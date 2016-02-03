@@ -1,0 +1,143 @@
+///////////////////////////////////////////////////////////////////////////////////////
+//
+// ETF-GmlGeoX
+//
+///////////////////////////////////////////////////////////////////////////////////////
+
+buildscript {
+	repositories {
+		maven {
+			url "http://services.interactive-instruments.de/etfdev-af/plugins-releases-local"
+			credentials {
+				username 'ii-bda'
+				password '6ozhS683'
+			}}
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+		jcenter()
+	}
+	dependencies {
+		classpath group: 'de.interactive_instruments.bda', name: 'etf-bda', version:'1.0.+'
+		classpath 'net.researchgate:gradle-release:2.3.4'
+		classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.12.1"
+	}
+	dependencies {
+		ant.unjar src: configurations.classpath.files.find {it.path.contains('etf')}, dest: 'build/gradle'
+	}
+}
+apply from: 'build/gradle/ii-bda.gradle'
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+group = 'de.interactive_instruments.etf.bsxm'
+description = "Basex XQuery module for validation and comparison of gml geometry data."
+
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'eclipse'
+
+ext.logbackVersion = '1.1.2'
+ext.deegreeVersion = '3.3.17'
+ext.basexVersion = '7.9'
+
+repositories {
+    maven {
+        url "https://services.interactive-instruments.de/etfdev-af/ext-deegree-cache"
+        credentials {
+            username gradle.rootProject.ext.r_user
+            password gradle.rootProject.ext.r_pwd
+        }
+    }
+}
+
+configurations {
+  runtime.exclude group: "org.slf4j", module: "slf4j-log4j12"
+  runtime.exclude group: "org.slf4j", module: "slf4j-nop"
+}
+
+dependencies {
+
+	// Validator dependencies
+	compile('org.bouncycastle:bcprov-jdk15on:1.53')
+	compile('com.thoughtworks.xstream:xstream:1.4.8')
+	compile('dom4j:dom4j:1.6.1') {
+		exclude group: 'xml-apis'
+	}
+	compile('com.vividsolutions:jts:1.13')
+	compile('org.apache.httpcomponents:httpclient:4.5.1') {
+		exclude group: 'commons-logging'
+	}
+	compile('commons-io:commons-io:2.4')
+	compile('org.jdom:jdom:2.0.2') {
+		exclude group: 'xerces'
+		exclude group: 'xalan'
+	}
+	compile('jaxen:jaxen:1.1.6') {
+		exclude group: 'xerces'
+		exclude group: 'xml-apis'
+	}
+	compile('org.apache.santuario:xmlsec:2.0.5') {
+		exclude group: 'org.slf4j'
+	}
+    compile("org.deegree:deegree-core-cs:$deegreeVersion") {
+        exclude group: 'org.postgis'
+        exclude group: 'postgresql'
+        exclude group: 'commons-logging'
+        exclude group: 'log4j'
+    }
+	compile("org.deegree:deegree-core-base:$deegreeVersion") {
+		exclude group: 'org.slf4j'
+		exclude group: 'xerces'
+		exclude group: 'xml-apis'
+		exclude group: 'com.h2database'
+		exclude group: 'org.postgis'
+		exclude group: 'postgresql'
+		exclude group: 'commons-logging'
+	}
+
+    compile "org.basex:basex-api:$basexVersion"
+
+	compile group: 'org.slf4j', name: 'slf4j-api', version:'1.7.5'
+
+	compile group: 'xerces', name: 'xercesImpl', version:'2.11.0.beta'
+  compile group: 'xml-apis', name: 'xml-apis', version:'1.4.01'
+	compile('xalan:xalan:2.7.2') {
+		exclude group: 'xerces'
+		exclude group: 'xml-apis'
+	}
+	compile group: 'javax.xml.bind', name: 'jaxb-api', version:'2.2.12'
+
+	testCompile group: 'junit', name: 'junit', version: '4.11'
+  testCompile "org.basex:basex:$basexVersion"
+  testCompile "ch.qos.logback:logback-classic:$logbackVersion"
+	testCompile "ch.qos.logback:logback-core:$logbackVersion"
+
+}
+
+jar.doFirst {
+	manifest {
+		attributes(
+				// Other manifest attributes are added by ii-bda
+				'Main-Class': 'de.interactive_instruments.etf.bsxm.GmlGeoX',
+		)
+	}
+}
+
+jar.doFirst {
+    from configurations.compile -
+            configurations.compile.filter { it.name.startsWith('basex') } -
+            configurations.compile.filter { it.name.startsWith('slf4j') } -
+            configurations.compile.filter { it.name.startsWith('jcl') } -
+            configurations.compile.filter { it.name.startsWith('log4j') } -
+            configurations.compile.filter { it.name.startsWith('commons-fileupload') } -
+            configurations.compile.filter { it.name.startsWith('xml-apis') } -
+            configurations.compile.filter { it.name.startsWith('xmldb-api') } -
+            configurations.compile.filter { it.name.startsWith('jaxb') } -
+            configurations.compile.filter { it.name.startsWith('milton') }
+}
+
+task showCompileDep << {
+    configurations.compile.each { println it }
+}
