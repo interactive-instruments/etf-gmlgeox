@@ -1,3 +1,18 @@
+/**
+ * Copyright 2010-2016 interactive instruments GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.interactive_instruments.etf.bsxm;
 
 import java.io.ByteArrayInputStream;
@@ -13,6 +28,10 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
+import com.vividsolutions.jts.geom.GeometryCollection;
+import com.vividsolutions.jts.geom.Polygon;
+import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 
 import org.basex.api.dom.BXElem;
 import org.basex.api.dom.BXNode;
@@ -42,13 +61,9 @@ import org.deegree.gml.GMLVersion;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import com.vividsolutions.jts.geom.GeometryCollection;
-import com.vividsolutions.jts.geom.Polygon;
-import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
-
 /**
- * 
- * 
+ *
+ *
  * @author Johannes Echterhoff (echterhoff <at> interactive-instruments
  *         <dot> de)
  *
@@ -64,7 +79,7 @@ public class GmlGeoXUtils {
 
 	/**
 	 * Creates a JTS Polygon from the given deegree PolygonPatch.
-	 * 
+	 *
 	 * @param patch
 	 * @return
 	 */
@@ -94,7 +109,7 @@ public class GmlGeoXUtils {
 
 	/**
 	 * Creates a JTS Polygon from the given JTS LineString.
-	 * 
+	 *
 	 * @param patch
 	 * @return
 	 */
@@ -109,7 +124,7 @@ public class GmlGeoXUtils {
 
 	/**
 	 * Creates a JTS GeometryCollection from the list of JTS geometry objects.
-	 * 
+	 *
 	 * @param gList
 	 * @return a JTS GeometryCollection (empty if the given list is
 	 *         <code>null</code> or empty)
@@ -133,7 +148,7 @@ public class GmlGeoXUtils {
 
 	/**
 	 * Computes a JTS geometry from the given deegree geometry.
-	 * 
+	 *
 	 * Supported geometry types:
 	 * <ul>
 	 * <li>GM_Point</li>
@@ -221,7 +236,7 @@ public class GmlGeoXUtils {
 	 * <li>GM_MultiSolid</li>
 	 * </ul>
 	 * </ul>
-	 * 
+	 *
 	 * @param geom
 	 * @return
 	 * @throws Exception
@@ -236,14 +251,14 @@ public class GmlGeoXUtils {
 			 * more than one patch - or rather: it ignores all patches except
 			 * the first one. So we need to detect and handle this case
 			 * ourselves.
-			 * 
+			 *
 			 * In fact, it is DefaultSurface that does not support multiple
 			 * patches. So we could check that the geometry is an instance of
 			 * DefaultSurface. However, it is not planned to create another
 			 * Geometry-Implementation for deegree. Thus we treat each Surface
 			 * as having the issue of not supporting JTS geometry creation if it
 			 * has multiple patches.
-			 * 
+			 *
 			 * Because we compute the JTS geometry of a surface directly from
 			 * its patch(es), we don't need a special treatment for the case of
 			 * an OrientableSurface. Much like for OrientableCurve, the deegree
@@ -396,7 +411,7 @@ public class GmlGeoXUtils {
 	 * <p>
 	 * See {{@link #toJTSGeometry(Geometry)} for a list of supported and
 	 * unsupported geometry types.
-	 * 
+	 *
 	 * @param aNode
 	 * @return
 	 * @throws Exception
@@ -423,7 +438,7 @@ public class GmlGeoXUtils {
 	 * <p>
 	 * See {{@link #toJTSGeometry(Geometry)} for a list of supported and
 	 * unsupported geometry types.
-	 * 
+	 *
 	 * @param e
 	 * @return
 	 * @throws Exception
@@ -452,10 +467,10 @@ public class GmlGeoXUtils {
 	public com.vividsolutions.jts.geom.Geometry toJTSGeometry(Object o)
 			throws Exception {
 
-		if(o == null) {
-			
+		if (o == null) {
+
 			return emptyJTSGeometry();
-			
+
 		} else if (o instanceof Value) {
 
 			Value v = (Value) o;
@@ -537,7 +552,7 @@ public class GmlGeoXUtils {
 
 	/**
 	 * Reads a geometry from the given DOM node.
-	 * 
+	 *
 	 * @param node
 	 *            represents a GML geometry element
 	 * @return the geometry represented by the node
@@ -608,7 +623,7 @@ public class GmlGeoXUtils {
 	 * (recursively scanning for GeometryCollections). Spatial relationship
 	 * operators cannot be performed for a JTS GeometryCollection, but for
 	 * (Multi)Point, (Multi)LineString, and (Multi)Polygon.
-	 * 
+	 *
 	 * @param geom
 	 * @return
 	 */

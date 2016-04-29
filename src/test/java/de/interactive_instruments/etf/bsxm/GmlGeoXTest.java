@@ -1,3 +1,18 @@
+/**
+ * Copyright 2010-2016 interactive instruments GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.interactive_instruments.etf.bsxm;
 
 import java.io.BufferedReader;
@@ -81,7 +96,7 @@ public final class GmlGeoXTest extends QueryTest {
 			// individually created databases
 		}
 
-		queries = new Object[][] { { "Point/Point",
+		queries = new Object[][]{{"Point/Point",
 				bool(true, false, false, false, true, false, true, false, false,
 						true, true, false, false, false, false, false),
 				COMMON_QUERY_PART + "return (\n"
@@ -100,9 +115,9 @@ public final class GmlGeoXTest extends QueryTest {
 						+ "  ggeo:overlaps($point1,$point2), (: false :)\n"
 						+ "  ggeo:overlaps($point1,$point3), (: false :)\n"
 						+ "  ggeo:touches($point1,$point2), (: false :)\n"
-						+ "  ggeo:touches($point1,$point3) (: false :)" + ")" },
+						+ "  ggeo:touches($point1,$point3) (: false :)" + ")"},
 
-				{ "Point/Curve",
+				{"Point/Curve",
 						bool(false, false, true, false, false, false, false,
 								false, false, false, false, true, true, true,
 								true, true, true, false, false, false, false,
@@ -149,9 +164,9 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "  ggeo:touches($curve1,$point4), (: false :)\n"
 								+ "  ggeo:touches($point1,$curve1), (: true :)\n"
 								+ "  ggeo:touches($curve1,$point1) (: true :)"
-								+ ")" },
+								+ ")"},
 
-				{ "Point/Surface",
+				{"Point/Surface",
 						bool(false, false, false, true, false, false, false,
 								false, false, false, false, true, true, true,
 								true, true, true, false, false, false, false,
@@ -198,9 +213,9 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "  ggeo:touches($surface1,$point5), (: false :)\n"
 								+ "  ggeo:touches($point1,$surface1), (: true :)\n"
 								+ "  ggeo:touches($surface1,$point1) (: true :)"
-								+ ")" },
+								+ ")"},
 
-				{ "Curve/Curve", bool(true, true, true, false, false, false,
+				{"Curve/Curve", bool(true, true, true, false, false, false,
 						false, false, true, false, true, false, false, true,
 						true, true, true, true, false, false, false, false,
 						false, false, true, true, false, false, false, false,
@@ -243,9 +258,9 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "  ggeo:touches($curve2,$curve5), (: false :)\n"
 								+ "  ggeo:touches($curve4,$curve6), (: false :)\n"
 								+ "  ggeo:touches($curve2,$curve4) (: true :)"
-								+ ")" },
+								+ ")"},
 
-				{ "Curve/Surface",
+				{"Curve/Surface",
 						bool(false, false, true, false, false, false, true,
 								true, false, false, false, true, true, true,
 								true, true, false, false, false, false, false,
@@ -293,9 +308,9 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "  ggeo:touches($surface2,$curve8), (: true :)\n"
 								+ "  ggeo:touches($curve10,$surface2), (: true :)\n"
 								+ "  ggeo:touches($surface2,$curve10) (: true :)"
-								+ ")" },
+								+ ")"},
 
-				{ "Surface/Surface",
+				{"Surface/Surface",
 						bool(false, false, false, true, false, true, false,
 								false, false, false, false, false, false, false,
 								true, false, true, true, true, false, false,
@@ -333,63 +348,63 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "  ggeo:touches($surface1,$surface2), (: false :)\n"
 								+ "  ggeo:touches($surface3,$surface7), (: true :)\n"
 								+ "  ggeo:touches($surface5,$surface4) (: false :)"
-								+ ")" },
+								+ ")"},
 
-				{ "Point / multiple individual points", bool(false, true),
+				{"Point / multiple individual points", bool(false, true),
 						COMMON_QUERY_PART
 								+ "let $multiplePoints := ($point1,$point2,$point3)\n"
 								+ "return (\n"
 								+ "  ggeo:intersects($point1,$multiplePoints,true()), (: false :)"
 								+ "  ggeo:intersects($point1,$multiplePoints,false()) (: true :)"
-								+ ")" },
+								+ ")"},
 
-				{ "Point / multiple individual points", bool(false, true),
+				{"Point / multiple individual points", bool(false, true),
 						COMMON_QUERY_PART
 								+ "let $multiplePoints := ($point3,$point2,$point1)\n"
 								+ "return (\n"
 								+ "  ggeo:intersects($point1,$multiplePoints,true()), (: false :)"
 								+ "  ggeo:intersects($point1,$multiplePoints,false()) (: true :)"
-								+ ")" },
+								+ ")"},
 
-				{ "Validation - all tests", str("VVV", "VVV", "VVV"),
+				{"Validation - all tests", str("VVV", "VVV", "VVV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface4), (: VVV :)\n"
 								+ "  ggeo:validate($curve1), (: VVV :)\n"
-								+ "  ggeo:validate($point1) (: VVV :)" + ")" },
+								+ "  ggeo:validate($point1) (: VVV :)" + ")"},
 
-				{ "Validation - ring orientation", str("FSS", "FSS"),
+				{"Validation - ring orientation", str("FSS", "FSS"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface8,'100'), (: FSS - exterior ring is oriented clockwise :) \n"
 								+ "  ggeo:validate($surface9,'100') (: FSS - interior ring is oriented counter-clockwise :)"
-								+ ")" },
+								+ ")"},
 
-				{ "Validation - repetition ", str("VVF", "VVF", "VVV"),
+				{"Validation - repetition ", str("VVF", "VVF", "VVV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface10), (: VVF - doppelte position :) \n"
 								+ "  ggeo:validate($curve14), (: VVF - doppelte position :) \n"
-								+ "  ggeo:validate($curve15) (: VVV :)" + ")" },
+								+ "  ggeo:validate($curve15) (: VVV :)" + ")"},
 
-				{ "Validation - connectedness ", str("VFV"),
+				{"Validation - connectedness ", str("VFV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface11) (: VFV - fourth patch is not connected :) \n"
-								+ ")" },
+								+ ")"},
 
-				{ "Validation - connectedness ", str("VFV"),
+				{"Validation - connectedness ", str("VFV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface12) (: VFV - the two patches only touch in a single point and are therefore not connected :) \n"
-								+ ")" },
+								+ ")"},
 
-				{ "Validation - connectedness ", str("VVV"),
+				{"Validation - connectedness ", str("VVV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface13) (: VVV - same surface as s11 but only using the first three patches, which are connected :) \n"
-								+ ")" },
+								+ ")"},
 
-				{ "Validation - connectedness ", str("VFV"),
+				{"Validation - connectedness ", str("VFV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface14) (: VFV - patch 1 is connected to patch 2, patch 3 is connected to patch 4, but patches 1/2 are not connected to patches 3/4 :) \n"
-								+ ")" },
+								+ ")"},
 
-				{ "Map use ", str("MULTIPOINT ((0 0), (1 1))"),
+				{"Map use ", str("MULTIPOINT ((0 0), (1 1))"),
 						COMMON_QUERY_PART + "\n"
 								+ "let $multiplePoints := ($point3,$point2,$point1)\r\n"
 								+ "let $geometryMap := map:new(\r\n"
@@ -397,7 +412,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "  return map { $x/@gml:id : ggeo:parseGeometry($x) }\r\n"
 								+ ")\r\n" + "\r\n"
 								+ "let $tnunion := ggeo:union(for-each($multiplePoints/@gml:id,$geometryMap))\r\n"
-								+ "return string($tnunion)" }
+								+ "return string($tnunion)"}
 
 		};
 	}

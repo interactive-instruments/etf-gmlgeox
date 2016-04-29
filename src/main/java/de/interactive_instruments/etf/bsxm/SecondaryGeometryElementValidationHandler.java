@@ -1,3 +1,18 @@
+/**
+ * Copyright 2010-2016 interactive instruments GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.interactive_instruments.etf.bsxm;
 
 import java.io.ByteArrayInputStream;
@@ -12,6 +27,11 @@ import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+
+import nl.vrom.roo.validator.core.ValidatorContext;
+import nl.vrom.roo.validator.core.ValidatorMessageBundle;
+import nl.vrom.roo.validator.core.dom4j.Dom4JHelper;
+import nl.vrom.roo.validator.core.errorlocation.IdErrorLocation;
 
 import org.deegree.commons.xml.XMLParsingException;
 import org.deegree.cs.exceptions.UnknownCRSException;
@@ -45,14 +65,9 @@ import org.dom4j.Namespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import nl.vrom.roo.validator.core.ValidatorContext;
-import nl.vrom.roo.validator.core.ValidatorMessageBundle;
-import nl.vrom.roo.validator.core.dom4j.Dom4JHelper;
-import nl.vrom.roo.validator.core.errorlocation.IdErrorLocation;
-
 /**
  * NOTE: Implementation is based on Geonovum's GeometryElementHandler.
- * 
+ *
  * @author Johannes Echterhoff (echterhoff <at> interactive-instruments
  *         <dot> de)
  *
@@ -278,10 +293,10 @@ public class SecondaryGeometryElementValidationHandler
 		return ValidatorMessageBundle
 				.getMessage(
 						"validator.core.validation.geometry.coordinates-position",
-						new Object[] { element.getName(),
+						new Object[]{element.getName(),
 								currentGmlGeometryCounters
 										.get(element.getName()),
-								currentFeatureMember, gmlId });
+								currentFeatureMember, gmlId});
 	}
 
 	/**
@@ -370,7 +385,7 @@ public class SecondaryGeometryElementValidationHandler
 	 * CompositeSolids).</li>
 	 * </ul>
 	 * Does NOT check the surfaces within solids!
-	 * 
+	 *
 	 * @param geom
 	 * @return <code>true</code> if the given geometry is a connected surface, a
 	 *         point, a curve, multi- or composite geometry that only consists
@@ -460,7 +475,7 @@ public class SecondaryGeometryElementValidationHandler
 	 * <li>The elements of multi and composite geometries</li>
 	 * </ul>
 	 * Does NOT check curve segments within solids!
-	 * 
+	 *
 	 * @param geom
 	 *            the geometry that shall be tested
 	 * @return <code>true</code> if no repetition was detected (or if the

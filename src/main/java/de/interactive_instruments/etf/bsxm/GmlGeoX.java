@@ -1,3 +1,18 @@
+/**
+ * Copyright 2010-2016 interactive instruments GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.interactive_instruments.etf.bsxm;
 
 import java.io.ByteArrayInputStream;
@@ -7,6 +22,14 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import nl.vrom.roo.validator.core.ValidatorContext;
+import nl.vrom.roo.validator.core.ValidatorMessage;
+import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
+
+import com.google.common.base.Joiner;
+import com.vividsolutions.jts.geom.util.GeometryExtracter;
+import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 
 import org.basex.api.dom.BXElem;
 import org.basex.api.dom.BXNode;
@@ -20,14 +43,6 @@ import org.dom4j.io.SAXReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
-
-import com.google.common.base.Joiner;
-import com.vividsolutions.jts.geom.util.GeometryExtracter;
-import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
-
-import nl.vrom.roo.validator.core.ValidatorContext;
-import nl.vrom.roo.validator.core.ValidatorMessage;
-import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
 
 /**
  * This module supports the validation of geometries as well as computing the
@@ -81,7 +96,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See the documentation of the {@link #validate(Object, String)} method for
 	 * a description of the supported geometry types.
-	 * 
+	 *
 	 * @param o
 	 * @return
 	 * @throws QueryException
@@ -148,7 +163,7 @@ public class GmlGeoX extends QueryModule {
 	 * <li>The mask '0' indicates that all except the first test shall be
 	 * performed.
 	 * </ul>
-	 * 
+	 *
 	 * @param o
 	 *            the GML geometry to validate
 	 * @return a mask with the test results, encoded as characters - one at each
@@ -313,7 +328,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param node1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -338,7 +353,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -368,7 +383,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param node1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -393,7 +408,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -423,7 +438,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param node1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -448,7 +463,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -478,7 +493,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param node1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -643,7 +658,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -673,7 +688,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -699,7 +714,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -729,7 +744,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param node1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -754,7 +769,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -784,7 +799,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param node1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -809,7 +824,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -839,7 +854,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param node1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -864,7 +879,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -892,7 +907,7 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Adds the name of a GML geometry element to the set of elements for which
 	 * validation is performed.
-	 * 
+	 *
 	 * @param nodeName
 	 *            name (simple, i.e. without namespace (prefix)) of a GML
 	 *            geometry element to validate.
@@ -905,7 +920,7 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Removes the name of a GML geometry element from the set of elements for
 	 * which validation is performed.
-	 * 
+	 *
 	 * @param nodeName
 	 *            name (simple, i.e. without namespace (prefix)) of a GML
 	 *            geometry element to remove from validation.
@@ -1006,7 +1021,7 @@ public class GmlGeoX extends QueryModule {
 	 * geometry. If holes were found a union is built, to ensure that the result
 	 * is a valid JTS Polygon or JTS MultiPolygon. If no holes were found an
 	 * empty JTS GeometryCollection is returned.
-	 * 
+	 *
 	 * @param geom
 	 *            potentially existing holes will be extracted from this
 	 *            geometry
@@ -1081,7 +1096,7 @@ public class GmlGeoX extends QueryModule {
 			} else {
 				return true;
 			}
-			
+
 		} else if (o instanceof Value) {
 
 			Value v = (Value) o;
@@ -1089,7 +1104,7 @@ public class GmlGeoX extends QueryModule {
 			if (v.size() > 1) {
 				throw new IllegalArgumentException(
 						"Single value expected where multiple were provided.");
-			} 
+			}
 
 		} else if (o instanceof Object[]) {
 			throw new IllegalArgumentException(
@@ -1108,7 +1123,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -1157,7 +1172,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
@@ -1267,7 +1282,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
-	 * 
+	 *
 	 * @param arg1
 	 *            represents the first geometry
 	 * @param arg2

@@ -1,3 +1,18 @@
+/**
+ * Copyright 2010-2016 interactive instruments GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.interactive_instruments.etf.bsxm;
 
 import java.util.ArrayList;
@@ -19,51 +34,41 @@ public class GmlGeoXGeometryValidationEventHandler
 
 	public enum GeometryValidationEventType {
 		/**
-		 * 
+		 *
 		 */
-		CURVE_DISCONTINUITY,
-		/**
-		 * 
-		 */
-		CURVE_SELF_INTERSECTION,
-		/**
-		 * 
-		 */
-		EXTERIOR_RING_ORIENTATION,
-		/**
-		 * 
-		 */
-		INTERIOR_RING_INTERSECTS_EXTERIOR,
-		/**
-		 * 
-		 */
-		INTERIOR_RING_ORIENTATION,
-		/**
-		 * 
-		 */
-		INTERIOR_RING_OUTSIDE_EXTERIOR,
-		/**
-		 * 
-		 */
-		INTERIOR_RINGS_INTERSECT,
-		/**
-		 * 
-		 */
-		INTERIOR_RINGS_NESTED,
-		/**
-		 * 
-		 */
-		INTERIOR_RINGS_TOUCH,
-		/**
-		 * 
-		 */
-		INTERIOR_RING_TOUCHES_EXTERIOR,
-		/**
-		 * 
-		 */
+		CURVE_DISCONTINUITY, /**
+								 *
+								 */
+		CURVE_SELF_INTERSECTION, /**
+									 *
+									 */
+		EXTERIOR_RING_ORIENTATION, /**
+									 *
+									 */
+		INTERIOR_RING_INTERSECTS_EXTERIOR, /**
+											 *
+											 */
+		INTERIOR_RING_ORIENTATION, /**
+									 *
+									 */
+		INTERIOR_RING_OUTSIDE_EXTERIOR, /**
+										 *
+										 */
+		INTERIOR_RINGS_INTERSECT, /**
+									 *
+									 */
+		INTERIOR_RINGS_NESTED, /**
+								 *
+								 */
+		INTERIOR_RINGS_TOUCH, /**
+								 *
+								 */
+		INTERIOR_RING_TOUCHES_EXTERIOR, /**
+										 *
+										 */
 		RING_NOT_CLOSED
 	}
-	
+
 	public boolean containsEventType(GeometryValidationEventType type) {
 		return eventsByType.containsKey(type);
 	}
@@ -256,7 +261,7 @@ public class GmlGeoXGeometryValidationEventHandler
 			return true;
 
 		} else {
-			
+
 			// TODO log occurrence of unrecognized event?
 			return false;
 		}
