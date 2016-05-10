@@ -15,7 +15,7 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
-import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -238,7 +238,7 @@ public class GmlGeoX extends QueryModule {
 				SAXReader saxReader = new SAXReader();
 				saxReader.setDefaultHandler(handler);
 
-				ByteArrayInputStream stream = geoutils.nodeToInputStream(elem);
+				final InputStream stream = geoutils.nodeToInputStream(elem);
 				saxReader.read(stream);
 
 				isValidGeonovum = ctx.isSuccessful();
@@ -271,7 +271,7 @@ public class GmlGeoX extends QueryModule {
 				SAXReader saxReader = new SAXReader();
 				saxReader.setDefaultHandler(handler);
 
-				ByteArrayInputStream stream = geoutils.nodeToInputStream(elem);
+				final InputStream stream = geoutils.nodeToInputStream(elem);
 				saxReader.read(stream);
 
 				// ================
@@ -329,10 +329,10 @@ public class GmlGeoX extends QueryModule {
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
 	 *
-	 * @param node1
+	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
-	 * @param node2
+	 * @param arg2
 	 *            represents the second geometry, encoded as a GML geometry
 	 *            element
 	 * @return <code>true</code> if the first geometry contains the second one,
@@ -384,10 +384,10 @@ public class GmlGeoX extends QueryModule {
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
 	 *
-	 * @param node1
+	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
-	 * @param node2
+	 * @param arg2
 	 *            represents the second geometry, encoded as a GML geometry
 	 *            element
 	 * @return <code>true</code> if the first geometry crosses the second one,
@@ -439,10 +439,10 @@ public class GmlGeoX extends QueryModule {
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
 	 *
-	 * @param node1
+	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
-	 * @param node2
+	 * @param arg2
 	 *            represents the second geometry, encoded as a GML geometry
 	 *            element
 	 * @return <code>true</code> if the first geometry equals the second one,
@@ -494,10 +494,10 @@ public class GmlGeoX extends QueryModule {
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
 	 *
-	 * @param node1
+	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
-	 * @param node2
+	 * @param arg2
 	 *            represents the second geometry, encoded as a GML geometry
 	 *            element
 	 * @return <code>true</code> if the first geometry intersects the second
@@ -745,10 +745,10 @@ public class GmlGeoX extends QueryModule {
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
 	 *
-	 * @param node1
+	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
-	 * @param node2
+	 * @param arg2
 	 *            represents the second geometry, encoded as a GML geometry
 	 *            element
 	 * @return <code>true</code> if the first geometry is within the second one,
@@ -800,10 +800,10 @@ public class GmlGeoX extends QueryModule {
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
 	 *
-	 * @param node1
+	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
-	 * @param node2
+	 * @param arg2
 	 *            represents the second geometry, encoded as a GML geometry
 	 *            element
 	 * @return <code>true</code> if the first geometry overlaps the second one,
@@ -855,10 +855,10 @@ public class GmlGeoX extends QueryModule {
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
 	 *
-	 * @param node1
+	 * @param arg1
 	 *            represents the first geometry, encoded as a GML geometry
 	 *            element
-	 * @param node2
+	 * @param arg2
 	 *            represents the second geometry, encoded as a GML geometry
 	 *            element
 	 * @return <code>true</code> if the first geometry touches the second one,

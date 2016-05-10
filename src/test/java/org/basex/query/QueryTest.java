@@ -2,15 +2,24 @@ package org.basex.query;
 
 import static org.junit.Assert.*;
 
-import org.basex.*;
-import org.basex.core.*;
-import org.basex.core.cmd.*;
-import org.basex.data.*;
-import org.basex.query.iter.*;
-import org.basex.query.simple.*;
-import org.basex.query.value.item.*;
-import org.basex.util.*;
-import org.junit.*;
+import org.basex.SandboxTest;
+import org.basex.core.BaseXException;
+import org.basex.core.MainOptions;
+import org.basex.core.cmd.CreateDB;
+import org.basex.data.Nodes;
+import org.basex.data.Result;
+import org.basex.query.iter.ValueBuilder;
+import org.basex.query.simple.XQUPTest;
+import org.basex.query.value.item.Bln;
+import org.basex.query.value.item.Dbl;
+import org.basex.query.value.item.Dec;
+import org.basex.query.value.item.Int;
+import org.basex.query.value.item.Item;
+import org.basex.query.value.item.Str;
+import org.basex.util.TokenBuilder;
+import org.basex.util.Util;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.Test;
 
 /**
