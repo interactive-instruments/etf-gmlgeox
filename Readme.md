@@ -38,6 +38,31 @@ For the spatial relationship operators, [this page](https://github.com/interacti
 
 Validation of GML geometry elements within a given XML node is basically a SAX-based scan for recognized GML geometry elements, and subsequent validation of these elements. The default set of recognized element names is a subset of GML. Functions offered by the module can be used to modify this set within an XQuery. See the [test project developer documentation for this module](https://github.com/interactive-instruments/etf-webapp/wiki/dev_manual_modules_gmlgeox) for further details.
 
+## Indexing
+
+Feature geometries can be indexed using an r*-tree. To index a feature execute `ggeo:index( int pre, String dbName, String id, Node xmlGeometry )`. 'pre' is the index of the feature node in the database table that can be obtained using `db:node-pre($node)`. It is essential that the XML database is not updated as this will change the pre values. 'dbName' is the name of the database that contains the feature node and can be obtained using `db:name($node)`. The 'id' is a String id used for the geometry cache. Typically the gml:id of the feature is used. The 'xmlGeometry' is the XML node with the GML geometry element to index.
+
+To index a node list of features (`$features`) simply execute:
+
+```
+let $dummy := for $feature in $features
+ return ggeo:index(db:node-pre($feature),db:name($feature),$feature/@gml:id,$feature/ns:geometry/*[1])
+```
+
+Once the index has been established, it can be searched to find all features whose bounding box overlaps with another bounding box. `ggeo:search( minx, miny, maxx, maxy )` returns a list of index entries. Using `ggeo:dbname( $entry )` and `ggeo:pre( $entry)` the information to access the database node of the GML feature using `db:open-pre( $dbname, $pre )` can be retrieved. For example:
+
+```
+let $env := ggeo:envelope($candidate_geometry)
+let $overlapping_features :=
+    for $entry in ggeo:search($env[1],$env[2],$env[3],$env[4])
+        return db:open-pre(ggeo:dbname($entry),ggeo:pre($entry))
+```
+
+
+## Geometry caching
+
+JTS geometries are cached during indexing to avoid multiple computation of the geometries from the XML. The cache size can be set before the indexing is started using `ggeo:cacheSize( int size )`, the default size is 100000 geometries. Geometries are accessed using `geo:getGeometry( String id, Node xmlGeometry )`. The `id` is specified during the indexing, typically the gml:id attribute of the GML feature is used. If the geometry with the id is currently in the cache, it is returned. Otherwise the geometry is computed from the XML and put into the cache.
+
 ## Deterministic vs. Non-Deterministic Functions
 
 When exposing a Java method as an XQuery function through a module, BaseX offers a way to indicate if the according function is deterministic. By default, such a function is assumed to be non-deterministic. Deterministic functions allow optimization, i.e. caching results instead of re-evaluating a function each time it occurs in the query execution.

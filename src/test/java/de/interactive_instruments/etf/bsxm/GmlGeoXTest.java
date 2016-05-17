@@ -15,12 +15,12 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
+import org.apache.commons.io.input.XmlStreamReader;
+import org.basex.query.QueryTest;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-
-import org.apache.commons.io.input.XmlStreamReader;
-import org.basex.query.*;
 
 /**
  * @author Johannes Echterhoff (echterhoff <at> interactive-instruments
@@ -412,8 +412,23 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "  return map { $x/@gml:id : ggeo:parseGeometry($x) }\r\n"
 								+ ")\r\n" + "\r\n"
 								+ "let $tnunion := ggeo:union(for-each($multiplePoints/@gml:id,$geometryMap))\r\n"
-								+ "return string($tnunion)"}
+								+ "return string($tnunion)"},
 
+				{"Basic test",
+						bool(true,true,true,true),
+						"import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';\n"
+								+ "declare namespace gml = 'http://www.opengis.net/gml/3.2';\n"
+								+ "\n"
+								+ "let $geom := /*/*/*\n"
+								+ "let $dummy := for $g in $geom\n"
+								+ " return ggeo:index(db:node-pre($g),db:name($g),$g/@gml:id,$g)\n"
+								+ "let $geoms := for $g in $geom return ggeo:getGeometry($g/@gml:id,$g)\n"
+								+ "return (\n"
+								+ "  count(ggeo:search(4,2.4,8,8.5))=12,\n"
+								+ "  count(ggeo:search(0,0,1,1))=11,\n"
+								+ "  ggeo:isWithin(ggeo:getGeometry('c1',$geom[@gml:id='c1']),$geoms,false()),\n"
+								+ "  number(ggeo:envelope($geom[1])[1])=1\n"
+								+ ")"}
 		};
 	}
 
