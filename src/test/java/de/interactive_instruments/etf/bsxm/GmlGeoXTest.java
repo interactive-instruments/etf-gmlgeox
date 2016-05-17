@@ -415,7 +415,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "return string($tnunion)"},
 
 				{"Basic test",
-						bool(true,true,true,true),
+						bool(true,true,true,true,true),
 						"import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';\n"
 								+ "declare namespace gml = 'http://www.opengis.net/gml/3.2';\n"
 								+ "\n"
@@ -426,6 +426,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "return (\n"
 								+ "  count(ggeo:search(4,2.4,8,8.5))=12,\n"
 								+ "  count(ggeo:search(0,0,1,1))=11,\n"
+								+ "  contains(ggeo:search(0,0,1,1)[@gml:id='p1']/gml:pos[1],'1 1'),\n"
 								+ "  ggeo:isWithin(ggeo:getGeometry('c1',$geom[@gml:id='c1']),$geoms,false()),\n"
 								+ "  number(ggeo:envelope($geom[1])[1])=1\n"
 								+ ")"}

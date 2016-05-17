@@ -28,11 +28,16 @@ import nl.vrom.roo.validator.core.ValidatorMessage;
 import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
 import org.basex.api.dom.BXElem;
 import org.basex.api.dom.BXNode;
+import org.basex.core.Context;
+import org.basex.data.Data;
 import org.basex.query.QueryException;
 import org.basex.query.QueryModule;
+import org.basex.query.QueryProcessor;
 import org.basex.query.value.Value;
 import org.basex.query.value.node.ANode;
+import org.basex.query.value.node.DBNode;
 import org.basex.query.value.seq.Empty;
+import org.basex.util.InputInfo;
 import org.deegree.geometry.Geometry;
 import org.dom4j.io.SAXReader;
 import org.slf4j.Logger;
@@ -1431,12 +1436,18 @@ public class GmlGeoX extends QueryModule {
 
             Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.search(Geometries.rectangle(x1,y1,x2,y2));
             Iterable<IndexEntry> iter = results.map(entry -> entry.value()).toBlocking().toIterable();
-            IndexEntry[] idlist = Iterables.toArray(iter,IndexEntry.class);
+            List<DBNode> nodelist = new ArrayList<DBNode>();
+            for (IndexEntry entry : iter) {
+				Data d = queryContext.resource.database(entry.dbname,new InputInfo("xpath",0,0));
+                DBNode n = new DBNode(d,entry.pre);
+                if (n!=null)
+                    nodelist.add(n);
+            }
             if (++count % 5000 == 0) {
-                printMemUsage("GmlGeoX#search "+count+". Hits: "+idlist.length);
+                printMemUsage("GmlGeoX#search "+count+". Hits: "+nodelist.size());
             }
 
-            return idlist;
+            return nodelist.toArray();
 
         } catch (Exception e) {
             throw new QueryException(e);
@@ -1485,32 +1496,30 @@ public class GmlGeoX extends QueryModule {
     public void index(Object pre, Object dbname, Object id, Object geom) throws QueryException {
         GeometryManager mgr = GeometryManager.getInstance();
 
-        if (pre instanceof BigInteger && dbname instanceof String && (id instanceof BXNode || id instanceof String) && (geom instanceof BXElem || geom instanceof com.vividsolutions.jts.geom.Geometry)) {
-            try {
-                IndexEntry entry = new IndexEntry((String) dbname,((BigInteger) pre).intValue());
-                String _id = id instanceof String ? (String) id : ((BXNode) id).getNodeValue();
-                com.vividsolutions.jts.geom.Geometry _geom = geom instanceof BXElem ? geoutils.singleObjectToJTSGeometry(geom) : ((com.vividsolutions.jts.geom.Geometry) geom);
-                Envelope env = _geom.getEnvelopeInternal();
-                if (!env.isNull()) {
-                    if (env.getHeight() == 0.0 && env.getWidth() == 0.0)
-                        rtree = rtree.add(entry, Geometries.point(env.getMinX(), env.getMinY()));
-                    else
-                        rtree = rtree.add(entry, Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()));
+        if (pre instanceof BigInteger && dbname instanceof String && (id instanceof BXNode || id instanceof String) && (geom instanceof BXElem || geom instanceof com.vividsolutions.jts.geom.Geometry))
+			try {
+				IndexEntry entry = new IndexEntry((String) dbname,((BigInteger) pre).intValue());
+				String _id = id instanceof String ? (String) id : ((BXNode) id).getNodeValue();
+				com.vividsolutions.jts.geom.Geometry _geom = geom instanceof BXElem ? geoutils.singleObjectToJTSGeometry(geom) : ((com.vividsolutions.jts.geom.Geometry) geom);
+				Envelope env = _geom.getEnvelopeInternal();
+				if (!env.isNull()) {
+					if (env.getHeight() == 0.0 && env.getWidth() == 0.0)
+						rtree = rtree.add(entry, Geometries.point(env.getMinX(), env.getMinY()));
+					else
+						rtree = rtree.add(entry, Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()));
 
-                    // add to geometry cache
-					if (_id!=null)
-	                    mgr.put(_id, _geom);
-                }
+					// add to geometry cache
+					if (_id != null)
+						mgr.put(_id, _geom);
+				}
 
-                int size = rtree.size();
-                if (size % 5000 == 0)
-                    printMemUsage("GmlGeoX#index progress: " + size);
+				int size = rtree.size();
+				if (size % 5000 == 0)
+					printMemUsage("GmlGeoX#index progress: " + size);
 
-            } catch (Exception e) {
-                throw new QueryException(e);
-            }
-
-        }
+			} catch (Exception e) {
+				throw new QueryException(e);
+			}
     }
 
     /**

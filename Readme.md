@@ -42,22 +42,27 @@ Validation of GML geometry elements within a given XML node is basically a SAX-b
 
 Feature geometries can be indexed using an r*-tree. To index a feature execute `ggeo:index( int pre, String dbName, String id, Node xmlGeometry )`. 'pre' is the index of the feature node in the database table that can be obtained using `db:node-pre($node)`. It is essential that the XML database is not updated as this will change the pre values. 'dbName' is the name of the database that contains the feature node and can be obtained using `db:name($node)`. The 'id' is a String id used for the geometry cache. Typically the gml:id of the feature is used. The 'xmlGeometry' is the XML node with the GML geometry element to index.
 
-To index a node list of features (`$features`) simply execute:
+To index a node list of features (`$features`) simply execute (where 'ns:geometry' is the geometry property):
 
 ```
 let $dummy := for $feature in $features
- return ggeo:index(db:node-pre($feature),db:name($feature),$feature/@gml:id,$feature/ns:geometry/*[1])
+    return ggeo:index(db:node-pre($feature),db:name($feature),$feature/@gml:id,$feature/ns:geometry/*[1])
 ```
 
-Once the index has been established, it can be searched to find all features whose bounding box overlaps with another bounding box. `ggeo:search( minx, miny, maxx, maxy )` returns a list of index entries. Using `ggeo:dbname( $entry )` and `ggeo:pre( $entry)` the information to access the database node of the GML feature using `db:open-pre( $dbname, $pre )` can be retrieved. For example:
+Once the index has been established, it can be searched to find all features whose bounding box overlaps with another bounding box. `ggeo:search( minx, miny, maxx, maxy )` returns a node list of indexed features overlapping with the search bounding box. For example:
 
 ```
 let $env := ggeo:envelope($candidate_geometry)
-let $overlapping_features :=
-    for $entry in ggeo:search($env[1],$env[2],$env[3],$env[4])
-        return db:open-pre(ggeo:dbname($entry),ggeo:pre($entry))
+let $overlapping_features := ggeo:search($env[1],$env[2],$env[3],$env[4])
 ```
 
+Or, if you want the candidate geometries that might intersect the search bounding box:
+
+```
+let $geometries :=
+    for $feature in ggeo:search($env[1],$env[2],$env[3],$env[4])
+        return ggeo:getGeometry($feature/@gml:id,$feature/ns:geometry/*[1])
+```
 
 ## Geometry caching
 
