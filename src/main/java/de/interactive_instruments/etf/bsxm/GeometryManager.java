@@ -21,6 +21,8 @@ import org.apache.commons.jcs.access.CacheAccess;
 import org.apache.commons.jcs.engine.control.CompositeCacheManager;
 import org.basex.query.QueryException;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 
 /**
@@ -103,9 +105,10 @@ class GeometryManager {
         {
             com.vividsolutions.jts.geom.Geometry geom = geometryCache.get(id);
             getCount++;
-            if (geom==null && ++missCount%10000==0)
-                System.out.println("GmlGeoX#getGeometry cache misses: "+missCount+" of "+getCount+" ");
-
+            if (geom==null && ++missCount%10000==0) {
+                String timeStamp = new SimpleDateFormat("HH:mm:ss.SSS").format(new Date());
+                System.out.println(timeStamp+" - GmlGeoX#getGeometry cache misses: " + missCount + " of " + getCount + " ");
+            }
             return geom;
         }
     }

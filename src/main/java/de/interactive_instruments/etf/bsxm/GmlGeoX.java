@@ -81,9 +81,11 @@ public class GmlGeoX extends QueryModule {
 
 	private final Set<String> gmlGeometries = new TreeSet<String>();
 
-	private RTree<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree = RTree.star().maxChildren(6).create();
+	private RTree<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree = RTree.star().create();
 
+	private boolean debug = false;
     private int count = 0;
+    private int count2 = 0;
 
 	public GmlGeoX() throws QueryException {
 
@@ -1444,7 +1446,7 @@ public class GmlGeoX extends QueryModule {
                     nodelist.add(n);
             }
             if (++count % 5000 == 0) {
-                printMemUsage("GmlGeoX#search "+count+". Hits: "+nodelist.size());
+                printMemUsage("GmlGeoX#search "+count+". Box: ("+x1+", "+y1+") ("+x2+", "+y2+")"+". Hits: "+nodelist.size());
             }
 
             return nodelist.toArray();
@@ -1454,11 +1456,45 @@ public class GmlGeoX extends QueryModule {
         }
     }
 
+	/**
+	 * Returns all items in the spatial r-tree index.
+	 *
+	 * @return the node set of all items in the index
+	 * @throws QueryException
+	 */
+    public Object[] search() throws QueryException {
+        try {
+            printMemUsage("GmlGeoX#search.start "+count+".");
+            Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.entries();
+            Iterable<IndexEntry> iter = results.map(entry -> entry.value()).toBlocking().toIterable();
+            List<DBNode> nodelist = new ArrayList<DBNode>();
+            for (IndexEntry entry : iter) {
+                Data d = queryContext.resource.database(entry.dbname,new InputInfo("xpath",0,0));
+                DBNode n = new DBNode(d,entry.pre);
+                if (n!=null)
+                    nodelist.add(n);
+            }
+            printMemUsage("GmlGeoX#search "+count+". Hits: "+nodelist.size());
+
+            return nodelist.toArray();
+
+        } catch (Exception e) {
+            throw new QueryException(e);
+        }
+    }
+
+	/**
+	 * Debug method that may print memory information
+	 *
+	 * @param progress
+     */
+
     private void printMemUsage(String progress) {
-		String timeStamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
-		MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
-        memory.gc();
-		System.out.println(timeStamp+" - "+progress+". Memory: "+Math.round(memory.getHeapMemoryUsage().getUsed()/1048576)+" MB of "+Math.round(memory.getHeapMemoryUsage().getMax()/1048576)+" MB.");
+		if (debug) {
+			String timeStamp = new SimpleDateFormat("HH:mm:ss.SSS").format(new Date());
+			MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
+			System.out.println(timeStamp + " - " + progress + ". Memory: " + Math.round(memory.getHeapMemoryUsage().getUsed() / 1048576) + " MB of " + Math.round(memory.getHeapMemoryUsage().getMax() / 1048576) + " MB.");
+		}
 	}
 
     /**
@@ -1540,6 +1576,10 @@ public class GmlGeoX extends QueryModule {
     @Requires(Permission.NONE)
     @Deterministic
     public com.vividsolutions.jts.geom.Geometry getGeometry(Object id, Object defgeom) throws QueryException {
+        if (++count2 % 5000 == 0) {
+            printMemUsage("GmlGeoX#getGeometry.start "+count2);
+        }
+
         GeometryManager mgr = GeometryManager.getInstance();
 
         String idx;
@@ -1568,7 +1608,10 @@ public class GmlGeoX extends QueryModule {
             geom = geoutils.emptyJTSGeometry();
         }
 
+        if (count2 % 5000 == 0) {
+            printMemUsage("GmlGeoX#getGeometry.end "+count2);
+        }
+
         return geom;
     }
-
 }
