@@ -15,20 +15,21 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
+import com.github.davidmoten.rtree.Entry;
+import com.github.davidmoten.rtree.RTree;
 import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.jcs.JCS;
 import org.apache.commons.jcs.access.CacheAccess;
 import org.apache.commons.jcs.engine.control.CompositeCacheManager;
 import org.basex.query.QueryException;
+import rx.Observable;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Properties;
 
 /**
- * The GeometryManager is an in-memory cache for JTS geometries that can be used
- * with the GmlGeoX module. The cache is filled during the indexing of the geometries
- * and updated when geometries are accessed using the {@link GmlGeoX#getGeometry(Object, Object)} function.
+ * The GeometryManager is a spatial index and an in-memory cache for JTS geometries that can be used
+ * with the GmlGeoX module. The cache is filled during the indexing of the geometries and updated
+ * when geometries are accessed using the {@link GmlGeoX#getGeometry(Object, Object)} function.
  *
  *  @author Clemens Portele (portele <at> interactive-instruments <dot> de)
  */
@@ -40,6 +41,7 @@ class GeometryManager {
     private static int missCount = 0;
     private static int size = 100000;
     private static CacheAccess<String, Geometry> geometryCache;
+    private static RTree<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree = RTree.star().create();
 
         private GeometryManager() throws QueryException {
             try
@@ -82,6 +84,13 @@ class GeometryManager {
             return instance;
         }
 
+    public static void setInstance(GeometryManager mgr) {
+        synchronized (instance)
+        {
+            instance = mgr;
+        }
+    }
+
     static void setSize(int s) throws QueryException {
         synchronized (GeometryManager.class)
         {
@@ -105,12 +114,28 @@ class GeometryManager {
         {
             com.vividsolutions.jts.geom.Geometry geom = geometryCache.get(id);
             getCount++;
-            if (geom==null && ++missCount%10000==0) {
-                String timeStamp = new SimpleDateFormat("HH:mm:ss.SSS").format(new Date());
-                System.out.println(timeStamp+" - GmlGeoX#getGeometry cache misses: " + missCount + " of " + getCount + " ");
-            }
+            if (geom==null)
+                missCount++;
             return geom;
         }
+    }
+
+    /**
+     * Returns the number of all read accesses to the cache
+     *
+     * @return number of read accesses to the cache
+     */
+    public int getCount() {
+        return getCount;
+    }
+
+    /**
+     * Returns the number of all failed read accesses to the cache
+     *
+     * @return number of failed read accesses to the cache
+     */
+    public int getMissCount() {
+        return missCount;
     }
 
     /**
@@ -127,4 +152,51 @@ class GeometryManager {
         }
     }
 
+    /**
+     * Index a geometry
+     *
+     * @param entry the index entry referencing the BaseX node
+     * @param geometry the geometry to index
+     */
+    public void index(IndexEntry entry, com.github.davidmoten.rtree.geometry.Geometry geometry) {
+        synchronized (rtree) {
+            rtree = rtree.add(entry, geometry);
+        }
+    }
+
+    /**
+     * Report current size of the spatial index
+     *
+     * @return  size of the spatial index
+     */
+    public int indexSize() {
+        synchronized (rtree) {
+            return rtree.size();
+        }
+    }
+
+    /**
+     * return all entries in the spatial index
+     *
+     * @return  iterator over all entries
+     */
+    public Iterable<IndexEntry> search() {
+        synchronized (rtree) {
+            Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.entries();
+            return results.map(entry -> entry.value()).toBlocking().toIterable();
+        }
+    }
+
+    /**
+     * return all entries in the spatial index that are in the bounding box
+     *
+     * @param bbox  the bounding box / rectangle
+     * @return  iterator over all detected entries
+     */
+    public Iterable<IndexEntry> search(com.github.davidmoten.rtree.geometry.Rectangle bbox) {
+        synchronized (rtree) {
+            Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.search(bbox);
+            return results.map(entry -> entry.value()).toBlocking().toIterable();
+        }
+    }
 }

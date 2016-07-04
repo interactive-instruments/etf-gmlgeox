@@ -15,11 +15,8 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
-import com.github.davidmoten.rtree.Entry;
-import com.github.davidmoten.rtree.RTree;
 import com.github.davidmoten.rtree.geometry.Geometries;
 import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.util.GeometryExtracter;
 import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
@@ -28,11 +25,9 @@ import nl.vrom.roo.validator.core.ValidatorMessage;
 import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
 import org.basex.api.dom.BXElem;
 import org.basex.api.dom.BXNode;
-import org.basex.core.Context;
 import org.basex.data.Data;
 import org.basex.query.QueryException;
 import org.basex.query.QueryModule;
-import org.basex.query.QueryProcessor;
 import org.basex.query.value.Value;
 import org.basex.query.value.node.ANode;
 import org.basex.query.value.node.DBNode;
@@ -43,14 +38,15 @@ import org.dom4j.io.SAXReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
-import rx.Observable;
 
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.math.BigInteger;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -80,8 +76,6 @@ public class GmlGeoX extends QueryModule {
 	protected GmlGeoXUtils geoutils = new GmlGeoXUtils();
 
 	private final Set<String> gmlGeometries = new TreeSet<String>();
-
-	private RTree<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree = RTree.star().create();
 
 	private boolean debug = false;
     private int count = 0;
@@ -1369,15 +1363,6 @@ public class GmlGeoX extends QueryModule {
 
     }
 
-    private class IndexEntry {
-        int pre;
-        String dbname;
-        IndexEntry(String dbn, int p) {
-            pre = p;
-            dbname = dbn;
-        }
-    }
-
     @Requires(Permission.NONE)
     @Deterministic
     public int pre(Object entry) {
@@ -1436,8 +1421,8 @@ public class GmlGeoX extends QueryModule {
             else
                 y2 = 0.0;
 
-            Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.search(Geometries.rectangle(x1,y1,x2,y2));
-            Iterable<IndexEntry> iter = results.map(entry -> entry.value()).toBlocking().toIterable();
+			GeometryManager mgr = GeometryManager.getInstance();
+            Iterable<IndexEntry> iter = mgr.search(Geometries.rectangle(x1,y1,x2,y2));
             List<DBNode> nodelist = new ArrayList<DBNode>();
             for (IndexEntry entry : iter) {
 				Data d = queryContext.resource.database(entry.dbname,new InputInfo("xpath",0,0));
@@ -1465,8 +1450,8 @@ public class GmlGeoX extends QueryModule {
     public Object[] search() throws QueryException {
         try {
             printMemUsage("GmlGeoX#search.start "+count+".");
-            Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.entries();
-            Iterable<IndexEntry> iter = results.map(entry -> entry.value()).toBlocking().toIterable();
+			GeometryManager mgr = GeometryManager.getInstance();
+            Iterable<IndexEntry> iter = mgr.search();
             List<DBNode> nodelist = new ArrayList<DBNode>();
             for (IndexEntry entry : iter) {
                 Data d = queryContext.resource.database(entry.dbname,new InputInfo("xpath",0,0));
@@ -1486,14 +1471,14 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Debug method that may print memory information
 	 *
-	 * @param progress
+	 * @param progress status string
      */
 
     private void printMemUsage(String progress) {
 		if (debug) {
-			String timeStamp = new SimpleDateFormat("HH:mm:ss.SSS").format(new Date());
 			MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
-			System.out.println(timeStamp + " - " + progress + ". Memory: " + Math.round(memory.getHeapMemoryUsage().getUsed() / 1048576) + " MB of " + Math.round(memory.getHeapMemoryUsage().getMax() / 1048576) + " MB.");
+			memory.gc();
+			LOGGER.debug(progress + ". Memory: " + Math.round(memory.getHeapMemoryUsage().getUsed() / 1048576) + " MB of " + Math.round(memory.getHeapMemoryUsage().getMax() / 1048576) + " MB.");
 		}
 	}
 
@@ -1540,16 +1525,16 @@ public class GmlGeoX extends QueryModule {
 				Envelope env = _geom.getEnvelopeInternal();
 				if (!env.isNull()) {
 					if (env.getHeight() == 0.0 && env.getWidth() == 0.0)
-						rtree = rtree.add(entry, Geometries.point(env.getMinX(), env.getMinY()));
+						mgr.index(entry, Geometries.point(env.getMinX(), env.getMinY()));
 					else
-						rtree = rtree.add(entry, Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()));
+						mgr.index(entry, Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()));
 
 					// add to geometry cache
 					if (_id != null)
 						mgr.put(_id, _geom);
 				}
 
-				int size = rtree.size();
+				int size = mgr.indexSize();
 				if (size % 5000 == 0)
 					printMemUsage("GmlGeoX#index progress: " + size);
 
@@ -1602,6 +1587,12 @@ public class GmlGeoX extends QueryModule {
             } catch (Exception e) {
                 throw new QueryException(e);
             }
+			if (debug) {
+				int missCount = mgr.getMissCount();
+				if (missCount % 10000 == 0) {
+					LOGGER.debug("Cache misses: " + missCount + " of " + mgr.getCount());
+				}
+			}
         }
 
         if (geom==null) {
