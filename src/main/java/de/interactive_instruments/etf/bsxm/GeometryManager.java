@@ -36,59 +36,46 @@ import java.util.Properties;
 class GeometryManager {
 
     private static GeometryManager instance;
-    private static int checkedOut = 0;
     private static int getCount = 0;
     private static int missCount = 0;
     private static int size = 100000;
     private static CacheAccess<String, Geometry> geometryCache;
     private static RTree<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree = RTree.star().create();
 
-        private GeometryManager() throws QueryException {
-            try
-            {
-                // Just use a default cache region - in memory
-                Properties props = new Properties();
-                props.put("jcs.default","");
-                props.put("jcs.default.cacheattributes","org.apache.commons.jcs.engine.CompositeCacheAttributes");
-                props.put("jcs.default.cacheattributes.MaxObjects", Integer.toString(size));
-                props.put("jcs.default.cacheattributes.MemoryCacheName","org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache");
-
-                CompositeCacheManager ccm = CompositeCacheManager.getUnconfiguredInstance();
-                ccm.configure(props);
-
-                geometryCache = JCS.getInstance("geometryCache");
-            }
-            catch (Exception e)
-            {
-                throw new QueryException("Cache for geometries could not be initialized.");
-            }
-        }
-
-        /**
-         * Singleton access point to the manager.
-         */
-        public static GeometryManager getInstance() throws QueryException {
-            synchronized (GeometryManager.class)
-            {
-                if (instance == null)
-                {
-                    instance = new GeometryManager();
-                }
-            }
-
-            synchronized (instance)
-            {
-                instance.checkedOut++;
-            }
-
-            return instance;
-        }
-
-    public static void setInstance(GeometryManager mgr) {
-        synchronized (instance)
+    private GeometryManager() throws QueryException {
+        try
         {
-            instance = mgr;
+            // Just use a default cache region - in memory
+            Properties props = new Properties();
+            props.put("jcs.default","");
+            props.put("jcs.default.cacheattributes","org.apache.commons.jcs.engine.CompositeCacheAttributes");
+            props.put("jcs.default.cacheattributes.MaxObjects", Integer.toString(size));
+            props.put("jcs.default.cacheattributes.MemoryCacheName","org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache");
+
+            CompositeCacheManager ccm = CompositeCacheManager.getUnconfiguredInstance();
+            ccm.configure(props);
+
+            geometryCache = JCS.getInstance("geometryCache");
         }
+        catch (Exception e)
+        {
+            throw new QueryException("Cache for geometries could not be initialized.");
+        }
+    }
+
+    /**
+     * Singleton access point to the manager.
+     */
+    public static GeometryManager getInstance() throws QueryException {
+        synchronized (GeometryManager.class)
+        {
+            if (instance == null)
+            {
+                instance = new GeometryManager();
+            }
+        }
+
+        return instance;
     }
 
     static void setSize(int s) throws QueryException {
