@@ -1,7 +1,7 @@
 # Gml geometry validation library
 
 [![Apache License 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
-[![Latest version](http://img.shields.io/badge/latest%20version-1.0.2-blue.svg)](http://services.interactive-instruments.de/etfdev-af/release/de/interactive_instruments/etf/bsxm/etf-gmlgeox/1.0.2/etf-gmlgeox-1.0.2.jar)
+[![Latest version](http://img.shields.io/badge/latest%20version-1.0.3-blue.svg)](http://services.interactive-instruments.de/etfdev-af/release/de/interactive_instruments/etf/bsxm/etf-gmlgeox/1.0.3/etf-gmlgeox-1.0.3.jar)
 [![Build Status](https://services.interactive-instruments.de/etfdev-ci/buildStatus/icon?job=etf-gmlgeox)](https://services.interactive-instruments.de/etfdev-ci/job/etf-gmlgeox/)
 
 The library can be used by the [ETF BaseX test driver](https://github.com/interactive-instruments/etf-bsxtd) to validate GML geometries within XML documents.
@@ -37,6 +37,36 @@ For the spatial relationship operators, [this page](https://github.com/interacti
 ## Geometry Validation
 
 Validation of GML geometry elements within a given XML node is basically a SAX-based scan for recognized GML geometry elements, and subsequent validation of these elements. The default set of recognized element names is a subset of GML. Functions offered by the module can be used to modify this set within an XQuery. See the [test project developer documentation for this module](https://github.com/interactive-instruments/etf-webapp/wiki/dev_manual_modules_gmlgeox) for further details.
+
+## Indexing
+
+Feature geometries can be indexed using an r*-tree. To index a feature execute `ggeo:index( int pre, String dbName, String id, Node xmlGeometry )`. 'pre' is the index of the feature node in the database table that can be obtained using `db:node-pre($node)`. It is essential that the XML database is not updated as this will change the pre values. 'dbName' is the name of the database that contains the feature node and can be obtained using `db:name($node)`. The 'id' is a String id used for the geometry cache. Typically the gml:id of the feature is used. The 'xmlGeometry' is the XML node with the GML geometry element to index.
+
+To index a node list of features (`$features`) simply execute (where 'ns:geometry' is the geometry property):
+
+```
+let $dummy := for $feature in $features
+    return ggeo:index(db:node-pre($feature),db:name($feature),$feature/@gml:id,$feature/ns:geometry/*[1])
+```
+
+Once the index has been established, it can be searched to find all features whose bounding box overlaps with another bounding box. `ggeo:search( minx, miny, maxx, maxy )` returns a node list of indexed features overlapping with the search bounding box. For example:
+
+```
+let $env := ggeo:envelope($candidate_geometry)
+let $overlapping_features := ggeo:search($env[1],$env[2],$env[3],$env[4])
+```
+
+Or, if you want the candidate geometries that might intersect the search bounding box:
+
+```
+let $geometries :=
+    for $feature in ggeo:search($env[1],$env[2],$env[3],$env[4])
+        return ggeo:getGeometry($feature/@gml:id,$feature/ns:geometry/*[1])
+```
+
+## Geometry caching
+
+JTS geometries are cached during indexing to avoid multiple computation of the geometries from the XML. The cache size can be set before the indexing is started using `ggeo:cacheSize( int size )`, the default size is 100000 geometries. Geometries are accessed using `geo:getGeometry( String id, Node xmlGeometry )`. The `id` is specified during the indexing, typically the gml:id attribute of the GML feature is used. If the geometry with the id is currently in the cache, it is returned. Otherwise the geometry is computed from the XML and put into the cache.
 
 ## Deterministic vs. Non-Deterministic Functions
 

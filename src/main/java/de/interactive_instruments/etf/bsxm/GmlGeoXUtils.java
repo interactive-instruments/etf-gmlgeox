@@ -17,6 +17,7 @@ package de.interactive_instruments.etf.bsxm;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +37,7 @@ import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 import org.basex.api.dom.BXElem;
 import org.basex.api.dom.BXNode;
 import org.basex.query.QueryException;
+import org.basex.query.QueryIOException;
 import org.basex.query.value.Value;
 import org.basex.query.value.item.Item;
 import org.basex.query.value.item.Jav;
@@ -110,7 +112,7 @@ public class GmlGeoXUtils {
 	/**
 	 * Creates a JTS Polygon from the given JTS LineString.
 	 *
-	 * @param patch
+	 * @param exterior
 	 * @return
 	 */
 	public Polygon toJTSPolygon(
@@ -412,7 +414,7 @@ public class GmlGeoXUtils {
 	 * See {{@link #toJTSGeometry(Geometry)} for a list of supported and
 	 * unsupported geometry types.
 	 *
-	 * @param aNode
+	 * @param node
 	 * @return
 	 * @throws Exception
 	 */
@@ -569,9 +571,9 @@ public class GmlGeoXUtils {
 					+ (namespaceURI == null ? "<null>" : namespaceURI) + "'.");
 		}
 
-		ByteArrayInputStream byteArrayInputStream = nodeToInputStream(node);
+		final InputStream byteArrayInputStream = nodeToInputStream(node);
 
-		XMLStreamReader xmlStream = xmlInputFactory
+		final XMLStreamReader xmlStream = xmlInputFactory
 				.createXMLStreamReader(byteArrayInputStream);
 
 		GMLVersion gmlVersion = null;
@@ -591,17 +593,29 @@ public class GmlGeoXUtils {
 		return result;
 	}
 
-	public ByteArrayInputStream nodeToInputStream(final Node node)
+	/**
+	 * Return text representation of a node as InputStream
+	 *
+	 * @param node
+	 * @return
+	 * @throws TransformerException
+	 */
+	public InputStream nodeToInputStream(final Node node)
 			throws TransformerException {
 
+		if (node instanceof BXNode) {
+			// BXNode does not support the getPrefix(), which is required by saxon.
+			try {
+				return new ByteArrayInputStream(((BXNode) node).getNode().serialize().toArray());
+			} catch (QueryIOException e) {
+				throw new TransformerException(e);
+			}
+		}
+
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-		Result outputTarget = new StreamResult(outputStream);
-
+		final Result outputTarget = new StreamResult(outputStream);
 		final Transformer t = TransformerFactory.newInstance().newTransformer();
-
 		t.transform(new DOMSource(node), outputTarget);
-
 		return new ByteArrayInputStream(outputStream.toByteArray());
 	}
 
@@ -630,7 +644,7 @@ public class GmlGeoXUtils {
 	public List<com.vividsolutions.jts.geom.Geometry> toFlattenedJTSGeometryCollection(
 			com.vividsolutions.jts.geom.Geometry geom) {
 
-		List<com.vividsolutions.jts.geom.Geometry> geoms = new ArrayList<com.vividsolutions.jts.geom.Geometry>();
+		final List<com.vividsolutions.jts.geom.Geometry> geoms = new ArrayList<com.vividsolutions.jts.geom.Geometry>();
 
 		if (isGeometryCollectionButNotASubtype(geom)) {
 			toFlattenedJTSGeometryCollection((GeometryCollection) geom, geoms);
