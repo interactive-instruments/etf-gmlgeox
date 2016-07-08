@@ -15,12 +15,12 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
-import org.apache.commons.io.input.XmlStreamReader;
-import org.basex.query.QueryTest;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+
+import org.apache.commons.io.input.XmlStreamReader;
+import org.basex.query.QueryTest;
 
 /**
  * @author Johannes Echterhoff (echterhoff <at> interactive-instruments
@@ -415,7 +415,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "return string($tnunion)"},
 
 				{"Basic test",
-						bool(true,true,true,true,true),
+						bool(true, true, true, true, true),
 						"import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';\n"
 								+ "declare namespace gml = 'http://www.opengis.net/gml/3.2';\n"
 								+ "\n"

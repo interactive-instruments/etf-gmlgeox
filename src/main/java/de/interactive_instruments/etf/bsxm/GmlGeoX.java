@@ -15,14 +15,27 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
+import java.io.InputStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import nl.vrom.roo.validator.core.ValidatorContext;
+import nl.vrom.roo.validator.core.ValidatorMessage;
+import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
+
 import com.github.davidmoten.rtree.geometry.Geometries;
 import com.google.common.base.Joiner;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.util.GeometryExtracter;
 import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
-import nl.vrom.roo.validator.core.ValidatorContext;
-import nl.vrom.roo.validator.core.ValidatorMessage;
-import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
+
 import org.basex.api.dom.BXElem;
 import org.basex.api.dom.BXNode;
 import org.basex.data.Data;
@@ -38,17 +51,6 @@ import org.dom4j.io.SAXReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
-
-import java.io.InputStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This module supports the validation of geometries as well as computing the
@@ -78,8 +80,8 @@ public class GmlGeoX extends QueryModule {
 	private final Set<String> gmlGeometries = new TreeSet<String>();
 
 	private boolean debug = false;
-    private int count = 0;
-    private int count2 = 0;
+	private int count = 0;
+	private int count2 = 0;
 
 	public GmlGeoX() throws QueryException {
 
@@ -100,7 +102,7 @@ public class GmlGeoX extends QueryModule {
 
 		registerGmlGeometry("Ring");
 		registerGmlGeometry("LineString");
-    }
+	}
 
 	/**
 	 * Calls the {@link #validate(Object, String)} method, with <code>null</code>
@@ -1329,117 +1331,117 @@ public class GmlGeoX extends QueryModule {
 
 	}
 
-    /**
-     * Computes the envelope of a geometry.
-     * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-     * and unsupported geometry types.
-     *
-     * @param arg
-     *            represents the geometry
-     * @return The bounding box, an array { x1, y1, x2, y2 }
-     * @throws QueryException
-     */
-    @Requires(Permission.NONE)
-    @Deterministic
-    public Object[] envelope(Object arg) throws QueryException {
+	/**
+	 * Computes the envelope of a geometry.
+	 * <p>
+	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
+	 * and unsupported geometry types.
+	 *
+	 * @param arg
+	 *            represents the geometry
+	 * @return The bounding box, an array { x1, y1, x2, y2 }
+	 * @throws QueryException
+	 */
+	@Requires(Permission.NONE)
+	@Deterministic
+	public Object[] envelope(Object arg) throws QueryException {
 
-        try {
-            Envelope env;
+		try {
+			Envelope env;
 
-            if (arg instanceof Empty) {
-                env = geoutils.emptyJTSGeometry().getEnvelopeInternal();
-            } else if (arg instanceof com.vividsolutions.jts.geom.Geometry){
-                env = ((com.vividsolutions.jts.geom.Geometry)arg).getEnvelopeInternal();
-            } else {
-                env = geoutils.toJTSGeometry(arg).getEnvelopeInternal();
-            }
-            Object[] res = { env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY() };
+			if (arg instanceof Empty) {
+				env = geoutils.emptyJTSGeometry().getEnvelopeInternal();
+			} else if (arg instanceof com.vividsolutions.jts.geom.Geometry) {
+				env = ((com.vividsolutions.jts.geom.Geometry) arg).getEnvelopeInternal();
+			} else {
+				env = geoutils.toJTSGeometry(arg).getEnvelopeInternal();
+			}
+			Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()};
 			return res;
 
-        } catch (Exception e) {
-            throw new QueryException(e);
-        }
+		} catch (Exception e) {
+			throw new QueryException(e);
+		}
 
-    }
+	}
 
-    @Requires(Permission.NONE)
-    @Deterministic
-    public int pre(Object entry) {
-        if (entry instanceof IndexEntry)
-            return ((IndexEntry) entry).pre;
+	@Requires(Permission.NONE)
+	@Deterministic
+	public int pre(Object entry) {
+		if (entry instanceof IndexEntry)
+			return ((IndexEntry) entry).pre;
 
-        return -1;
-    }
+		return -1;
+	}
 
-    @Requires(Permission.NONE)
-    @Deterministic
-    public String dbname(Object entry) {
-        if (entry instanceof IndexEntry)
-            return ((IndexEntry) entry).dbname;
+	@Requires(Permission.NONE)
+	@Deterministic
+	public String dbname(Object entry) {
+		if (entry instanceof IndexEntry)
+			return ((IndexEntry) entry).dbname;
 
-        return null;
-    }
+		return null;
+	}
 
-    /**
-     * Searches the spatial r-tree index for items in the envelope.
-     *
-     * @param minx
-     *            represents the minimum value on the first coordinate axis; a number
-     * @param miny
-     *            represents the minimum value on the second coordinate axis; a number
-     * @param maxx
-     *            represents the maximum value on the first coordinate axis; a number
-     * @param maxy
-     *            represents the maximum value on the second coordinate axis; a number
-     * @return the node set of all items in the envelope
-     * @throws QueryException
-     */
-    @Requires(Permission.NONE)
-    @Deterministic
-    public Object[] search(Object minx, Object miny, Object maxx, Object maxy) throws QueryException {
+	/**
+	 * Searches the spatial r-tree index for items in the envelope.
+	 *
+	 * @param minx
+	 *            represents the minimum value on the first coordinate axis; a number
+	 * @param miny
+	 *            represents the minimum value on the second coordinate axis; a number
+	 * @param maxx
+	 *            represents the maximum value on the first coordinate axis; a number
+	 * @param maxy
+	 *            represents the maximum value on the second coordinate axis; a number
+	 * @return the node set of all items in the envelope
+	 * @throws QueryException
+	 */
+	@Requires(Permission.NONE)
+	@Deterministic
+	public Object[] search(Object minx, Object miny, Object maxx, Object maxy) throws QueryException {
 
-        try {
-            double x1;
-            double x2;
-            double y1;
-            double y2;
-            if (minx instanceof Number)
-                x1 = ((Number) minx).doubleValue();
-            else
-                x1 = 0.0;
-            if (miny instanceof Number)
-                y1 = ((Number) miny).doubleValue();
-            else
-                y1 = 0.0;
-            if (maxx instanceof Number)
-                x2 = ((Number) maxx).doubleValue();
-            else
-                x2 = 0.0;
-            if (maxy instanceof Number)
-                y2 = ((Number) maxy).doubleValue();
-            else
-                y2 = 0.0;
+		try {
+			double x1;
+			double x2;
+			double y1;
+			double y2;
+			if (minx instanceof Number)
+				x1 = ((Number) minx).doubleValue();
+			else
+				x1 = 0.0;
+			if (miny instanceof Number)
+				y1 = ((Number) miny).doubleValue();
+			else
+				y1 = 0.0;
+			if (maxx instanceof Number)
+				x2 = ((Number) maxx).doubleValue();
+			else
+				x2 = 0.0;
+			if (maxy instanceof Number)
+				y2 = ((Number) maxy).doubleValue();
+			else
+				y2 = 0.0;
 
 			GeometryManager mgr = GeometryManager.getInstance();
-            Iterable<IndexEntry> iter = mgr.search(Geometries.rectangle(x1,y1,x2,y2));
-            List<DBNode> nodelist = new ArrayList<DBNode>();
-            for (IndexEntry entry : iter) {
-				Data d = queryContext.resource.database(entry.dbname,new InputInfo("xpath",0,0));
-                DBNode n = new DBNode(d,entry.pre);
-                if (n!=null)
-                    nodelist.add(n);
-            }
-            if (++count % 5000 == 0) {
-                printMemUsage("GmlGeoX#search "+count+". Box: ("+x1+", "+y1+") ("+x2+", "+y2+")"+". Hits: "+nodelist.size());
-            }
+			Iterable<IndexEntry> iter = mgr.search(Geometries.rectangle(x1, y1, x2, y2));
+			List<DBNode> nodelist = new ArrayList<DBNode>();
+			for (IndexEntry entry : iter) {
+				Data d = queryContext.resource.database(entry.dbname, new InputInfo("xpath", 0, 0));
+				DBNode n = new DBNode(d, entry.pre);
+				if (n != null)
+					nodelist.add(n);
+			}
+			if (++count % 5000 == 0) {
+				printMemUsage("GmlGeoX#search " + count + ". Box: (" + x1 + ", " + y1 + ") (" + x2 + ", " + y2 + ")" + ". Hits: " + nodelist.size());
+			}
 
-            return nodelist.toArray();
+			return nodelist.toArray();
 
-        } catch (Exception e) {
-            throw new QueryException(e);
-        }
-    }
+		} catch (Exception e) {
+			throw new QueryException(e);
+		}
+	}
 
 	/**
 	 * Returns all items in the spatial r-tree index.
@@ -1447,34 +1449,34 @@ public class GmlGeoX extends QueryModule {
 	 * @return the node set of all items in the index
 	 * @throws QueryException
 	 */
-    public Object[] search() throws QueryException {
-        try {
-            printMemUsage("GmlGeoX#search.start "+count+".");
+	public Object[] search() throws QueryException {
+		try {
+			printMemUsage("GmlGeoX#search.start " + count + ".");
 			GeometryManager mgr = GeometryManager.getInstance();
-            Iterable<IndexEntry> iter = mgr.search();
-            List<DBNode> nodelist = new ArrayList<DBNode>();
-            for (IndexEntry entry : iter) {
-                Data d = queryContext.resource.database(entry.dbname,new InputInfo("xpath",0,0));
-                DBNode n = new DBNode(d,entry.pre);
-                if (n!=null)
-                    nodelist.add(n);
-            }
-            printMemUsage("GmlGeoX#search "+count+". Hits: "+nodelist.size());
+			Iterable<IndexEntry> iter = mgr.search();
+			List<DBNode> nodelist = new ArrayList<DBNode>();
+			for (IndexEntry entry : iter) {
+				Data d = queryContext.resource.database(entry.dbname, new InputInfo("xpath", 0, 0));
+				DBNode n = new DBNode(d, entry.pre);
+				if (n != null)
+					nodelist.add(n);
+			}
+			printMemUsage("GmlGeoX#search " + count + ". Hits: " + nodelist.size());
 
-            return nodelist.toArray();
+			return nodelist.toArray();
 
-        } catch (Exception e) {
-            throw new QueryException(e);
-        }
-    }
+		} catch (Exception e) {
+			throw new QueryException(e);
+		}
+	}
 
 	/**
 	 * Debug method that may print memory information
 	 *
 	 * @param progress status string
-     */
+	 */
 
-    private void printMemUsage(String progress) {
+	private void printMemUsage(String progress) {
 		if (debug) {
 			MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
 			memory.gc();
@@ -1482,44 +1484,44 @@ public class GmlGeoX extends QueryModule {
 		}
 	}
 
-    /**
-     * Set cache size for geometries
-     *
-     * @param size
-     *            the size of the geometry cache; default is 100000
-     * @throws QueryException
-     */
-    @Requires(Permission.NONE)
-    public void cacheSize(Object size) throws QueryException {
-        if (size instanceof BigInteger)
-            GeometryManager.setSize(((BigInteger) size).intValue());
-    }
+	/**
+	 * Set cache size for geometries
+	 *
+	 * @param size
+	 *            the size of the geometry cache; default is 100000
+	 * @throws QueryException
+	 */
+	@Requires(Permission.NONE)
+	public void cacheSize(Object size) throws QueryException {
+		if (size instanceof BigInteger)
+			GeometryManager.setSize(((BigInteger) size).intValue());
+	}
 
-    /**
-     * Indexes a list of id nodes (gml:id attribute of features) with their GML geometries
-     * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-     * and unsupported geometry types.
-     * <p>
-     * Both lists must have equal length.
-     *
-     * @param pre
-     *            represents the pre value of the indexed item node (typically the gml:id of GML feature elements)
-     * @param dbname
-     *            represents the name of the database that contains the indexed item node (typically the gml:id of GML feature elements)
-     * @param id
-     *            represents the id string of the item that should be indexed, typically the gml:id of GML feature elements; must be String instances
-     * @param geom
-     *            represents the GML geometry to index; must be an BXElem instance
-     * @throws QueryException
-     */
-    @Requires(Permission.NONE)
-    public void index(Object pre, Object dbname, Object id, Object geom) throws QueryException {
-        GeometryManager mgr = GeometryManager.getInstance();
+	/**
+	 * Indexes a list of id nodes (gml:id attribute of features) with their GML geometries
+	 * <p>
+	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
+	 * and unsupported geometry types.
+	 * <p>
+	 * Both lists must have equal length.
+	 *
+	 * @param pre
+	 *            represents the pre value of the indexed item node (typically the gml:id of GML feature elements)
+	 * @param dbname
+	 *            represents the name of the database that contains the indexed item node (typically the gml:id of GML feature elements)
+	 * @param id
+	 *            represents the id string of the item that should be indexed, typically the gml:id of GML feature elements; must be String instances
+	 * @param geom
+	 *            represents the GML geometry to index; must be an BXElem instance
+	 * @throws QueryException
+	 */
+	@Requires(Permission.NONE)
+	public void index(Object pre, Object dbname, Object id, Object geom) throws QueryException {
+		GeometryManager mgr = GeometryManager.getInstance();
 
-        if (pre instanceof BigInteger && dbname instanceof String && (id instanceof BXNode || id instanceof String) && (geom instanceof BXElem || geom instanceof com.vividsolutions.jts.geom.Geometry))
+		if (pre instanceof BigInteger && dbname instanceof String && (id instanceof BXNode || id instanceof String) && (geom instanceof BXElem || geom instanceof com.vividsolutions.jts.geom.Geometry))
 			try {
-				IndexEntry entry = new IndexEntry((String) dbname,((BigInteger) pre).intValue());
+				IndexEntry entry = new IndexEntry((String) dbname, ((BigInteger) pre).intValue());
 				String _id = id instanceof String ? (String) id : ((BXNode) id).getNodeValue();
 				com.vividsolutions.jts.geom.Geometry _geom = geom instanceof BXElem ? geoutils.singleObjectToJTSGeometry(geom) : ((com.vividsolutions.jts.geom.Geometry) geom);
 				Envelope env = _geom.getEnvelopeInternal();
@@ -1541,68 +1543,68 @@ public class GmlGeoX extends QueryModule {
 			} catch (Exception e) {
 				throw new QueryException(e);
 			}
-    }
+	}
 
-    /**
-     * Retrieve the geometry of an item as a JTS geometry. First try the cache and if it is not in the cache
-     * construct it from the XML.
-     * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-     * and unsupported geometry types.
-     *
-     * @param id
-     *            the id for which the geometry should be retrieved, typically a gml:id of a GML feature element; must be a String or BXNode instance
-     * @param defgeom
-     *            represents the default GML geometry, if the geometry is not cached; must be a BXElem instance
-     * @return
-     *            the geometry of the indexed node, or null if no geometry was found
-     * @throws QueryException
-     */
-    @Requires(Permission.NONE)
-    @Deterministic
-    public com.vividsolutions.jts.geom.Geometry getGeometry(Object id, Object defgeom) throws QueryException {
-        if (++count2 % 5000 == 0) {
-            printMemUsage("GmlGeoX#getGeometry.start "+count2);
-        }
+	/**
+	 * Retrieve the geometry of an item as a JTS geometry. First try the cache and if it is not in the cache
+	 * construct it from the XML.
+	 * <p>
+	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
+	 * and unsupported geometry types.
+	 *
+	 * @param id
+	 *            the id for which the geometry should be retrieved, typically a gml:id of a GML feature element; must be a String or BXNode instance
+	 * @param defgeom
+	 *            represents the default GML geometry, if the geometry is not cached; must be a BXElem instance
+	 * @return
+	 *            the geometry of the indexed node, or null if no geometry was found
+	 * @throws QueryException
+	 */
+	@Requires(Permission.NONE)
+	@Deterministic
+	public com.vividsolutions.jts.geom.Geometry getGeometry(Object id, Object defgeom) throws QueryException {
+		if (++count2 % 5000 == 0) {
+			printMemUsage("GmlGeoX#getGeometry.start " + count2);
+		}
 
-        GeometryManager mgr = GeometryManager.getInstance();
+		GeometryManager mgr = GeometryManager.getInstance();
 
-        String idx;
-        if (id instanceof String) {
-            idx = (String) id;
-        } else if (id instanceof BXNode) {
-            idx = ((BXNode) id).getNodeValue();
-        } else
-            throw new QueryException("Failure to get geometry. An id uses an incorrect type: "+id.getClass().getCanonicalName());
+		String idx;
+		if (id instanceof String) {
+			idx = (String) id;
+		} else if (id instanceof BXNode) {
+			idx = ((BXNode) id).getNodeValue();
+		} else
+			throw new QueryException("Failure to get geometry. An id uses an incorrect type: " + id.getClass().getCanonicalName());
 
 		com.vividsolutions.jts.geom.Geometry geom = mgr.get(idx);
-        if (geom==null) {
-            if (!(defgeom instanceof BXElem || defgeom instanceof com.vividsolutions.jts.geom.Geometry)) {
-                throw new QueryException("Failure to parse geometry. A geometry uses an incorrect type: "+defgeom.getClass().getCanonicalName());
-            }
-            try {
-                geom = defgeom instanceof BXElem ? geoutils.singleObjectToJTSGeometry(defgeom) : ((com.vividsolutions.jts.geom.Geometry) defgeom);
-                if (geom!=null)
-                    mgr.put(idx, geom);
-            } catch (Exception e) {
-                throw new QueryException(e);
-            }
+		if (geom == null) {
+			if (!(defgeom instanceof BXElem || defgeom instanceof com.vividsolutions.jts.geom.Geometry)) {
+				throw new QueryException("Failure to parse geometry. A geometry uses an incorrect type: " + defgeom.getClass().getCanonicalName());
+			}
+			try {
+				geom = defgeom instanceof BXElem ? geoutils.singleObjectToJTSGeometry(defgeom) : ((com.vividsolutions.jts.geom.Geometry) defgeom);
+				if (geom != null)
+					mgr.put(idx, geom);
+			} catch (Exception e) {
+				throw new QueryException(e);
+			}
 			if (debug) {
 				int missCount = mgr.getMissCount();
 				if (missCount % 10000 == 0) {
 					LOGGER.debug("Cache misses: " + missCount + " of " + mgr.getCount());
 				}
 			}
-        }
+		}
 
-        if (geom==null) {
-            geom = geoutils.emptyJTSGeometry();
-        }
+		if (geom == null) {
+			geom = geoutils.emptyJTSGeometry();
+		}
 
-        if (count2 % 5000 == 0) {
-            printMemUsage("GmlGeoX#getGeometry.end "+count2);
-        }
+		if (count2 % 5000 == 0) {
+			printMemUsage("GmlGeoX#getGeometry.end " + count2);
+		}
 
-        return geom;
-    }
+		return geom;
+	}
 }

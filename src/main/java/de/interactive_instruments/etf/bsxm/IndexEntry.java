@@ -21,12 +21,13 @@ package de.interactive_instruments.etf.bsxm;
  *
  * @author Clemens Portele (portele <at> interactive-instruments <dot> de)
  *
- */class IndexEntry {
-    int pre;
-    String dbname;
+ */
+class IndexEntry {
+	int pre;
+	String dbname;
 
-    IndexEntry(String dbn, int p) {
-        pre = p;
-        dbname = dbn;
-    }
+	IndexEntry(String dbn, int p) {
+		pre = p;
+		dbname = dbn;
+	}
 }

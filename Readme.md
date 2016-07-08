@@ -46,7 +46,7 @@ To index a node list of features (`$features`) simply execute (where 'ns:geometr
 
 ```
 let $dummy := for $feature in $features
-    return ggeo:index(db:node-pre($feature),db:name($feature),$feature/@gml:id,$feature/ns:geometry/*[1])
+	return ggeo:index(db:node-pre($feature),db:name($feature),$feature/@gml:id,$feature/ns:geometry/*[1])
 ```
 
 Once the index has been established, it can be searched to find all features whose bounding box overlaps with another bounding box. `ggeo:search( minx, miny, maxx, maxy )` returns a node list of indexed features overlapping with the search bounding box. For example:
@@ -60,8 +60,8 @@ Or, if you want the candidate geometries that might intersect the search boundin
 
 ```
 let $geometries :=
-    for $feature in ggeo:search($env[1],$env[2],$env[3],$env[4])
-        return ggeo:getGeometry($feature/@gml:id,$feature/ns:geometry/*[1])
+	for $feature in ggeo:search($env[1],$env[2],$env[3],$env[4])
+		return ggeo:getGeometry($feature/@gml:id,$feature/ns:geometry/*[1])
 ```
 
 ## Geometry caching
