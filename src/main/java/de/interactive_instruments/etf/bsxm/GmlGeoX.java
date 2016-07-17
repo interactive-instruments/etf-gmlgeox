@@ -75,17 +75,18 @@ public class GmlGeoX extends QueryModule {
 	private static final Pattern INTERSECTIONPATTERN = Pattern
 			.compile("[0-2\\*TF]{9}");
 
-	protected GmlGeoXUtils geoutils = new GmlGeoXUtils();
+	protected final GmlGeoXUtils geoutils = new GmlGeoXUtils();
 
 	private final Set<String> gmlGeometries = new TreeSet<String>();
 
-	private boolean debug = false;
+	private static final boolean debug = LOGGER.isDebugEnabled();
+
 	private int count = 0;
 	private int count2 = 0;
 
 	public GmlGeoX() throws QueryException {
 
-		printMemUsage("GmlGeoX#init");
+		logMemUsage("GmlGeoX#init");
 
 		// default geometry types for which validation is performed
 		registerGmlGeometry("Point");
@@ -1433,7 +1434,7 @@ public class GmlGeoX extends QueryModule {
 					nodelist.add(n);
 			}
 			if (++count % 5000 == 0) {
-				printMemUsage("GmlGeoX#search " + count + ". Box: (" + x1 + ", " + y1 + ") (" + x2 + ", " + y2 + ")" + ". Hits: " + nodelist.size());
+				logMemUsage("GmlGeoX#search " + count + ". Box: (" + x1 + ", " + y1 + ") (" + x2 + ", " + y2 + ")" + ". Hits: " + nodelist.size());
 			}
 
 			return nodelist.toArray();
@@ -1451,7 +1452,7 @@ public class GmlGeoX extends QueryModule {
 	 */
 	public Object[] search() throws QueryException {
 		try {
-			printMemUsage("GmlGeoX#search.start " + count + ".");
+			logMemUsage("GmlGeoX#search.start " + count + ".");
 			GeometryManager mgr = GeometryManager.getInstance();
 			Iterable<IndexEntry> iter = mgr.search();
 			List<DBNode> nodelist = new ArrayList<DBNode>();
@@ -1461,7 +1462,7 @@ public class GmlGeoX extends QueryModule {
 				if (n != null)
 					nodelist.add(n);
 			}
-			printMemUsage("GmlGeoX#search " + count + ". Hits: " + nodelist.size());
+			logMemUsage("GmlGeoX#search " + count + ". Hits: " + nodelist.size());
 
 			return nodelist.toArray();
 
@@ -1471,14 +1472,14 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Debug method that may print memory information
+	 * Logs memory information if Logger is enabled for the DEBUG level
 	 *
 	 * @param progress status string
 	 */
 
-	private void printMemUsage(String progress) {
+	private void logMemUsage(final String progress) {
 		if (debug) {
-			MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
+			final MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
 			memory.gc();
 			LOGGER.debug(progress + ". Memory: " + Math.round(memory.getHeapMemoryUsage().getUsed() / 1048576) + " MB of " + Math.round(memory.getHeapMemoryUsage().getMax() / 1048576) + " MB.");
 		}
@@ -1538,7 +1539,7 @@ public class GmlGeoX extends QueryModule {
 
 				int size = mgr.indexSize();
 				if (size % 5000 == 0)
-					printMemUsage("GmlGeoX#index progress: " + size);
+					logMemUsage("GmlGeoX#index progress: " + size);
 
 			} catch (Exception e) {
 				throw new QueryException(e);
@@ -1564,7 +1565,7 @@ public class GmlGeoX extends QueryModule {
 	@Deterministic
 	public com.vividsolutions.jts.geom.Geometry getGeometry(Object id, Object defgeom) throws QueryException {
 		if (++count2 % 5000 == 0) {
-			printMemUsage("GmlGeoX#getGeometry.start " + count2);
+			logMemUsage("GmlGeoX#getGeometry.start " + count2);
 		}
 
 		GeometryManager mgr = GeometryManager.getInstance();
@@ -1602,7 +1603,7 @@ public class GmlGeoX extends QueryModule {
 		}
 
 		if (count2 % 5000 == 0) {
-			printMemUsage("GmlGeoX#getGeometry.end " + count2);
+			logMemUsage("GmlGeoX#getGeometry.end " + count2);
 		}
 
 		return geom;
