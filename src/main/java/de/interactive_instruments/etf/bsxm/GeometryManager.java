@@ -24,6 +24,9 @@ import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.jcs.JCS;
 import org.apache.commons.jcs.access.CacheAccess;
 import org.apache.commons.jcs.engine.control.CompositeCacheManager;
+import org.apache.commons.jcs.engine.memory.AbstractDoubleLinkedListMemoryCache;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.basex.query.QueryException;
 
 import rx.Observable;
@@ -55,6 +58,15 @@ class GeometryManager {
 
 			CompositeCacheManager ccm = CompositeCacheManager.getUnconfiguredInstance();
 			ccm.configure(props);
+
+			// If log4j level is set to debug, jcs will execute the method
+			// AbstractDoubleLinkedListMemoryCache.verifyCache() and may hang in an infinite loop
+			// due to a possible cycle in a double linked list.
+			// Might be a good idea to set the root level to ERROR, so that other blocks which
+			// check the log level with isDebugEnabled() method are not executed
+			// Logger.getLogger(AbstractDoubleLinkedListMemoryCache.class).setLevel(Level.ERROR);
+			// Todo: use log4j to slf4j bridge if log4j is not required anymore in ii-commons-util
+			Logger.getRootLogger().setLevel(Level.ERROR);
 
 			geometryCache = JCS.getInstance("geometryCache");
 		} catch (Exception e) {
