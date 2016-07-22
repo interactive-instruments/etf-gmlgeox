@@ -36,36 +36,46 @@ public class GmlGeoXGeometryValidationEventHandler
 		/**
 		 *
 		 */
-		CURVE_DISCONTINUITY, /**
-								 *
-								 */
-		CURVE_SELF_INTERSECTION, /**
-									 *
-									 */
-		EXTERIOR_RING_ORIENTATION, /**
-									 *
-									 */
-		INTERIOR_RING_INTERSECTS_EXTERIOR, /**
-											 *
-											 */
-		INTERIOR_RING_ORIENTATION, /**
-									 *
-									 */
-		INTERIOR_RING_OUTSIDE_EXTERIOR, /**
-										 *
-										 */
-		INTERIOR_RINGS_INTERSECT, /**
-									 *
-									 */
-		INTERIOR_RINGS_NESTED, /**
-								 *
-								 */
-		INTERIOR_RINGS_TOUCH, /**
-								 *
-								 */
-		INTERIOR_RING_TOUCHES_EXTERIOR, /**
-										 *
-										 */
+		CURVE_DISCONTINUITY,
+		/**
+		 *
+		 */
+		CURVE_SELF_INTERSECTION,
+		/**
+		 *
+		 */
+		EXTERIOR_RING_ORIENTATION,
+		/**
+		 *
+		 */
+		INTERIOR_RING_INTERSECTS_EXTERIOR,
+		/**
+		 *
+		 */
+		INTERIOR_RING_ORIENTATION,
+		/**
+		 *
+		 */
+		INTERIOR_RING_OUTSIDE_EXTERIOR,
+		/**
+		 *
+		 */
+		INTERIOR_RINGS_INTERSECT,
+		/**
+		 *
+		 */
+		INTERIOR_RINGS_NESTED,
+		/**
+		 *
+		 */
+		INTERIOR_RINGS_TOUCH,
+		/**
+		 *
+		 */
+		INTERIOR_RING_TOUCHES_EXTERIOR,
+		/**
+		 *
+		 */
 		RING_NOT_CLOSED
 	}
 

@@ -606,7 +606,7 @@ public class GmlGeoX extends QueryModule {
 
 	private boolean performSpatialRelationshipOperation(Object arg1,
 			Object arg2, SpatialRelOp op, boolean matchAll)
-					throws QueryException {
+			throws QueryException {
 
 		try {
 
