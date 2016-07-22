@@ -1426,7 +1426,7 @@ public class GmlGeoX extends QueryModule {
 			else
 				y2 = 0.0;
 
-			if (mgr==null)
+			if (mgr == null)
 				mgr = new GeometryManager();
 			Iterable<IndexEntry> iter = mgr.search(Geometries.rectangle(x1, y1, x2, y2));
 			List<DBNode> nodelist = new ArrayList<DBNode>();
@@ -1456,7 +1456,7 @@ public class GmlGeoX extends QueryModule {
 	public Object[] search() throws QueryException {
 		try {
 			logMemUsage("GmlGeoX#search.start " + count + ".");
-			if (mgr==null)
+			if (mgr == null)
 				mgr = new GeometryManager();
 			Iterable<IndexEntry> iter = mgr.search();
 			List<DBNode> nodelist = new ArrayList<DBNode>();
@@ -1499,7 +1499,7 @@ public class GmlGeoX extends QueryModule {
 	@Requires(Permission.NONE)
 	public void cacheSize(Object size) throws QueryException {
 		if (size instanceof BigInteger) {
-			if (mgr==null)
+			if (mgr == null)
 				mgr = new GeometryManager();
 			mgr.setSize(((BigInteger) size).intValue());
 		}
@@ -1525,7 +1525,7 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	public void index(Object pre, Object dbname, Object id, Object geom) throws QueryException {
-		if (mgr==null)
+		if (mgr == null)
 			mgr = new GeometryManager();
 
 		if (pre instanceof BigInteger && dbname instanceof String && (id instanceof BXNode || id instanceof String) && (geom instanceof BXElem || geom instanceof com.vividsolutions.jts.geom.Geometry))
@@ -1576,7 +1576,7 @@ public class GmlGeoX extends QueryModule {
 			logMemUsage("GmlGeoX#getGeometry.start " + count2);
 		}
 
-		if (mgr==null)
+		if (mgr == null)
 			mgr = new GeometryManager();
 
 		String idx;
