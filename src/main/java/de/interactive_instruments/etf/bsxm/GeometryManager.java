@@ -24,7 +24,6 @@ import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.jcs.JCS;
 import org.apache.commons.jcs.access.CacheAccess;
 import org.apache.commons.jcs.engine.control.CompositeCacheManager;
-import org.apache.commons.jcs.engine.memory.AbstractDoubleLinkedListMemoryCache;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.basex.query.QueryException;
@@ -40,14 +39,13 @@ import rx.Observable;
  */
 class GeometryManager {
 
-	private static GeometryManager instance;
-	private static int getCount = 0;
-	private static int missCount = 0;
-	private static int size = 100000;
-	private static CacheAccess<String, Geometry> geometryCache;
-	private static RTree<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree = RTree.star().create();
+	private int getCount = 0;
+	private int missCount = 0;
+	private int size = 100000;
+	private CacheAccess<String, Geometry> geometryCache;
+	private RTree<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree;
 
-	private GeometryManager() throws QueryException {
+	GeometryManager() throws QueryException {
 		try {
 			// Just use a default cache region - in memory
 			Properties props = new Properties();
@@ -69,30 +67,14 @@ class GeometryManager {
 			Logger.getRootLogger().setLevel(Level.ERROR);
 
 			geometryCache = JCS.getInstance("geometryCache");
+			rtree = RTree.star().create();
 		} catch (Exception e) {
 			throw new QueryException("Cache for geometries could not be initialized.");
 		}
 	}
 
-	/**
-	 * Singleton access point to the manager.
-	 */
-	public static GeometryManager getInstance() throws QueryException {
-		synchronized (GeometryManager.class) {
-			if (instance == null) {
-				instance = new GeometryManager();
-			}
-		}
-
-		return instance;
-	}
-
-	static void setSize(int s) throws QueryException {
-		synchronized (GeometryManager.class) {
-			if (instance == null) {
-				size = s;
-			}
-		}
+	void setSize(int s) throws QueryException {
+		size = s;
 	}
 
 	/**
@@ -104,13 +86,11 @@ class GeometryManager {
 	 *            the geometry of the indexed node, or null if no geometry was found
 	 */
 	public com.vividsolutions.jts.geom.Geometry get(String id) {
-		synchronized (geometryCache) {
-			com.vividsolutions.jts.geom.Geometry geom = geometryCache.get(id);
-			getCount++;
-			if (geom == null)
-				missCount++;
-			return geom;
-		}
+		com.vividsolutions.jts.geom.Geometry geom = geometryCache.get(id);
+		getCount++;
+		if (geom == null)
+			missCount++;
+		return geom;
 	}
 
 	/**
@@ -140,9 +120,7 @@ class GeometryManager {
 	 *            the geometry to cache
 	 */
 	public void put(String id, com.vividsolutions.jts.geom.Geometry geom) {
-		synchronized (geometryCache) {
-			geometryCache.put(id, geom);
-		}
+		geometryCache.put(id, geom);
 	}
 
 	/**
@@ -152,9 +130,7 @@ class GeometryManager {
 	 * @param geometry the geometry to index
 	 */
 	public void index(IndexEntry entry, com.github.davidmoten.rtree.geometry.Geometry geometry) {
-		synchronized (rtree) {
-			rtree = rtree.add(entry, geometry);
-		}
+		rtree = rtree.add(entry, geometry);
 	}
 
 	/**
@@ -163,9 +139,7 @@ class GeometryManager {
 	 * @return  size of the spatial index
 	 */
 	public int indexSize() {
-		synchronized (rtree) {
-			return rtree.size();
-		}
+		return rtree.size();
 	}
 
 	/**
@@ -174,10 +148,8 @@ class GeometryManager {
 	 * @return  iterator over all entries
 	 */
 	public Iterable<IndexEntry> search() {
-		synchronized (rtree) {
-			Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.entries();
-			return results.map(entry -> entry.value()).toBlocking().toIterable();
-		}
+		Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.entries();
+		return results.map(entry -> entry.value()).toBlocking().toIterable();
 	}
 
 	/**
@@ -187,9 +159,7 @@ class GeometryManager {
 	 * @return  iterator over all detected entries
 	 */
 	public Iterable<IndexEntry> search(com.github.davidmoten.rtree.geometry.Rectangle bbox) {
-		synchronized (rtree) {
-			Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.search(bbox);
-			return results.map(entry -> entry.value()).toBlocking().toIterable();
-		}
+		Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.search(bbox);
+		return results.map(entry -> entry.value()).toBlocking().toIterable();
 	}
 }

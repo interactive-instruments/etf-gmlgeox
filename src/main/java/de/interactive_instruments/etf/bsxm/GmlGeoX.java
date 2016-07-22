@@ -81,6 +81,8 @@ public class GmlGeoX extends QueryModule {
 
 	private static final boolean debug = LOGGER.isDebugEnabled();
 
+	private GeometryManager mgr = null;
+
 	private int count = 0;
 	private int count2 = 0;
 
@@ -1424,7 +1426,8 @@ public class GmlGeoX extends QueryModule {
 			else
 				y2 = 0.0;
 
-			GeometryManager mgr = GeometryManager.getInstance();
+			if (mgr==null)
+				mgr = new GeometryManager();
 			Iterable<IndexEntry> iter = mgr.search(Geometries.rectangle(x1, y1, x2, y2));
 			List<DBNode> nodelist = new ArrayList<DBNode>();
 			for (IndexEntry entry : iter) {
@@ -1453,7 +1456,8 @@ public class GmlGeoX extends QueryModule {
 	public Object[] search() throws QueryException {
 		try {
 			logMemUsage("GmlGeoX#search.start " + count + ".");
-			GeometryManager mgr = GeometryManager.getInstance();
+			if (mgr==null)
+				mgr = new GeometryManager();
 			Iterable<IndexEntry> iter = mgr.search();
 			List<DBNode> nodelist = new ArrayList<DBNode>();
 			for (IndexEntry entry : iter) {
@@ -1494,8 +1498,11 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	public void cacheSize(Object size) throws QueryException {
-		if (size instanceof BigInteger)
-			GeometryManager.setSize(((BigInteger) size).intValue());
+		if (size instanceof BigInteger) {
+			if (mgr==null)
+				mgr = new GeometryManager();
+			mgr.setSize(((BigInteger) size).intValue());
+		}
 	}
 
 	/**
@@ -1518,7 +1525,8 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	public void index(Object pre, Object dbname, Object id, Object geom) throws QueryException {
-		GeometryManager mgr = GeometryManager.getInstance();
+		if (mgr==null)
+			mgr = new GeometryManager();
 
 		if (pre instanceof BigInteger && dbname instanceof String && (id instanceof BXNode || id instanceof String) && (geom instanceof BXElem || geom instanceof com.vividsolutions.jts.geom.Geometry))
 			try {
@@ -1568,7 +1576,8 @@ public class GmlGeoX extends QueryModule {
 			logMemUsage("GmlGeoX#getGeometry.start " + count2);
 		}
 
-		GeometryManager mgr = GeometryManager.getInstance();
+		if (mgr==null)
+			mgr = new GeometryManager();
 
 		String idx;
 		if (id instanceof String) {

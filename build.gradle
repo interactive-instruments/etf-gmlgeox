@@ -124,7 +124,6 @@ jar.doFirst {
             configurations.compile.filter { it.name.startsWith('basex') } -
             configurations.compile.filter { it.name.startsWith('slf4j') } -
             configurations.compile.filter { it.name.startsWith('jcl') } -
-            configurations.compile.filter { it.name.startsWith('log4j') } -
             configurations.compile.filter { it.name.startsWith('commons-fileupload') } -
             configurations.compile.filter { it.name.startsWith('xml-apis') } -
             configurations.compile.filter { it.name.startsWith('xmldb-api') } -
