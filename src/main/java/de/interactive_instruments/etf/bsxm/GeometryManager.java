@@ -15,16 +15,15 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
-import java.util.Properties;
-
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.davidmoten.rtree.Entry;
 import com.github.davidmoten.rtree.RTree;
 import com.vividsolutions.jts.geom.Geometry;
 
-import org.apache.commons.jcs.JCS;
-import org.apache.commons.jcs.access.CacheAccess;
-import org.apache.commons.jcs.engine.control.CompositeCacheManager;
 import org.basex.query.QueryException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import rx.Observable;
 
@@ -37,33 +36,34 @@ import rx.Observable;
  */
 class GeometryManager {
 
-	private int getCount = 0;
-	private int missCount = 0;
-	private int size = 100000;
-	private CacheAccess<String, Geometry> geometryCache;
+	private static final Logger logger = LoggerFactory.getLogger(GeometryManager.class);
+
+	// Max cache entries as number
+	public static final String ETF_GEOCACHE_SIZE = "etf.gmlgeox.geocache.size";
+
+	// Record hitcounts and misscounts as boolean
+	public static final String ETF_RECORD_STATISTICS = "etf.gmlgeox.geocache.statistics";
+
+	private final Cache<String, Geometry> geometryCache;
 	private RTree<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree;
 
 	GeometryManager() throws QueryException {
-		try {
-			// Just use a default cache region - in memory
-			Properties props = new Properties();
-			props.put("jcs.default", "");
-			props.put("jcs.default.cacheattributes", "org.apache.commons.jcs.engine.CompositeCacheAttributes");
-			props.put("jcs.default.cacheattributes.MaxObjects", Integer.toString(size));
-			props.put("jcs.default.cacheattributes.MemoryCacheName", "org.apache.commons.jcs.engine.memory.lru.LRUMemoryCache");
-
-			CompositeCacheManager ccm = CompositeCacheManager.getUnconfiguredInstance();
-			ccm.configure(props);
-
-			geometryCache = JCS.getInstance("geometryCache");
-			rtree = RTree.star().create();
-		} catch (Exception e) {
-			throw new QueryException("Cache for geometries could not be initialized.");
-		}
+		this(Integer.valueOf(System.getProperty(ETF_GEOCACHE_SIZE, "100000")));
 	}
 
-	void setSize(int s) throws QueryException {
-		size = s;
+	GeometryManager(final int maxSize) throws QueryException {
+		try {
+			if (logger.isDebugEnabled() ||
+					Boolean.valueOf(System.getProperty(ETF_RECORD_STATISTICS, "false"))) {
+				geometryCache = Caffeine.newBuilder().recordStats().maximumSize(maxSize).build();
+			} else {
+				geometryCache = Caffeine.newBuilder().maximumSize(maxSize).build();
+			}
+			rtree = RTree.star().create();
+		} catch (Exception e) {
+			throw new QueryException(
+					"Cache for geometries could not be initialized: " + e.getMessage());
+		}
 	}
 
 	/**
@@ -75,11 +75,7 @@ class GeometryManager {
 	 *            the geometry of the indexed node, or null if no geometry was found
 	 */
 	public com.vividsolutions.jts.geom.Geometry get(String id) {
-		com.vividsolutions.jts.geom.Geometry geom = geometryCache.get(id);
-		getCount++;
-		if (geom == null)
-			missCount++;
-		return geom;
+		return geometryCache.getIfPresent(id);
 	}
 
 	/**
@@ -87,8 +83,8 @@ class GeometryManager {
 	 *
 	 * @return number of read accesses to the cache
 	 */
-	public int getCount() {
-		return getCount;
+	public long getCount() {
+		return geometryCache.stats().hitCount();
 	}
 
 	/**
@@ -96,8 +92,8 @@ class GeometryManager {
 	 *
 	 * @return number of failed read accesses to the cache
 	 */
-	public int getMissCount() {
-		return missCount;
+	public long getMissCount() {
+		return geometryCache.stats().missCount();
 	}
 
 	/**
@@ -137,7 +133,7 @@ class GeometryManager {
 	 * @return  iterator over all entries
 	 */
 	public Iterable<IndexEntry> search() {
-		Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.entries();
+		final Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.entries();
 		return results.map(entry -> entry.value()).toBlocking().toIterable();
 	}
 
@@ -148,7 +144,7 @@ class GeometryManager {
 	 * @return  iterator over all detected entries
 	 */
 	public Iterable<IndexEntry> search(com.github.davidmoten.rtree.geometry.Rectangle bbox) {
-		Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.search(bbox);
+		final Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.search(bbox);
 		return results.map(entry -> entry.value()).toBlocking().toIterable();
 	}
 }

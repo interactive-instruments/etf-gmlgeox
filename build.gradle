@@ -90,7 +90,8 @@ dependencies {
 		exclude group: 'commons-logging'
 	}
 	compile('com.github.davidmoten:rtree:0.7.6')
-    compile('org.apache.commons:commons-jcs-core:2.0-beta-1')
+	compile 'com.github.ben-manes.caffeine:caffeine:2.3.1'
+	compile('org.apache.commons:commons-jcs-core:2.0-beta-1')
 	compile "org.basex:basex-api:$basexVersion"
 
 	compile group: 'org.slf4j', name: 'slf4j-api', version: etf_slf4jApiVersion

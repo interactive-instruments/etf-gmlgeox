@@ -1499,9 +1499,7 @@ public class GmlGeoX extends QueryModule {
 	@Requires(Permission.NONE)
 	public void cacheSize(Object size) throws QueryException {
 		if (size instanceof BigInteger) {
-			if (mgr == null)
-				mgr = new GeometryManager();
-			mgr.setSize(((BigInteger) size).intValue());
+			mgr = new GeometryManager(((BigInteger) size).intValue());
 		}
 	}
 
@@ -1600,7 +1598,7 @@ public class GmlGeoX extends QueryModule {
 				throw new QueryException(e);
 			}
 			if (debug) {
-				int missCount = mgr.getMissCount();
+				long missCount = mgr.getMissCount();
 				if (missCount % 10000 == 0) {
 					LOGGER.debug("Cache misses: " + missCount + " of " + mgr.getCount());
 				}
