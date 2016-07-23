@@ -42,7 +42,7 @@ class GeometryManager {
 	public static final String ETF_GEOCACHE_SIZE = "etf.gmlgeox.geocache.size";
 
 	// Record hitcounts and misscounts as boolean
-	public static final String ETF_RECORD_STATISTICS = "etf.gmlgeox.geocache.statistics";
+	public static final String ETF_GEOCACHE_REC_STATS = "etf.gmlgeox.geocache.statistics";
 
 	private final Cache<String, Geometry> geometryCache;
 	private RTree<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree;
@@ -54,7 +54,7 @@ class GeometryManager {
 	GeometryManager(final int maxSize) throws QueryException {
 		try {
 			if (logger.isDebugEnabled() ||
-					Boolean.valueOf(System.getProperty(ETF_RECORD_STATISTICS, "false"))) {
+					Boolean.valueOf(System.getProperty(ETF_GEOCACHE_REC_STATS, "false"))) {
 				geometryCache = Caffeine.newBuilder().recordStats().maximumSize(maxSize).build();
 			} else {
 				geometryCache = Caffeine.newBuilder().maximumSize(maxSize).build();
