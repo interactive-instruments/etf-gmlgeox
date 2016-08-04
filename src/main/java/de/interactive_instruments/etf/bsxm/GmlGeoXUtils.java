@@ -31,6 +31,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import com.vividsolutions.jts.geom.GeometryCollection;
+import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 
@@ -47,8 +48,7 @@ import org.deegree.geometry.composite.CompositeCurve;
 import org.deegree.geometry.composite.CompositeGeometry;
 import org.deegree.geometry.composite.CompositeSolid;
 import org.deegree.geometry.composite.CompositeSurface;
-import org.deegree.geometry.multi.MultiGeometry;
-import org.deegree.geometry.multi.MultiSolid;
+import org.deegree.geometry.multi.*;
 import org.deegree.geometry.primitive.Curve;
 import org.deegree.geometry.primitive.OrientableCurve;
 import org.deegree.geometry.primitive.Point;
@@ -143,6 +143,75 @@ public class GmlGeoXUtils {
 			GeometryCollection gc = jtsFactory.createGeometryCollection(
 					gList.toArray(new com.vividsolutions.jts.geom.Geometry[gList
 							.size()]));
+
+			return gc;
+		}
+	}
+
+	/**
+	 * Creates a JTS MultiPolygon from the list of JTS polygon objects.
+	 *
+	 * @param gList list of JTS Polygons
+	 * @return a JTS MultiPolygon (or an empty GeometryCollection if the given list is
+	 *         <code>null</code> or empty)
+	 */
+	public GeometryCollection toJTSMultiPolygon(
+			List<com.vividsolutions.jts.geom.Polygon> gList) {
+
+		if (gList == null || gList.isEmpty()) {
+
+			return jtsFactory.createGeometryCollection(null);
+
+		} else {
+
+			GeometryCollection gc = jtsFactory.createMultiPolygon(
+					gList.toArray(new com.vividsolutions.jts.geom.Polygon[gList.size()]));
+
+			return gc;
+		}
+	}
+
+	/**
+	 * Creates a JTS MultiLineString from the list of JTS polygon objects.
+	 *
+	 * @param gList list of JTS LineStrings
+	 * @return a JTS MultiLineString (or an empty GeometryCollection if the given list is
+	 *         <code>null</code> or empty)
+	 */
+	public GeometryCollection toJTSMultiLineString(
+			List<com.vividsolutions.jts.geom.LineString> gList) {
+
+		if (gList == null || gList.isEmpty()) {
+
+			return jtsFactory.createGeometryCollection(null);
+
+		} else {
+
+			GeometryCollection gc = jtsFactory.createMultiLineString(
+					gList.toArray(new com.vividsolutions.jts.geom.LineString[gList.size()]));
+
+			return gc;
+		}
+	}
+
+	/**
+	 * Creates a JTS MultiPoint from the list of JTS polygon objects.
+	 *
+	 * @param gList list of JTS Points
+	 * @return a JTS MultiPoint  (or an empty GeometryCollection if the given list is
+	 *         <code>null</code> or empty)
+	 */
+	public GeometryCollection toJTSMultiPoint (
+			List<com.vividsolutions.jts.geom.Point > gList) {
+
+		if (gList == null || gList.isEmpty()) {
+
+			return jtsFactory.createGeometryCollection(null);
+
+		} else {
+
+			GeometryCollection gc = jtsFactory.createMultiPoint (
+					gList.toArray(new com.vividsolutions.jts.geom.Point [gList.size()]));
 
 			return gc;
 		}
@@ -353,6 +422,63 @@ public class GmlGeoXUtils {
 		} else if (geom instanceof MultiSolid) {
 			throw new UnsupportedGeometryTypeException(
 					"Computation of the JTS geometry for a MultiSolid is not supported.");
+
+		} else if (geom instanceof MultiSurface) {
+
+			@SuppressWarnings("rawtypes")
+			MultiSurface mg = (MultiSurface) geom;
+
+			List<com.vividsolutions.jts.geom.Polygon> gList = new ArrayList<com.vividsolutions.jts.geom.Polygon>();
+
+			for (Object o : mg) {
+				Geometry geo = (Geometry) o;
+				com.vividsolutions.jts.geom.Geometry g = toJTSGeometry(geo);
+				if (g instanceof com.vividsolutions.jts.geom.Polygon)
+					gList.add((com.vividsolutions.jts.geom.Polygon)g);
+				else
+					throw new UnsupportedGeometryTypeException("A geometry was found in a MultiSurface that could not be converted to a JTS Polygon.");
+			}
+
+			GeometryCollection gc = toJTSMultiPolygon(gList);
+			return gc;
+
+		} else if (geom instanceof MultiCurve) {
+
+			@SuppressWarnings("rawtypes")
+			MultiCurve mg = (MultiCurve) geom;
+
+			List<com.vividsolutions.jts.geom.LineString> gList = new ArrayList<com.vividsolutions.jts.geom.LineString>();
+
+			for (Object o : mg) {
+				Geometry geo = (Geometry) o;
+				com.vividsolutions.jts.geom.Geometry g = toJTSGeometry(geo);
+				if (g instanceof com.vividsolutions.jts.geom.LineString)
+					gList.add((com.vividsolutions.jts.geom.LineString)g);
+				else
+					throw new UnsupportedGeometryTypeException("A geometry was found in a MultiCurve that could not be converted to a JTS LineString.");
+			}
+
+			GeometryCollection gc = toJTSMultiLineString(gList);
+			return gc;
+
+		} else if (geom instanceof MultiPoint) {
+
+			@SuppressWarnings("rawtypes")
+			MultiPoint mg = (MultiPoint) geom;
+
+			List<com.vividsolutions.jts.geom.Point> gList = new ArrayList<com.vividsolutions.jts.geom.Point>();
+
+			for (Object o : mg) {
+				Geometry geo = (Geometry) o;
+				com.vividsolutions.jts.geom.Geometry g = toJTSGeometry(geo);
+				if (g instanceof com.vividsolutions.jts.geom.Point)
+					gList.add((com.vividsolutions.jts.geom.Point)g);
+				else
+					throw new UnsupportedGeometryTypeException("A geometry was found in a MultiPoint that could not be converted to a JTS Point.");
+			}
+
+			GeometryCollection gc = toJTSMultiPoint(gList);
+			return gc;
 
 		} else if (geom instanceof MultiGeometry) {
 
