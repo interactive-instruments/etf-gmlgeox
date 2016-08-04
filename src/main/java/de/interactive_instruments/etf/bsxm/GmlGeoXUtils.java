@@ -201,8 +201,8 @@ public class GmlGeoXUtils {
 	 * @return a JTS MultiPoint  (or an empty GeometryCollection if the given list is
 	 *         <code>null</code> or empty)
 	 */
-	public GeometryCollection toJTSMultiPoint (
-			List<com.vividsolutions.jts.geom.Point > gList) {
+	public GeometryCollection toJTSMultiPoint(
+			List<com.vividsolutions.jts.geom.Point> gList) {
 
 		if (gList == null || gList.isEmpty()) {
 
@@ -210,8 +210,8 @@ public class GmlGeoXUtils {
 
 		} else {
 
-			GeometryCollection gc = jtsFactory.createMultiPoint (
-					gList.toArray(new com.vividsolutions.jts.geom.Point [gList.size()]));
+			GeometryCollection gc = jtsFactory.createMultiPoint(
+					gList.toArray(new com.vividsolutions.jts.geom.Point[gList.size()]));
 
 			return gc;
 		}
@@ -434,7 +434,7 @@ public class GmlGeoXUtils {
 				Geometry geo = (Geometry) o;
 				com.vividsolutions.jts.geom.Geometry g = toJTSGeometry(geo);
 				if (g instanceof com.vividsolutions.jts.geom.Polygon)
-					gList.add((com.vividsolutions.jts.geom.Polygon)g);
+					gList.add((com.vividsolutions.jts.geom.Polygon) g);
 				else
 					throw new UnsupportedGeometryTypeException("A geometry was found in a MultiSurface that could not be converted to a JTS Polygon.");
 			}
@@ -453,7 +453,7 @@ public class GmlGeoXUtils {
 				Geometry geo = (Geometry) o;
 				com.vividsolutions.jts.geom.Geometry g = toJTSGeometry(geo);
 				if (g instanceof com.vividsolutions.jts.geom.LineString)
-					gList.add((com.vividsolutions.jts.geom.LineString)g);
+					gList.add((com.vividsolutions.jts.geom.LineString) g);
 				else
 					throw new UnsupportedGeometryTypeException("A geometry was found in a MultiCurve that could not be converted to a JTS LineString.");
 			}
@@ -472,7 +472,7 @@ public class GmlGeoXUtils {
 				Geometry geo = (Geometry) o;
 				com.vividsolutions.jts.geom.Geometry g = toJTSGeometry(geo);
 				if (g instanceof com.vividsolutions.jts.geom.Point)
-					gList.add((com.vividsolutions.jts.geom.Point)g);
+					gList.add((com.vividsolutions.jts.geom.Point) g);
 				else
 					throw new UnsupportedGeometryTypeException("A geometry was found in a MultiPoint that could not be converted to a JTS Point.");
 			}

@@ -15,34 +15,34 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import org.basex.core.BaseXException;
 import org.basex.core.Context;
 import org.basex.core.cmd.XQuery;
 import org.basex.query.QueryException;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 public final class ExecuteTestQuery {
-    /** Database context. */
-    private static Context context = new Context();
-    private static String[] xqFiles = { "test.xq" };
+	/** Database context. */
+	private static Context context = new Context();
+	private static String[] xqFiles = {"test.xq"};
 
-    /**
-     * Runs the example code.
-     * @param args (ignored) command-line arguments
-     * @throws IOException if an error occurs while serializing the results
-     * @throws QueryException if an error occurs while evaluating the query
-     * @throws BaseXException if a database command fails
-     */
-    public static void main(final String[] args) throws IOException, QueryException {
-        // Evaluate the specified XQuery
-        for (String file : xqFiles) {
-            String query =  new String(Files.readAllBytes(Paths.get(file)));
-            System.out.println(file+":");
-            System.out.println(new XQuery(query).execute(context));
-            System.out.println();
-        }
-    }
+	/**
+	 * Runs the example code.
+	 * @param args (ignored) command-line arguments
+	 * @throws IOException if an error occurs while serializing the results
+	 * @throws QueryException if an error occurs while evaluating the query
+	 * @throws BaseXException if a database command fails
+	 */
+	public static void main(final String[] args) throws IOException, QueryException {
+		// Evaluate the specified XQuery
+		for (String file : xqFiles) {
+			String query = new String(Files.readAllBytes(Paths.get(file)));
+			System.out.println(file + ":");
+			System.out.println(new XQuery(query).execute(context));
+			System.out.println();
+		}
+	}
 }
