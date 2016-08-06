@@ -989,7 +989,7 @@ public class GmlGeoX extends QueryModule {
 			geoms.add(geom2);
 
 			com.vividsolutions.jts.geom.GeometryCollection gc = geoutils
-					.toJTSGeometryCollection(geoms);
+					.toJTSGeometryCollection(geoms, true);
 
 			return gc.union();
 
@@ -1012,7 +1012,7 @@ public class GmlGeoX extends QueryModule {
 			geoms.add(geom);
 
 			com.vividsolutions.jts.geom.GeometryCollection gc = geoutils
-					.toJTSGeometryCollection(geoms);
+					.toJTSGeometryCollection(geoms, true);
 
 			return gc.union();
 

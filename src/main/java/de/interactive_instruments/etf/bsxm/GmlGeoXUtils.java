@@ -129,11 +129,12 @@ public class GmlGeoXUtils {
      * homogeneous, ie only points, line strings, or polygons, create the specific geometric aggregate
 	 *
 	 * @param gList
+     * @param forceGeometryCollection
 	 * @return a JTS GeometryCollection (empty if the given list is
 	 *         <code>null</code> or empty)
 	 */
 	public GeometryCollection toJTSGeometryCollection(
-			List<com.vividsolutions.jts.geom.Geometry> gList) {
+			List<com.vividsolutions.jts.geom.Geometry> gList, boolean forceGeometryCollection) {
 
         if (gList == null || gList.isEmpty()) {
 
@@ -152,9 +153,15 @@ public class GmlGeoXUtils {
 
         }
 
+        GeometryCollection gc = null;
 		if (gListClean.isEmpty()) {
 
-			return jtsFactory.createGeometryCollection(null);
+			gc = jtsFactory.createGeometryCollection(null);
+
+        } else if (forceGeometryCollection) {
+
+            gc = jtsFactory.createGeometryCollection(
+                    gListClean.toArray(new com.vividsolutions.jts.geom.Geometry[gListClean.size()]));
 
 		} else {
 
@@ -172,7 +179,6 @@ public class GmlGeoXUtils {
                     break;
             }
 
-            GeometryCollection gc = null;
             if (point) {
                 gc = jtsFactory.createMultiPoint(
                         gListClean.toArray(new com.vividsolutions.jts.geom.Point[gListClean.size()]));
@@ -191,12 +197,11 @@ public class GmlGeoXUtils {
 
                 if (gc == null) {
                     gc = jtsFactory.createGeometryCollection(
-                            gList.toArray(new com.vividsolutions.jts.geom.Geometry[gListClean.size()]));
+                            gListClean.toArray(new com.vividsolutions.jts.geom.Geometry[gListClean.size()]));
                 }
             }
-
-		    return gc;
 		}
+        return gc;
 	}
 
 	/**
@@ -418,7 +423,7 @@ public class GmlGeoXUtils {
 				gList.add(g);
 			}
 
-			GeometryCollection gc = toJTSGeometryCollection(gList);
+			GeometryCollection gc = toJTSGeometryCollection(gList, false);
 			return gc;
 
 		} else if (geom instanceof CompositeSolid) {
@@ -438,7 +443,7 @@ public class GmlGeoXUtils {
 				gList.add(g);
 			}
 
-			GeometryCollection gc = toJTSGeometryCollection(gList);
+			GeometryCollection gc = toJTSGeometryCollection(gList, true);
 			return gc;
 
 		} else if (geom instanceof CompositeCurve) {
@@ -538,7 +543,7 @@ public class GmlGeoXUtils {
 					geoms.add(geom);
 				}
 
-				return toJTSGeometryCollection(geoms);
+				return toJTSGeometryCollection(geoms, true);
 
 			} else {
 
@@ -554,7 +559,7 @@ public class GmlGeoXUtils {
 				geoms.add(geom);
 			}
 
-			return toJTSGeometryCollection(geoms);
+			return toJTSGeometryCollection(geoms, true);
 
 		} else {
 
