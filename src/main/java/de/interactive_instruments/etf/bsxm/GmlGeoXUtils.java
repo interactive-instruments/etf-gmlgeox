@@ -126,82 +126,82 @@ public class GmlGeoXUtils {
 
 	/**
 	 * Creates a JTS GeometryCollection from the list of JTS geometry objects. If the geometries are
-     * homogeneous, ie only points, line strings, or polygons, create the specific geometric aggregate
+	 * homogeneous, ie only points, line strings, or polygons, create the specific geometric aggregate
 	 *
 	 * @param gList
-     * @param forceGeometryCollection
+	 * @param forceGeometryCollection
 	 * @return a JTS GeometryCollection (empty if the given list is
 	 *         <code>null</code> or empty)
 	 */
 	public GeometryCollection toJTSGeometryCollection(
 			List<com.vividsolutions.jts.geom.Geometry> gList, boolean forceGeometryCollection) {
 
-        if (gList == null || gList.isEmpty()) {
+		if (gList == null || gList.isEmpty()) {
 
-            return jtsFactory.createGeometryCollection(null);
+			return jtsFactory.createGeometryCollection(null);
 
-        }
+		}
 
-	    /*
-	     * Before processing the list of geometries, first remove all empty geometry collections from the list
-	     */
-        List<com.vividsolutions.jts.geom.Geometry> gListClean = new ArrayList<com.vividsolutions.jts.geom.Geometry>();
-        for (com.vividsolutions.jts.geom.Geometry g : gList) {
+		/*
+		 * Before processing the list of geometries, first remove all empty geometry collections from the list
+		 */
+		List<com.vividsolutions.jts.geom.Geometry> gListClean = new ArrayList<com.vividsolutions.jts.geom.Geometry>();
+		for (com.vividsolutions.jts.geom.Geometry g : gList) {
 
-            if (!g.isEmpty())
-                gListClean.add(g);
+			if (!g.isEmpty())
+				gListClean.add(g);
 
-        }
+		}
 
-        GeometryCollection gc = null;
+		GeometryCollection gc = null;
 		if (gListClean.isEmpty()) {
 
 			gc = jtsFactory.createGeometryCollection(null);
 
-        } else if (forceGeometryCollection) {
+		} else if (forceGeometryCollection) {
 
-            gc = jtsFactory.createGeometryCollection(
-                    gListClean.toArray(new com.vividsolutions.jts.geom.Geometry[gListClean.size()]));
+			gc = jtsFactory.createGeometryCollection(
+					gListClean.toArray(new com.vividsolutions.jts.geom.Geometry[gListClean.size()]));
 
 		} else {
 
-            boolean point = true;
-            boolean linestring = true;
-            boolean polygon = true;
+			boolean point = true;
+			boolean linestring = true;
+			boolean polygon = true;
 			for (com.vividsolutions.jts.geom.Geometry g : gListClean) {
-			    if (!(g instanceof com.vividsolutions.jts.geom.Polygon))
-			        polygon = false;
-                if (!(g instanceof com.vividsolutions.jts.geom.LineString))
-                    linestring = false;
-                if (!(g instanceof com.vividsolutions.jts.geom.Point))
-                    point = false;
-                if (!polygon && !linestring && !point)
-                    break;
-            }
+				if (!(g instanceof com.vividsolutions.jts.geom.Polygon))
+					polygon = false;
+				if (!(g instanceof com.vividsolutions.jts.geom.LineString))
+					linestring = false;
+				if (!(g instanceof com.vividsolutions.jts.geom.Point))
+					point = false;
+				if (!polygon && !linestring && !point)
+					break;
+			}
 
-            if (point) {
-                gc = jtsFactory.createMultiPoint(
-                        gListClean.toArray(new com.vividsolutions.jts.geom.Point[gListClean.size()]));
-            } else if (linestring) {
-                gc = jtsFactory.createMultiLineString(
-                        gListClean.toArray(new com.vividsolutions.jts.geom.LineString[gListClean.size()]));
-            } else if (polygon) {
-                gc = jtsFactory.createMultiPolygon(
-                        gListClean.toArray(new com.vividsolutions.jts.geom.Polygon[gListClean.size()]));
-            } else {
-                if (gListClean.size() == 1) {
-                    com.vividsolutions.jts.geom.Geometry g = gListClean.get(0);
-                    if (g instanceof GeometryCollection)
-                        gc = (GeometryCollection) g;
-                }
+			if (point) {
+				gc = jtsFactory.createMultiPoint(
+						gListClean.toArray(new com.vividsolutions.jts.geom.Point[gListClean.size()]));
+			} else if (linestring) {
+				gc = jtsFactory.createMultiLineString(
+						gListClean.toArray(new com.vividsolutions.jts.geom.LineString[gListClean.size()]));
+			} else if (polygon) {
+				gc = jtsFactory.createMultiPolygon(
+						gListClean.toArray(new com.vividsolutions.jts.geom.Polygon[gListClean.size()]));
+			} else {
+				if (gListClean.size() == 1) {
+					com.vividsolutions.jts.geom.Geometry g = gListClean.get(0);
+					if (g instanceof GeometryCollection)
+						gc = (GeometryCollection) g;
+				}
 
-                if (gc == null) {
-                    gc = jtsFactory.createGeometryCollection(
-                            gListClean.toArray(new com.vividsolutions.jts.geom.Geometry[gListClean.size()]));
-                }
-            }
+				if (gc == null) {
+					gc = jtsFactory.createGeometryCollection(
+							gListClean.toArray(new com.vividsolutions.jts.geom.Geometry[gListClean.size()]));
+				}
+			}
 		}
-        return gc;
+		return gc;
 	}
 
 	/**
