@@ -1431,7 +1431,7 @@ public class GmlGeoX extends QueryModule {
 			Iterable<IndexEntry> iter = mgr.search(Geometries.rectangle(x1, y1, x2, y2));
 			List<DBNode> nodelist = new ArrayList<DBNode>();
 			for (IndexEntry entry : iter) {
-				Data d = queryContext.resource.database(entry.dbname, new InputInfo("xpath", 0, 0));
+				Data d = queryContext.resources.database(entry.dbname, new InputInfo("xpath", 0, 0));
 				DBNode n = new DBNode(d, entry.pre);
 				if (n != null)
 					nodelist.add(n);
@@ -1461,7 +1461,7 @@ public class GmlGeoX extends QueryModule {
 			Iterable<IndexEntry> iter = mgr.search();
 			List<DBNode> nodelist = new ArrayList<DBNode>();
 			for (IndexEntry entry : iter) {
-				Data d = queryContext.resource.database(entry.dbname, new InputInfo("xpath", 0, 0));
+				Data d = queryContext.resources.database(entry.dbname, new InputInfo("xpath", 0, 0));
 				DBNode n = new DBNode(d, entry.pre);
 				if (n != null)
 					nodelist.add(n);
@@ -1588,7 +1588,7 @@ public class GmlGeoX extends QueryModule {
 		com.vividsolutions.jts.geom.Geometry geom = mgr.get(idx);
 		if (geom == null) {
 			if (!(defgeom instanceof BXElem || defgeom instanceof com.vividsolutions.jts.geom.Geometry)) {
-				throw new QueryException("Failure to parse geometry. A geometry uses an incorrect type: " + defgeom.getClass().getCanonicalName());
+				throw new QueryException("Failure to parse geometry. A geometry was not found or uses an incorrect type: " + defgeom.getClass().getCanonicalName());
 			}
 			try {
 				geom = defgeom instanceof BXElem ? geoutils.singleObjectToJTSGeometry(defgeom) : ((com.vividsolutions.jts.geom.Geometry) defgeom);

@@ -88,7 +88,7 @@ public final class GmlGeoXTest extends QueryTest {
 
 			result = result.replaceAll("\"", "'");
 
-			doc = result;
+			create(result);
 
 		} catch (IOException e) {
 			// TODO this test should be refactored to resemble the
@@ -97,7 +97,7 @@ public final class GmlGeoXTest extends QueryTest {
 		}
 
 		queries = new Object[][]{{"Point/Point",
-				bool(true, false, false, false, true, false, true, false, false,
+				booleans(true, false, false, false, true, false, true, false, false,
 						true, true, false, false, false, false, false),
 				COMMON_QUERY_PART + "return (\n"
 						+ "ggeo:contains($point1,$point2), (: true :)\n"
@@ -118,7 +118,7 @@ public final class GmlGeoXTest extends QueryTest {
 						+ "  ggeo:touches($point1,$point3) (: false :)" + ")"},
 
 				{"Point/Curve",
-						bool(false, false, true, false, false, false, false,
+						booleans(false, false, true, false, false, false, false,
 								false, false, false, false, true, true, true,
 								true, true, true, false, false, false, false,
 								false, false, true, false, false, false, false,
@@ -167,7 +167,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ ")"},
 
 				{"Point/Surface",
-						bool(false, false, false, true, false, false, false,
+						booleans(false, false, false, true, false, false, false,
 								false, false, false, false, true, true, true,
 								true, true, true, false, false, false, false,
 								false, false, true, false, false, false, false,
@@ -215,7 +215,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "  ggeo:touches($surface1,$point1) (: true :)"
 								+ ")"},
 
-				{"Curve/Curve", bool(true, true, true, false, false, false,
+				{"Curve/Curve", booleans(true, true, true, false, false, false,
 						false, false, true, false, true, false, false, true,
 						true, true, true, true, false, false, false, false,
 						false, false, true, true, false, false, false, false,
@@ -261,7 +261,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ ")"},
 
 				{"Curve/Surface",
-						bool(false, false, true, false, false, false, true,
+						booleans(false, false, true, false, false, false, true,
 								true, false, false, false, true, true, true,
 								true, true, false, false, false, false, false,
 								false, false, false, true, false, false, false,
@@ -311,7 +311,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ ")"},
 
 				{"Surface/Surface",
-						bool(false, false, false, true, false, true, false,
+						booleans(false, false, false, true, false, true, false,
 								false, false, false, false, false, false, false,
 								true, false, true, true, true, false, false,
 								false, false, true, false, false, false, true,
@@ -350,7 +350,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "  ggeo:touches($surface5,$surface4) (: false :)"
 								+ ")"},
 
-				{"Point / multiple individual points", bool(false, true),
+				{"Point / multiple individual points", booleans(false, true),
 						COMMON_QUERY_PART
 								+ "let $multiplePoints := ($point1,$point2,$point3)\n"
 								+ "return (\n"
@@ -358,7 +358,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "  ggeo:intersects($point1,$multiplePoints,false()) (: true :)"
 								+ ")"},
 
-				{"Point / multiple individual points", bool(false, true),
+				{"Point / multiple individual points", booleans(false, true),
 						COMMON_QUERY_PART
 								+ "let $multiplePoints := ($point3,$point2,$point1)\n"
 								+ "return (\n"
@@ -366,48 +366,48 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "  ggeo:intersects($point1,$multiplePoints,false()) (: true :)"
 								+ ")"},
 
-				{"Validation - all tests", str("VVV", "VVV", "VVV"),
+				{"Validation - all tests", strings("VVV", "VVV", "VVV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface4), (: VVV :)\n"
 								+ "  ggeo:validate($curve1), (: VVV :)\n"
 								+ "  ggeo:validate($point1) (: VVV :)" + ")"},
 
-				{"Validation - ring orientation", str("FSS", "FSS"),
+				{"Validation - ring orientation", strings("FSS", "FSS"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface8,'100'), (: FSS - exterior ring is oriented clockwise :) \n"
 								+ "  ggeo:validate($surface9,'100') (: FSS - interior ring is oriented counter-clockwise :)"
 								+ ")"},
 
-				{"Validation - repetition ", str("VVF", "VVF", "VVV"),
+				{"Validation - repetition ", strings("VVF", "VVF", "VVV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface10), (: VVF - doppelte position :) \n"
 								+ "  ggeo:validate($curve14), (: VVF - doppelte position :) \n"
 								+ "  ggeo:validate($curve15) (: VVV :)" + ")"},
 
-				{"Validation - connectedness ", str("VFV"),
+				{"Validation - connectedness ", strings("VFV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface11) (: VFV - fourth patch is not connected :) \n"
 								+ ")"},
 
-				{"Validation - connectedness ", str("VFV"),
+				{"Validation - connectedness ", strings("VFV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface12) (: VFV - the two patches only touch in a single point and are therefore not connected :) \n"
 								+ ")"},
 
-				{"Validation - connectedness ", str("VVV"),
+				{"Validation - connectedness ", strings("VVV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface13) (: VVV - same surface as s11 but only using the first three patches, which are connected :) \n"
 								+ ")"},
 
-				{"Validation - connectedness ", str("VFV"),
+				{"Validation - connectedness ", strings("VFV"),
 						COMMON_QUERY_PART + "\n" + "return (\n"
 								+ "  ggeo:validate($surface14) (: VFV - patch 1 is connected to patch 2, patch 3 is connected to patch 4, but patches 1/2 are not connected to patches 3/4 :) \n"
 								+ ")"},
 
-				{"Map use ", str("MULTIPOINT ((0 0), (1 1))"),
+				{"Map use ", strings("MULTIPOINT ((0 0), (1 1))"),
 						COMMON_QUERY_PART + "\n"
 								+ "let $multiplePoints := ($point3,$point2,$point1)\r\n"
-								+ "let $geometryMap := map:new(\r\n"
+								+ "let $geometryMap := map:merge(\r\n"
 								+ "  for $x in $multiplePoints\r\n"
 								+ "  return map { $x/@gml:id : ggeo:parseGeometry($x) }\r\n"
 								+ ")\r\n" + "\r\n"
@@ -415,7 +415,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "return string($tnunion)"},
 
 				{"Basic test",
-						bool(true, true, true, true, true),
+						booleans(true, true, true, true, true),
 						"import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';\n"
 								+ "declare namespace gml = 'http://www.opengis.net/gml/3.2';\n"
 								+ "\n"

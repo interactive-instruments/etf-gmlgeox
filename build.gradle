@@ -33,9 +33,12 @@ apply plugin: 'maven'
 apply plugin: 'eclipse'
 
 ext.deegreeVersion = '3.3.17'
-ext.basexVersion = '7.9'
+ext.basexVersion = '8.5.3'
 
 repositories {
+	maven {
+		url "http://files.basex.org/maven"
+	}
     maven {
         url "https://services.interactive-instruments.de/etfdev-af/ext-deegree-cache"
         credentials {
