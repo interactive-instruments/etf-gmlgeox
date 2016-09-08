@@ -1,8 +1,5 @@
 package nl.vrom.roo.validator.core.dom4j.handlers;
 
-
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.List;
 
 import nl.vrom.roo.validator.core.ValidatorContext;
@@ -143,23 +140,13 @@ class GMLValidationEventHandler implements GeometryValidationEventHandler {
 			Point endPoint = curve.getCurveSegments().get(segmentIdx-1).getEndPoint();
 			Point startPoint = curve.getCurveSegments().get(segmentIdx).getStartPoint();
 			
-			
-//			String errMessage = ValidatorMessageBundle.getMessage(
-//	    			"validator.core.validation.geometry.curvediscontinuity", 
-//	    			this.currentGmlId,
-//	    			this.currentOnderdeelName,
-//	    			getAffectedCoordinates(curve.getCurveSegments().get(segmentIdx), 60),
-//	    			getProblemLocation(startPoint),
-//	    			segmentIdx,
-//	    			getProblemLocation(endPoint));
-
 			String een = "validator.core.validation.geometry.curvediscontinuity";
 			String twee = this.currentGmlId;
 			String drie = this.currentOnderdeelName;
-			String vier = getAffectedCoordinates(curve.getCurveSegments().get(segmentIdx), 60);
-			String vijf = getProblemLocation(startPoint);
+			String vier = ValidationUtil.getAffectedCoordinates(curve.getCurveSegments().get(segmentIdx), 60);
+			String vijf = ValidationUtil.getProblemLocation(startPoint);
 			int zes = segmentIdx;
-			String zeven = getProblemLocation(endPoint);
+			String zeven = ValidationUtil.getProblemLocation(endPoint);
 			
 			String errMessage = ValidatorMessageBundle.getMessage(
 	    			een,
@@ -202,7 +189,7 @@ class GMLValidationEventHandler implements GeometryValidationEventHandler {
 		    			"validator.core.validation.geometry.exteriorRingCW", 
 		    			this.currentGmlId,
 		    			this.currentOnderdeelName,
-		    			getAffectedCoordinates(patch.getExteriorRing(), 60));
+		    			ValidationUtil.getAffectedCoordinates(patch.getExteriorRing(), 60));
 
 		    	this.validatorContext.addError(errMessage);
 		    	
@@ -228,7 +215,7 @@ class GMLValidationEventHandler implements GeometryValidationEventHandler {
 		    			"validator.core.validation.geometry.interiorRingCCW", 
 		    			this.currentGmlId,
 		    			this.currentOnderdeelName,
-		    			getAffectedCoordinates(patch.getInteriorRings().get(ringIdx), 60),
+		    			ValidationUtil.getAffectedCoordinates(patch.getInteriorRings().get(ringIdx), 60),
 		    			ringIdx);
 
 	    		this.validatorContext.addError(errMessage);
@@ -362,57 +349,14 @@ class GMLValidationEventHandler implements GeometryValidationEventHandler {
 					"validator.core.validation.geometry.ringnotclosed", 
 	    			this.currentGmlId,
 	    			this.currentOnderdeelName,
-	    			getAffectedCoordinates(evt.getRing(), 60),
-	    			getProblemLocation(startPoint),
-	    			getProblemLocation(endPoint));
+	    			ValidationUtil.getAffectedCoordinates(evt.getRing(), 60),
+	    			ValidationUtil.getProblemLocation(startPoint),
+	    			ValidationUtil.getProblemLocation(endPoint));
 
 	    	this.validatorContext.addError(errMessage); 
 			
 			return false;
 	    }
-	    
-	    
-
-
-
-		private static final NumberFormat COORD_FORMAT = new DecimalFormat("0.000#######");
-		
-		String formatValue(double value) { // NOPMD - Method is not empty
-			return COORD_FORMAT.format(value);
-		}
-
-
-	    
-	    String getProblemLocation(Point location) {
-	    	
-			return ValidatorMessageBundle.getMessage(
-					"validator.core.validation.geometry.problem-location", 
-							formatValue(location.get0()), formatValue(location.get1()) );
-	    }
-
-	    String getAffectedCoordinates(Object affectedGeometryParticles, int numberOfCharacters)
-	    {
-	    	String out = null;
-	    	if(affectedGeometryParticles instanceof org.deegree.geometry.standard.curvesegments.DefaultLineStringSegment) {
-	    		
-	    		org.deegree.geometry.standard.curvesegments.DefaultLineStringSegment segment = (org.deegree.geometry.standard.curvesegments.DefaultLineStringSegment) affectedGeometryParticles;
-
-	    		StringBuffer buf = new StringBuffer("LINESTRING (");
-	    		
-	    		for(Point point : segment.getControlPoints()) {
-	    			buf.append(formatValue(point.get0())).append(" ").append(formatValue(point.get1())).append(",");
-	    		}
-	    		
-	    		out = buf.toString();
-	    	}
-	    	else {
-		    	out = affectedGeometryParticles.toString();
-	    	}
-
-	    	return out.substring(0, Math.min(out.length() , numberOfCharacters));
-	    }
-
-
 //
 //		
 //		private String getProblemLocationText(Point problem) {
@@ -444,12 +388,5 @@ class GMLValidationEventHandler implements GeometryValidationEventHandler {
 //			}
 //			return coordinatesText;
 //		}
-
-
-
-
-
-	    
-	    
 	}
 

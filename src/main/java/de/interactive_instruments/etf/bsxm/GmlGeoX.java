@@ -26,6 +26,10 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import nl.vrom.roo.validator.core.ValidatorContext;
 import nl.vrom.roo.validator.core.ValidatorMessage;
 import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
@@ -50,6 +54,7 @@ import org.deegree.geometry.Geometry;
 import org.dom4j.io.SAXReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
@@ -65,6 +70,9 @@ import org.w3c.dom.Element;
  *
  */
 public class GmlGeoX extends QueryModule {
+
+	public static final String NS = "de.interactive_instruments.etf.bsxm.GmlGeoX";
+	public static final String PREFIX = "ggeo";
 
 	public enum SpatialRelOp {
 		CONTAINS, CROSSES, EQUALS, INTERSECTS, ISDISJOINT, ISWITHIN, OVERLAPS, TOUCHES
@@ -87,7 +95,7 @@ public class GmlGeoX extends QueryModule {
 	private int count2 = 0;
 
 	public GmlGeoX() throws QueryException {
-
+		
 		logMemUsage("GmlGeoX#init");
 
 		// default geometry types for which validation is performed
@@ -108,8 +116,9 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Calls the {@link #validate(Object, String)} method, with <code>null</code>
-	 * as the bitmask, resulting in a validation with all tests enabled.
+	 * Calls the {@link #validate(Object, String)} method, with
+	 * <code>null</code> as the bitmask, resulting in a validation with all
+	 * tests enabled.
 	 * <p>
 	 * See the documentation of the {@link #validate(Object, String)} method for
 	 * a description of the supported geometry types.
@@ -192,8 +201,172 @@ public class GmlGeoX extends QueryModule {
 	 *         third failed.
 	 * @throws QueryException
 	 */
-	@Requires(Permission.NONE)
 	public String validate(Object o, String testMask) throws QueryException {
+		ValidationReport vr = this.executeValidate(o, testMask);
+		return vr.getValidationResult();
+	}
+
+	public Element validateAndReport(Object o) throws QueryException {
+		return validateAndReport(o, null);
+	}
+
+	/**
+	 * @see #executeValidate(Object, String)
+	 * @param o
+	 * @param testMask
+	 * @return a DOM element like the following:
+	 * 
+	 *         <pre>
+	 *         {@code
+	 *         <ggeo:ValidationResult xmlns:ggeo="de.interactive_instruments.etf.bsxm.GmlGeoX">
+	 *           <ggeo:isValid>false</ggeo:isValid>
+	 *           <ggeo:result>VFV</ggeo:result>
+	 *           <ggeo:message type="NOTICE">Detected GML standard version: GML3.2.</ggeo:message>
+	 *           <ggeo:message type="ERROR">Invalid surface (gml:id: s14). The patches of the surface are not connected.</ggeo:message>
+	 *         </ggeo:ValidationResult>}
+	 *         </pre>
+	 * 
+	 *         Where:
+	 *         <ul>
+	 *         <li>ggeo:isValid - contains the boolean value indicating if the
+	 *         object passed all tests (defined by the testMask).</li>
+	 *         <li>ggeo:result - contains a string that is a mask with the test
+	 *         results, encoded as characters - one at each position (1-based
+	 *         index) of the available tests. 'V' indicates that the test
+	 *         passed, i.e. that the geometry is valid according to that test.
+	 *         'F' indicates that the test failed. 'S' indicates that the test
+	 *         was skipped. Example: the string 'SVF' shows that the first test
+	 *         was skipped, while the second test passed and the third failed
+	 *         </li>
+	 *         <li>ggeo:message (one for each message produced during
+	 *         validation) contains:
+	 *         <ul>
+	 *         <li>an XML attribute 'type' that indicates the severity level of
+	 *         the message ('FATAL', 'ERROR', 'WARNING', or 'NOTICE')</li>
+	 *         <li>the actual validation message as text content</li>
+	 *         </ul>
+	 *         </ul>
+	 * @throws QueryException
+	 */
+	public Element validateAndReport(Object o, String testMask)
+			throws QueryException {
+
+		ValidationReport vr = this.executeValidate(o, testMask);
+
+		DocumentBuilderFactory docFactory = DocumentBuilderFactory
+				.newInstance();
+		docFactory.setNamespaceAware(true);
+
+		DocumentBuilder docBuilder;
+
+		try {
+			docBuilder = docFactory.newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
+			throw new QueryException(e);
+		}
+
+		// root elements
+		Document doc = docBuilder.newDocument();
+
+		Element root = doc.createElementNS(NS, PREFIX + ":ValidationResult");
+		doc.appendChild(root);
+
+		Element isValid = doc.createElementNS(NS, PREFIX + ":isValid");
+		isValid.setTextContent(vr.isValid() ? "true" : "false");
+
+		root.appendChild(isValid);
+
+		Element result = doc.createElementNS(NS, PREFIX + ":result");
+		result.setTextContent(vr.getValidationResult());
+
+		root.appendChild(result);
+
+		for (ValidatorMessage vm : vr.getValidatorMessages()) {
+
+			Element msg = doc.createElementNS(NS, PREFIX + ":message");
+			root.appendChild(msg);
+
+			msg.setAttribute("type", vm.getType().toString());
+			msg.setTextContent(vm.getMessage());
+		}
+
+		return root;
+	}
+
+	/**
+	 * Validates the given (GML geometry) node.
+	 * <p>
+	 * By default validation is only performed for the following GML geometry
+	 * elements: Point, Polygon, Surface, Curve, LinearRing, MultiPolygon,
+	 * MultiGeometry, MultiSurface, MultiCurve, Ring, and LineString. The set of
+	 * GML elements to validate can be modified via the following methods:
+	 * {@link #registerGmlGeometry(String)},
+	 * {@link #unregisterGmlGeometry(String)}, and
+	 * {@link #unregisterAllGmlGeometries()}. These methods are also available
+	 * for XQueries.
+	 * <p>
+	 * The validation tasks to perform can be specified via the given mask. The
+	 * mask is a simple string, where the character '1' at the position of a
+	 * specific test (assuming a 1-based index) specifies that the test shall be
+	 * performed. If the mask does not contain a character at the position of a
+	 * specific test (because the mask is empty or the length is smaller than
+	 * the position), then the test will be executed.
+	 * <p>
+	 * The following tests are available:
+	 * <p>
+	 * <table>
+	 * <tr>
+	 * <th>Position</th>
+	 * <th>Test Name</th>
+	 * <th>Description</th>
+	 * </tr>
+	 * <tr>
+	 * <td>1</td>
+	 * <td>General Validation</td>
+	 * <td>This test validates the given geometry using the validation
+	 * functionality of both deegree and JTS.</td>
+	 * </tr>
+	 * <tr>
+	 * <td>2</td>
+	 * <td>Polygon Patch Connectivity</td>
+	 * <td>Checks that multiple polygon patches within a single surface are
+	 * connected.</td>
+	 * </tr>
+	 * <tr>
+	 * <td>3</td>
+	 * <td>Repetition of Position in CurveSegments</td>
+	 * <td>Checks that consecutive positions within a CurveSegment are not
+	 * equal.</td>
+	 * </tr>
+	 * </table>
+	 * <p>
+	 * Examples:
+	 * <ul>
+	 * <li>The mask '010' indicates that only the 'Polygon Patch Connectivity'
+	 * test shall be performed.</li>
+	 * <li>The mask '1' indicates that all tests shall be performed (because the
+	 * first one is set to true/'1' and nothing is said for the other tests).
+	 * </li>
+	 * <li>The mask '0' indicates that all except the first test shall be
+	 * performed.
+	 * </ul>
+	 *
+	 * @param o
+	 *            the GML geometry to validate
+	 * @return a validation report, with the validation result and validation
+	 *         message (providing further details about any errors). The
+	 *         validation result is encoded as a sequence of characters - one at
+	 *         each position (1-based index) of the available tests. 'V'
+	 *         indicates that the test passed, i.e. that the geometry is valid
+	 *         according to that test. 'F' indicates that the test failed. 'S'
+	 *         indicates that the test was skipped. Example: the string 'SVF'
+	 *         shows that the first test was skipped, while the second test
+	 *         passed and the third failed.
+	 * @throws QueryException
+	 */
+	@Requires(Permission.NONE)
+	ValidationReport executeValidate(Object o, String testMask)
+			throws QueryException {
 
 		try {
 
@@ -234,6 +407,7 @@ public class GmlGeoX extends QueryModule {
 								+ "' is not supported for this method.");
 			}
 
+			List<ValidatorMessage> validationMessages = new ArrayList<ValidatorMessage>();
 			// ================
 			// Geonovum validation (deegree and JTS validation)
 
@@ -262,6 +436,7 @@ public class GmlGeoX extends QueryModule {
 
 				if (!isValidGeonovum) {
 					List<ValidatorMessage> vmsgs = ctx.getMessages();
+					validationMessages.addAll(vmsgs);
 					for (ValidatorMessage msg : vmsgs) {
 						LOGGER.error(msg.toString());
 					}
@@ -304,6 +479,15 @@ public class GmlGeoX extends QueryModule {
 					noRepetitionInCurveSegment = handler
 							.isNoRepetitionInCurveSegments();
 				}
+
+				if (!polygonPatchesAreConnected
+						|| !noRepetitionInCurveSegment) {
+					List<ValidatorMessage> vmsgs = ctx.getMessages();
+					validationMessages.addAll(vmsgs);
+					for (ValidatorMessage msg : vmsgs) {
+						LOGGER.error(msg.toString());
+					}
+				}
 			}
 
 			// combine results
@@ -333,7 +517,7 @@ public class GmlGeoX extends QueryModule {
 				sb.append("F");
 			}
 
-			return sb.toString();
+			return new ValidationReport(sb.toString(), validationMessages);
 
 		} catch (Exception e) {
 			throw new QueryException(e);
@@ -1355,11 +1539,13 @@ public class GmlGeoX extends QueryModule {
 			if (arg instanceof Empty) {
 				env = geoutils.emptyJTSGeometry().getEnvelopeInternal();
 			} else if (arg instanceof com.vividsolutions.jts.geom.Geometry) {
-				env = ((com.vividsolutions.jts.geom.Geometry) arg).getEnvelopeInternal();
+				env = ((com.vividsolutions.jts.geom.Geometry) arg)
+						.getEnvelopeInternal();
 			} else {
 				env = geoutils.toJTSGeometry(arg).getEnvelopeInternal();
 			}
-			Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()};
+			Object[] res = { env.getMinX(), env.getMinY(), env.getMaxX(),
+					env.getMaxY() };
 			return res;
 
 		} catch (Exception e) {
@@ -1390,19 +1576,24 @@ public class GmlGeoX extends QueryModule {
 	 * Searches the spatial r-tree index for items in the envelope.
 	 *
 	 * @param minx
-	 *            represents the minimum value on the first coordinate axis; a number
+	 *            represents the minimum value on the first coordinate axis; a
+	 *            number
 	 * @param miny
-	 *            represents the minimum value on the second coordinate axis; a number
+	 *            represents the minimum value on the second coordinate axis; a
+	 *            number
 	 * @param maxx
-	 *            represents the maximum value on the first coordinate axis; a number
+	 *            represents the maximum value on the first coordinate axis; a
+	 *            number
 	 * @param maxy
-	 *            represents the maximum value on the second coordinate axis; a number
+	 *            represents the maximum value on the second coordinate axis; a
+	 *            number
 	 * @return the node set of all items in the envelope
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public Object[] search(Object minx, Object miny, Object maxx, Object maxy) throws QueryException {
+	public Object[] search(Object minx, Object miny, Object maxx, Object maxy)
+			throws QueryException {
 
 		try {
 			double x1;
@@ -1428,16 +1619,20 @@ public class GmlGeoX extends QueryModule {
 
 			if (mgr == null)
 				mgr = new GeometryManager();
-			Iterable<IndexEntry> iter = mgr.search(Geometries.rectangle(x1, y1, x2, y2));
+			Iterable<IndexEntry> iter = mgr
+					.search(Geometries.rectangle(x1, y1, x2, y2));
 			List<DBNode> nodelist = new ArrayList<DBNode>();
 			for (IndexEntry entry : iter) {
-				Data d = queryContext.resources.database(entry.dbname, new InputInfo("xpath", 0, 0));
+				Data d = queryContext.resources.database(entry.dbname,
+						new InputInfo("xpath", 0, 0));
 				DBNode n = new DBNode(d, entry.pre);
 				if (n != null)
 					nodelist.add(n);
 			}
 			if (++count % 5000 == 0) {
-				logMemUsage("GmlGeoX#search " + count + ". Box: (" + x1 + ", " + y1 + ") (" + x2 + ", " + y2 + ")" + ". Hits: " + nodelist.size());
+				logMemUsage("GmlGeoX#search " + count + ". Box: (" + x1 + ", "
+						+ y1 + ") (" + x2 + ", " + y2 + ")" + ". Hits: "
+						+ nodelist.size());
 			}
 
 			return nodelist.toArray();
@@ -1461,12 +1656,14 @@ public class GmlGeoX extends QueryModule {
 			Iterable<IndexEntry> iter = mgr.search();
 			List<DBNode> nodelist = new ArrayList<DBNode>();
 			for (IndexEntry entry : iter) {
-				Data d = queryContext.resources.database(entry.dbname, new InputInfo("xpath", 0, 0));
+				Data d = queryContext.resources.database(entry.dbname,
+						new InputInfo("xpath", 0, 0));
 				DBNode n = new DBNode(d, entry.pre);
 				if (n != null)
 					nodelist.add(n);
 			}
-			logMemUsage("GmlGeoX#search " + count + ". Hits: " + nodelist.size());
+			logMemUsage(
+					"GmlGeoX#search " + count + ". Hits: " + nodelist.size());
 
 			return nodelist.toArray();
 
@@ -1478,14 +1675,20 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Logs memory information if Logger is enabled for the DEBUG level
 	 *
-	 * @param progress status string
+	 * @param progress
+	 *            status string
 	 */
 
 	private void logMemUsage(final String progress) {
 		if (debug) {
 			final MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
 			memory.gc();
-			LOGGER.debug(progress + ". Memory: " + Math.round(memory.getHeapMemoryUsage().getUsed() / 1048576) + " MB of " + Math.round(memory.getHeapMemoryUsage().getMax() / 1048576) + " MB.");
+			LOGGER.debug(progress + ". Memory: "
+					+ Math.round(
+							memory.getHeapMemoryUsage().getUsed() / 1048576)
+					+ " MB of "
+					+ Math.round(memory.getHeapMemoryUsage().getMax() / 1048576)
+					+ " MB.");
 		}
 	}
 
@@ -1504,7 +1707,8 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Indexes a list of id nodes (gml:id attribute of features) with their GML geometries
+	 * Indexes a list of id nodes (gml:id attribute of features) with their GML
+	 * geometries
 	 * <p>
 	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
@@ -1512,31 +1716,46 @@ public class GmlGeoX extends QueryModule {
 	 * Both lists must have equal length.
 	 *
 	 * @param pre
-	 *            represents the pre value of the indexed item node (typically the gml:id of GML feature elements)
+	 *            represents the pre value of the indexed item node (typically
+	 *            the gml:id of GML feature elements)
 	 * @param dbname
-	 *            represents the name of the database that contains the indexed item node (typically the gml:id of GML feature elements)
+	 *            represents the name of the database that contains the indexed
+	 *            item node (typically the gml:id of GML feature elements)
 	 * @param id
-	 *            represents the id string of the item that should be indexed, typically the gml:id of GML feature elements; must be String instances
+	 *            represents the id string of the item that should be indexed,
+	 *            typically the gml:id of GML feature elements; must be String
+	 *            instances
 	 * @param geom
-	 *            represents the GML geometry to index; must be an BXElem instance
+	 *            represents the GML geometry to index; must be an BXElem
+	 *            instance
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
-	public void index(Object pre, Object dbname, Object id, Object geom) throws QueryException {
+	public void index(Object pre, Object dbname, Object id, Object geom)
+			throws QueryException {
 		if (mgr == null)
 			mgr = new GeometryManager();
 
-		if (pre instanceof BigInteger && dbname instanceof String && (id instanceof BXNode || id instanceof String) && (geom instanceof BXElem || geom instanceof com.vividsolutions.jts.geom.Geometry))
+		if (pre instanceof BigInteger && dbname instanceof String
+				&& (id instanceof BXNode || id instanceof String)
+				&& (geom instanceof BXElem
+						|| geom instanceof com.vividsolutions.jts.geom.Geometry))
 			try {
-				IndexEntry entry = new IndexEntry((String) dbname, ((BigInteger) pre).intValue());
-				String _id = id instanceof String ? (String) id : ((BXNode) id).getNodeValue();
-				com.vividsolutions.jts.geom.Geometry _geom = geom instanceof BXElem ? geoutils.singleObjectToJTSGeometry(geom) : ((com.vividsolutions.jts.geom.Geometry) geom);
+				IndexEntry entry = new IndexEntry((String) dbname,
+						((BigInteger) pre).intValue());
+				String _id = id instanceof String ? (String) id
+						: ((BXNode) id).getNodeValue();
+				com.vividsolutions.jts.geom.Geometry _geom = geom instanceof BXElem
+						? geoutils.singleObjectToJTSGeometry(geom)
+						: ((com.vividsolutions.jts.geom.Geometry) geom);
 				Envelope env = _geom.getEnvelopeInternal();
 				if (!env.isNull()) {
 					if (env.getHeight() == 0.0 && env.getWidth() == 0.0)
-						mgr.index(entry, Geometries.point(env.getMinX(), env.getMinY()));
+						mgr.index(entry,
+								Geometries.point(env.getMinX(), env.getMinY()));
 					else
-						mgr.index(entry, Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()));
+						mgr.index(entry, Geometries.rectangle(env.getMinX(),
+								env.getMinY(), env.getMaxX(), env.getMaxY()));
 
 					// add to geometry cache
 					if (_id != null)
@@ -1553,23 +1772,27 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Retrieve the geometry of an item as a JTS geometry. First try the cache and if it is not in the cache
-	 * construct it from the XML.
+	 * Retrieve the geometry of an item as a JTS geometry. First try the cache
+	 * and if it is not in the cache construct it from the XML.
 	 * <p>
 	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
 	 *
 	 * @param id
-	 *            the id for which the geometry should be retrieved, typically a gml:id of a GML feature element; must be a String or BXNode instance
+	 *            the id for which the geometry should be retrieved, typically a
+	 *            gml:id of a GML feature element; must be a String or BXNode
+	 *            instance
 	 * @param defgeom
-	 *            represents the default GML geometry, if the geometry is not cached; must be a BXElem instance
-	 * @return
-	 *            the geometry of the indexed node, or null if no geometry was found
+	 *            represents the default GML geometry, if the geometry is not
+	 *            cached; must be a BXElem instance
+	 * @return the geometry of the indexed node, or null if no geometry was
+	 *         found
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public com.vividsolutions.jts.geom.Geometry getGeometry(Object id, Object defgeom) throws QueryException {
+	public com.vividsolutions.jts.geom.Geometry getGeometry(Object id,
+			Object defgeom) throws QueryException {
 		if (++count2 % 5000 == 0) {
 			logMemUsage("GmlGeoX#getGeometry.start " + count2);
 		}
@@ -1583,15 +1806,22 @@ public class GmlGeoX extends QueryModule {
 		} else if (id instanceof BXNode) {
 			idx = ((BXNode) id).getNodeValue();
 		} else
-			throw new QueryException("Failure to get geometry. An id uses an incorrect type: " + id.getClass().getCanonicalName());
+			throw new QueryException(
+					"Failure to get geometry. An id uses an incorrect type: "
+							+ id.getClass().getCanonicalName());
 
 		com.vividsolutions.jts.geom.Geometry geom = mgr.get(idx);
 		if (geom == null) {
-			if (!(defgeom instanceof BXElem || defgeom instanceof com.vividsolutions.jts.geom.Geometry)) {
-				throw new QueryException("Failure to parse geometry. A geometry was not found or uses an incorrect type: " + defgeom.getClass().getCanonicalName());
+			if (!(defgeom instanceof BXElem
+					|| defgeom instanceof com.vividsolutions.jts.geom.Geometry)) {
+				throw new QueryException(
+						"Failure to parse geometry. A geometry was not found or uses an incorrect type: "
+								+ defgeom.getClass().getCanonicalName());
 			}
 			try {
-				geom = defgeom instanceof BXElem ? geoutils.singleObjectToJTSGeometry(defgeom) : ((com.vividsolutions.jts.geom.Geometry) defgeom);
+				geom = defgeom instanceof BXElem
+						? geoutils.singleObjectToJTSGeometry(defgeom)
+						: ((com.vividsolutions.jts.geom.Geometry) defgeom);
 				if (geom != null)
 					mgr.put(idx, geom);
 			} catch (Exception e) {
@@ -1600,7 +1830,8 @@ public class GmlGeoX extends QueryModule {
 			if (debug) {
 				long missCount = mgr.getMissCount();
 				if (missCount % 10000 == 0) {
-					LOGGER.debug("Cache misses: " + missCount + " of " + mgr.getCount());
+					LOGGER.debug("Cache misses: " + missCount + " of "
+							+ mgr.getCount());
 				}
 			}
 		}
