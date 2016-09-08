@@ -23,7 +23,7 @@ public class LocalePerThread {
 	}
 	
 	/**
-	 * @return the language used in this thread. Default: "nl".
+	 * @return the language used in this thread.
 	 */
 	public static Locale getThreadLocale() {
 		

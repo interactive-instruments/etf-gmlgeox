@@ -31,6 +31,7 @@ import javax.xml.stream.XMLStreamReader;
 import nl.vrom.roo.validator.core.ValidatorContext;
 import nl.vrom.roo.validator.core.ValidatorMessageBundle;
 import nl.vrom.roo.validator.core.dom4j.Dom4JHelper;
+import nl.vrom.roo.validator.core.dom4j.handlers.ValidationUtil;
 import nl.vrom.roo.validator.core.errorlocation.IdErrorLocation;
 
 import org.deegree.commons.xml.XMLParsingException;
@@ -78,8 +79,6 @@ public class SecondaryGeometryElementValidationHandler
 	private static final Logger LOGGER = LoggerFactory
 			.getLogger(SecondaryGeometryElementValidationHandler.class);
 
-	private static final String NODE_NAME_FEATURE_MEMBER = "featureMember";
-
 	protected GmlGeoXUtils geoutils = new GmlGeoXUtils();
 
 	private final ValidatorContext validatorContext;
@@ -88,7 +87,7 @@ public class SecondaryGeometryElementValidationHandler
 
 	private final Map<String, Integer> currentGmlGeometryCounters = new HashMap<String, Integer>();
 
-	private String currentFeatureMember;
+	private Element currentElement;
 
 	private boolean isGMLVersionReported;
 
@@ -141,27 +140,25 @@ public class SecondaryGeometryElementValidationHandler
 	 * </p>
 	 */
 	public void onStart(ElementPath elementPath) {
-
-		String currentPath = elementPath.getPath();
-
-		if (NODE_NAME_FEATURE_MEMBER.equals(Dom4JHelper
-				.getNodeFromPath(Dom4JHelper.getParentPath(currentPath)))) {
-			currentFeatureMember = Dom4JHelper.getNodeFromPath(currentPath);
-			resetGmlGeometryCounters();
-		}
+		resetGmlGeometryCounters();
 	}
 
 	/** {@inheritDoc} */
 	public void onEnd(ElementPath elementPath) {
+
 		String nodeName = Dom4JHelper.getNodeFromPath(elementPath.getPath());
+
 		if (gmlGeometries.contains(nodeName)) {
 
 			// Check if this element is a main geometry
 			if (isMainGeometry(elementPath)) {
+
 				raiseGmlGeometryCounter(nodeName);
 
+				currentElement = elementPath.getCurrent();
+
 				try {
-					validate(validatorContext, elementPath.getCurrent());
+					validate(validatorContext, currentElement);
 				} catch (XMLParsingException e) {
 					LOGGER.error(
 							"Unexpected error detected while validating geometry",
@@ -279,13 +276,6 @@ public class SecondaryGeometryElementValidationHandler
 
 			LOGGER.error(e.getMessage(), e);
 		}
-
-		// finally {
-		// // Only permitted if this is a main geometry....
-		// if (isMainGeometry(element)) {
-		// element.detach();
-		// }
-		// }
 	}
 
 	private String getLocationDescription(Element element, String gmlId) {
@@ -293,10 +283,10 @@ public class SecondaryGeometryElementValidationHandler
 		return ValidatorMessageBundle
 				.getMessage(
 						"validator.core.validation.geometry.coordinates-position",
-						new Object[]{element.getName(),
+						new Object[] { element.getName(),
 								currentGmlGeometryCounters
 										.get(element.getName()),
-								currentFeatureMember, gmlId});
+								currentElement.getName(), gmlId });
 	}
 
 	/**
@@ -379,8 +369,10 @@ public class SecondaryGeometryElementValidationHandler
 	 * <ul>
 	 * <li>Surface (including PolyhedralSurface, CompositeSurface, and
 	 * OrientableSurface)</li>
-	 * <ul><li>Only PolygonPatch is allowed as surface patch - all surfaces that
-	 * contain a different type of surface patch are ignored.</li></ul>
+	 * <ul>
+	 * <li>Only PolygonPatch is allowed as surface patch - all surfaces that
+	 * contain a different type of surface patch are ignored.</li>
+	 * </ul>
 	 * <li>The elements of multi and composite geometries (except Multi- and
 	 * CompositeSolids).</li>
 	 * </ul>
@@ -422,8 +414,22 @@ public class SecondaryGeometryElementValidationHandler
 						.toJTSGeometry(geom);
 
 				if (g instanceof com.vividsolutions.jts.geom.Polygon) {
+					
 					return true;
+					
 				} else {
+					
+					String gmlid = Dom4JHelper.findGmlId(currentElement);
+					if (geom.getId() != null) {
+						gmlid = geom.getId();
+					}
+					if(gmlid == null) {
+						gmlid = "null";
+					}
+
+					validatorContext.addError(ValidatorMessageBundle.getMessage(
+							"validator.core.validation.geometry.surfacepatchesnotconnected",
+							gmlid));
 					return false;
 				}
 			}
@@ -492,7 +498,12 @@ public class SecondaryGeometryElementValidationHandler
 
 			Curve curve = (Curve) geom;
 
-			for (CurveSegment segment : curve.getCurveSegments()) {
+			List<CurveSegment> segments = curve.getCurveSegments();
+
+			for (int segmentIdx = 0; segmentIdx < segments
+					.size(); segmentIdx++) {
+
+				CurveSegment segment = segments.get(segmentIdx);
 
 				Points points = null;
 
@@ -532,6 +543,24 @@ public class SecondaryGeometryElementValidationHandler
 				for (Point point : points) {
 					if (lastPoint != null) {
 						if (point.equals(lastPoint)) {
+							
+							String s0 = Dom4JHelper.findGmlId(currentElement);
+							if (geom.getId() != null) {
+								s0 = geom.getId();
+							}
+							if(s0 == null) {
+								s0 = "null";
+							}
+							
+							String s1 = ValidationUtil.getAffectedCoordinates(
+									curve.getCurveSegments().get(segmentIdx),
+									null);
+							String s2 = ValidationUtil
+									.getProblemLocation(point);
+							validatorContext
+									.addError(ValidatorMessageBundle.getMessage(
+											"validator.core.validation.geometry.repetitionincurvesegment",
+											s0, s1, s2));
 							return false;
 						}
 					}

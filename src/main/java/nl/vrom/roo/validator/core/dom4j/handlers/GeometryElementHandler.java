@@ -330,7 +330,7 @@ public class GeometryElementHandler implements ElementHandler {
 				String currentGmlId = Dom4JHelper.findGmlId(element);
 
 				LOGGER.debug(
-						"{} {} within element with planId {} is not supported: {}",
+						"{} {} within element with gml:id {} is not supported: {}",
 						new Object[] { element.getName(),
 								currentGmlGeometryCounters
 										.get(element.getName()),
@@ -401,7 +401,7 @@ public class GeometryElementHandler implements ElementHandler {
 		String currentGmlId = Dom4JHelper.findGmlId(element);
 		if (topError == null) {
 
-			LOGGER.trace("{} {} within element with planId {} is valid",
+			LOGGER.trace("{} {} within element with gml:id {} is valid",
 					new Object[] { element.getName(),
 							currentGmlGeometryCounters.get(element.getName()),
 							currentGmlId });
@@ -409,7 +409,7 @@ public class GeometryElementHandler implements ElementHandler {
 			String coordinatesText = generateCoordinatesText(
 					jtsGeometry.getCoordinates(), topError.getCoordinate());
 
-			LOGGER.trace("{} {} within element with planId {} is invalid",
+			LOGGER.trace("{} {} within element with gml:id {} is invalid",
 					new Object[] { element.getName(),
 							currentGmlGeometryCounters.get(element.getName()),
 							currentGmlId });

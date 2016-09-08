@@ -111,7 +111,7 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: etf_junitTestVersion
   	testCompile "org.basex:basex:$basexVersion"
 	testCompile group: 'ch.qos.logback', name: 'logback-classic', version: etf_logbackVersion
-
+	testCompile "xmlunit:xmlunit:1.3"
 }
 
 jar.doFirst {
