@@ -99,7 +99,7 @@
       </message>
       <message>
         <type>ERROR</type>
-        <text>Invalid geometry (gml:id: c14). Repetition of coordinate in curve (segment). Internal representation of the curve segment: LINESTRING (0,000 0,000,1,000 0,000,2,000 0,000,2,000 0,000). Repeated point: (2,000 0,000).</text>
+        <text>Invalid geometry (gml:id: c14). Repetition of coordinate in curve (segment). Internal representation of the curve segment: LINESTRING (0.000 0.000,1.000 0.000,2.000 0.000,2.000 0.000). Repeated point: (2.000 0.000).</text>
       </message>
     </messages>
   </test>
@@ -181,7 +181,7 @@
       </message>
       <message>
         <type>ERROR</type>
-        <text>Invalid geometry (gml:id: s10). Repetition of coordinate in curve (segment). Internal representation of the curve segment: LINESTRING (1,000 0,000,1,000 1,000,1,000 1,000,1,000 4,000). Repeated point: (1,000 1,000).</text>
+        <text>Invalid geometry (gml:id: s10). Repetition of coordinate in curve (segment). Internal representation of the curve segment: LINESTRING (1.000 0.000,1.000 1.000,1.000 1.000,1.000 4.000). Repeated point: (1.000 1.000).</text>
       </message>
     </messages>
   </test>

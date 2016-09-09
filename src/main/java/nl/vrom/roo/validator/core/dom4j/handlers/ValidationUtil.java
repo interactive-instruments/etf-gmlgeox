@@ -2,6 +2,7 @@ package nl.vrom.roo.validator.core.dom4j.handlers;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.Locale;
 
 import org.deegree.geometry.primitive.Point;
 
@@ -17,8 +18,14 @@ public class ValidationUtil {
 	public ValidationUtil() {
 	}
 
-	private static final NumberFormat COORD_FORMAT = new DecimalFormat(
-			"0.000#######");
+	private static final NumberFormat COORD_FORMAT;
+	
+	static {
+		NumberFormat nf = NumberFormat.getInstance(Locale.ENGLISH); 
+		DecimalFormat df =  (DecimalFormat)nf;
+		df.applyPattern("0.000#######");
+		COORD_FORMAT = df;
+	}
 
 	public static String formatValue(double value) { // NOPMD - Method is not
 														// empty
