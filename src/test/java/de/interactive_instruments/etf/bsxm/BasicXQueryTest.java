@@ -58,6 +58,10 @@ public class BasicXQueryTest {
 		xmlTest("test_geometry_validation.xq",
 				"geometryRelationship/GeometryRelationshipTest.xml");
 
+		/*
+		 * Test the isClosed methods
+		 */
+		xmlTest("test_geometry_isClosed.xq", "GeometryIsClosedTest.xml");
 	}
 
 	private void xmlTest(String xquery, String doc) {
@@ -73,7 +77,7 @@ public class BasicXQueryTest {
 			/*
 			 * The XQuery must declare external variable 'docPath' that expects
 			 * the path to the input XML.
-			 * 
+			 *
 			 * Example: declare variable $docPath external := '...';
 			 */
 			xq.bind("docPath", xmlDir + doc);
