@@ -145,7 +145,7 @@ jar.doFirst {
 	manifest {
 		attributes(
 				// Other manifest attributes are added by ii-bda
-				'Main-Class': 'de.interactive_instruments.etf.bsxm.Entry',
+				'Main-Class': 'de.interactive_instruments.etf.bsxm.GmlGeoX',
 		)
 	}
 }
