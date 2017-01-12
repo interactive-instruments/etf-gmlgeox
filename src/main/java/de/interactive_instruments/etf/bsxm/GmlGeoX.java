@@ -1220,10 +1220,10 @@ public class GmlGeoX extends QueryModule {
 	 * Checks if a given object is closed. The object can be a single geometry
 	 * or a collection of geometries. Only LineStrings and MultiLineStrings are
 	 * checked.
-	 * 
+	 *
 	 * NOTE: Invokes the {@link #isClosed(Object, boolean)} method, with
 	 * <code>true</code> for the second parameter.
-	 * 
+	 *
 	 * @see #isClosed(Object, boolean)
 	 * @param o
 	 * @return
@@ -1246,7 +1246,7 @@ public class GmlGeoX extends QueryModule {
 	 * geometry types that will be checked are LineString and MultiLineString.
 	 * If a (Multi)LineString is not closed, this method will return
 	 * <code>false</code>.
-	 * 
+	 *
 	 * @param o
 	 *            the geometry object(s) to test, can be a JTS geometry object,
 	 *            collection, and BaseX nodes (that will be converted to JTS
@@ -1295,18 +1295,18 @@ public class GmlGeoX extends QueryModule {
 						/*
 						 * The JTS FAQ contains the following question and
 						 * answer:
-						 * 
+						 *
 						 * Question: Does JTS support 3D operations?
-						 * 
+						 *
 						 * Answer: JTS does not provide support for true 3D
 						 * geometry and operations. However, JTS does allow
 						 * Coordinates to carry an elevation or Z value. This
 						 * does not provide true 3D support, but does allow
 						 * "2.5D" uses which are required in some geospatial
 						 * applications.
-						 * 
+						 *
 						 * -------
-						 * 
+						 *
 						 * So, JTS does not support true 3D geometry and
 						 * operations. Therefore, JTS cannot determine if a
 						 * surface is closed. deegree does not seem to support
