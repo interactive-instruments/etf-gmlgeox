@@ -73,7 +73,7 @@ public class BasicXQueryTest {
 			/*
 			 * The XQuery must declare external variable 'docPath' that expects
 			 * the path to the input XML.
-			 * 
+			 *
 			 * Example: declare variable $docPath external := '...';
 			 */
 			xq.bind("docPath", xmlDir + doc);

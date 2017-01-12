@@ -95,7 +95,7 @@ public class GmlGeoX extends QueryModule {
 	private int count2 = 0;
 
 	public GmlGeoX() throws QueryException {
-		
+
 		logMemUsage("GmlGeoX#init");
 
 		// default geometry types for which validation is performed
@@ -215,7 +215,7 @@ public class GmlGeoX extends QueryModule {
 	 * @param o
 	 * @param testMask
 	 * @return a DOM element like the following:
-	 * 
+	 *
 	 *         <pre>
 	 *         {@code
 	 *         <ggeo:ValidationResult xmlns:ggeo="de.interactive_instruments.etf.bsxm.GmlGeoX">
@@ -225,7 +225,7 @@ public class GmlGeoX extends QueryModule {
 	 *           <ggeo:message type="ERROR">Invalid surface (gml:id: s14). The patches of the surface are not connected.</ggeo:message>
 	 *         </ggeo:ValidationResult>}
 	 *         </pre>
-	 * 
+	 *
 	 *         Where:
 	 *         <ul>
 	 *         <li>ggeo:isValid - contains the boolean value indicating if the
@@ -1544,8 +1544,8 @@ public class GmlGeoX extends QueryModule {
 			} else {
 				env = geoutils.toJTSGeometry(arg).getEnvelopeInternal();
 			}
-			Object[] res = { env.getMinX(), env.getMinY(), env.getMaxX(),
-					env.getMaxY() };
+			Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(),
+					env.getMaxY()};
 			return res;
 
 		} catch (Exception e) {

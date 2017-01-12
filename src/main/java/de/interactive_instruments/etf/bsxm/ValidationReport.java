@@ -25,12 +25,12 @@ import nl.vrom.roo.validator.core.ValidatorMessage;
  *
  */
 public final class ValidationReport {
-	
+
 	private String validationResult = "VVV";
 	private List<ValidatorMessage> validatorMessages = new ArrayList<ValidatorMessage>();
-	
-	public ValidationReport(){
-		
+
+	public ValidationReport() {
+
 	}
 
 	public ValidationReport(String validationResult, List<ValidatorMessage> validatorMessages) {
@@ -51,7 +51,7 @@ public final class ValidationReport {
 	public List<ValidatorMessage> getValidatorMessages() {
 		return validatorMessages;
 	}
-	
+
 	public boolean isValid() {
 		return validationResult.toLowerCase().indexOf('f') == -1;
 	}

@@ -283,10 +283,10 @@ public class SecondaryGeometryElementValidationHandler
 		return ValidatorMessageBundle
 				.getMessage(
 						"validator.core.validation.geometry.coordinates-position",
-						new Object[] { element.getName(),
+						new Object[]{element.getName(),
 								currentGmlGeometryCounters
 										.get(element.getName()),
-								currentElement.getName(), gmlId });
+								currentElement.getName(), gmlId});
 	}
 
 	/**
@@ -414,16 +414,16 @@ public class SecondaryGeometryElementValidationHandler
 						.toJTSGeometry(geom);
 
 				if (g instanceof com.vividsolutions.jts.geom.Polygon) {
-					
+
 					return true;
-					
+
 				} else {
-					
+
 					String gmlid = Dom4JHelper.findGmlId(currentElement);
 					if (geom.getId() != null) {
 						gmlid = geom.getId();
 					}
-					if(gmlid == null) {
+					if (gmlid == null) {
 						gmlid = "null";
 					}
 
@@ -543,15 +543,15 @@ public class SecondaryGeometryElementValidationHandler
 				for (Point point : points) {
 					if (lastPoint != null) {
 						if (point.equals(lastPoint)) {
-							
+
 							String s0 = Dom4JHelper.findGmlId(currentElement);
 							if (geom.getId() != null) {
 								s0 = geom.getId();
 							}
-							if(s0 == null) {
+							if (s0 == null) {
 								s0 = "null";
 							}
-							
+
 							String s1 = ValidationUtil.getAffectedCoordinates(
 									curve.getCurveSegments().get(segmentIdx),
 									null);
