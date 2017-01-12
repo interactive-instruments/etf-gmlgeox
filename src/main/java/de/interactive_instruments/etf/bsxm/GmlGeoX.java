@@ -1217,6 +1217,147 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
+	 * Checks if a given object is closed. The object can be a single geometry
+	 * or a collection of geometries. Only LineStrings and MultiLineStrings are
+	 * checked.
+	 * 
+	 * NOTE: Invokes the {@link #isClosed(Object, boolean)} method, with
+	 * <code>true</code> for the second parameter.
+	 * 
+	 * @see #isClosed(Object, boolean)
+	 * @param o
+	 * @return
+	 * @throws QueryException
+	 */
+	@Requires(Permission.NONE)
+	@Deterministic
+	public boolean isClosed(Object o) throws QueryException {
+		return isClosed(o, true);
+	}
+
+	/**
+	 * Checks if a given object is closed. The object can be a single geometry
+	 * or a collection of geometries. Points and MultiPoints are closed by
+	 * definition (they do not have a boundary). Polygons and MultiPolygons are
+	 * never closed in 2D, and since operations in 3D are not supported, this
+	 * method will always return <code>false</code> if a polygon is encountered
+	 * - unless the parameter onlyCheckCurveGeometries is set to
+	 * <code>true</code>. LinearRings are closed by definition. The remaining
+	 * geometry types that will be checked are LineString and MultiLineString.
+	 * If a (Multi)LineString is not closed, this method will return
+	 * <code>false</code>.
+	 * 
+	 * @param o
+	 *            the geometry object(s) to test, can be a JTS geometry object,
+	 *            collection, and BaseX nodes (that will be converted to JTS
+	 *            geometries)
+	 * @param onlyCheckCurveGeometries
+	 *            <code>true</code> if only curve geometries (i.e., for JTS:
+	 *            LineString, LinearRing, and MultiLineString) shall be tested,
+	 *            else <code>false</code> (in this case, the occurrence of
+	 *            polygons will result in the return value <code>false</code>).
+	 * @return <code>true</code> if the given object - a geometry or collection
+	 *         of geometries - is closed, else <code>false</code>
+	 * @throws QueryException
+	 */
+	@Requires(Permission.NONE)
+	@Deterministic
+	public boolean isClosed(Object o, boolean onlyCheckCurveGeometries)
+			throws QueryException {
+
+		try {
+
+			if (o instanceof Empty) {
+
+				return true;
+
+			} else {
+
+				com.vividsolutions.jts.geom.Geometry geom = geoutils
+						.toJTSGeometry(o);
+
+				List<com.vividsolutions.jts.geom.Geometry> gc = geoutils
+						.toFlattenedJTSGeometryCollection(geom);
+
+				for (com.vividsolutions.jts.geom.Geometry g : gc) {
+
+					if (g instanceof com.vividsolutions.jts.geom.Point
+							|| g instanceof com.vividsolutions.jts.geom.MultiPoint) {
+
+						/*
+						 * points are closed by definition (they do not have a
+						 * boundary)
+						 */
+
+					} else if (g instanceof com.vividsolutions.jts.geom.Polygon
+							|| g instanceof com.vividsolutions.jts.geom.MultiPolygon) {
+
+						/*
+						 * The JTS FAQ contains the following question and
+						 * answer:
+						 * 
+						 * Question: Does JTS support 3D operations?
+						 * 
+						 * Answer: JTS does not provide support for true 3D
+						 * geometry and operations. However, JTS does allow
+						 * Coordinates to carry an elevation or Z value. This
+						 * does not provide true 3D support, but does allow
+						 * "2.5D" uses which are required in some geospatial
+						 * applications.
+						 * 
+						 * -------
+						 * 
+						 * So, JTS does not support true 3D geometry and
+						 * operations. Therefore, JTS cannot determine if a
+						 * surface is closed. deegree does not seem to support
+						 * this, either. In order for a surface to be closed, it
+						 * must be a sphere or torus, possibly with holes. A
+						 * surface in 2D can never be closed. Since we lack the
+						 * ability to compute in 3D we assume that a
+						 * (Multi)Polygon is not closed. If we do check
+						 * geometries other than curves, then we return false.
+						 */
+						if (!onlyCheckCurveGeometries) {
+							return false;
+						}
+
+					} else if (g instanceof com.vividsolutions.jts.geom.MultiLineString) {
+
+						com.vividsolutions.jts.geom.MultiLineString mls = (com.vividsolutions.jts.geom.MultiLineString) g;
+						if (!mls.isClosed()) {
+							return false;
+						}
+
+					} else if (g instanceof com.vividsolutions.jts.geom.LineString) {
+
+						/*
+						 * NOTE: LinearRing is a subclass of LineString, and
+						 * closed by definition
+						 */
+
+						com.vividsolutions.jts.geom.LineString ls = (com.vividsolutions.jts.geom.LineString) g;
+						if (!ls.isClosed()) {
+							return false;
+						}
+
+					} else {
+						// should not happen
+						throw new Exception(
+								"Unexpected geometry type encountered: "
+										+ g.getClass().getName());
+					}
+				}
+
+				// all relevant geometries are closed
+				return true;
+			}
+
+		} catch (Exception e) {
+			throw new QueryException(e);
+		}
+	}
+
+	/**
 	 * Identifies the holes contained in the given geometry (can be a Polygon,
 	 * MultiPolygon, or any other JTS geometry) and returns them as a JTS
 	 * geometry. If holes were found a union is built, to ensure that the result

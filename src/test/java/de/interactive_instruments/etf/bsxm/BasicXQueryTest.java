@@ -58,6 +58,10 @@ public class BasicXQueryTest {
 		xmlTest("test_geometry_validation.xq",
 				"geometryRelationship/GeometryRelationshipTest.xml");
 
+		/*
+		 * Test the isClosed methods
+		 */
+		xmlTest("test_geometry_isClosed.xq", "GeometryIsClosedTest.xml");
 	}
 
 	private void xmlTest(String xquery, String doc) {
