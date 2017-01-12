@@ -49,7 +49,6 @@ repositories {
 }
 
 configurations {
-  runtime.exclude group: "org.slf4j", module: "slf4j-log4j12"
   runtime.exclude group: "org.slf4j", module: "slf4j-nop"
 }
 
@@ -58,31 +57,51 @@ dependencies {
 	// Validator dependencies
 	compile('org.bouncycastle:bcprov-jdk15on:1.53')
 	compile('com.thoughtworks.xstream:xstream:1.4.8')
+
 	compile('dom4j:dom4j:1.6.1') {
 		exclude group: 'xml-apis'
 	}
+
+	compile('org.apache.santuario:xmlsec:2.0.5') {
+		exclude group: 'org.slf4j'
+	}
+
+    // Overwrite
+	compile group: 'org.codehaus.woodstox', name: 'woodstox-core-asl', version: '4.4.1'
+
+
+	// Overwrite
 	compile('com.vividsolutions:jts:1.13')
+
+	// Overwrite
 	compile('org.apache.httpcomponents:httpclient:4.5.1') {
 		exclude group: 'commons-logging'
 	}
-	compile('commons-io:commons-io:2.4')
+
+	// Overwrite
+	compile('commons-io:commons-io:2.5')
+
+	// Overwrite
 	compile('org.jdom:jdom:2.0.2') {
 		exclude group: 'xerces'
 		exclude group: 'xalan'
 	}
+
+	// Overwrite
 	compile('jaxen:jaxen:1.1.6') {
 		exclude group: 'xerces'
 		exclude group: 'xml-apis'
 	}
-	compile('org.apache.santuario:xmlsec:2.0.5') {
-		exclude group: 'org.slf4j'
-	}
+
+	/*
     compile("org.deegree:deegree-core-cs:$deegreeVersion") {
         exclude group: 'org.postgis'
         exclude group: 'postgresql'
         exclude group: 'commons-logging'
         exclude group: 'log4j'
     }
+	*/
+
 	compile("org.deegree:deegree-core-base:$deegreeVersion") {
 		exclude group: 'org.slf4j'
 		exclude group: 'xerces'
@@ -92,19 +111,25 @@ dependencies {
 		exclude group: 'postgresql'
 		exclude group: 'commons-logging'
 	}
+
 	compile('com.github.davidmoten:rtree:0.7.6')
-	compile 'com.github.ben-manes.caffeine:caffeine:2.3.1'
+
 	compile('org.apache.commons:commons-jcs-core:2.0-beta-1')
+	compile 'com.github.ben-manes.caffeine:caffeine:2.3.1'
+
 	compile "org.basex:basex-api:$basexVersion"
 
 	compile group: 'org.slf4j', name: 'slf4j-api', version: etf_slf4jApiVersion
 
 	compile group: 'xerces', name: 'xercesImpl', version: etf_xercesVersion
-	compileOnly group: 'xml-apis', name: 'xml-apis', version: etf_xmlApisVersion
+
+	compile group: 'xml-apis', name: 'xml-apis', version: etf_xmlApisVersion
+
 	compile('xalan:xalan:2.7.2') {
 		exclude group: 'xerces'
 		exclude group: 'xml-apis'
 	}
+
 	compileOnly group: 'javax.xml.bind', name: 'jaxb-api', version:'2.2.12'
 
     testCompile group: 'net.sf.saxon', name: 'Saxon-HE', version: '9.7.0-4'
@@ -118,24 +143,41 @@ jar.doFirst {
 	manifest {
 		attributes(
 				// Other manifest attributes are added by ii-bda
-				'Main-Class': 'de.interactive_instruments.etf.bsxm.GmlGeoX',
+				'Main-Class': 'de.interactive_instruments.etf.bsxm.Entry',
 		)
 	}
 }
 
-jar.doFirst {
-    from configurations.compile -
-            configurations.compile.filter { it.name.startsWith('basex') } -
-            configurations.compile.filter { it.name.startsWith('slf4j') } -
-            configurations.compile.filter { it.name.startsWith('log4j') } -
-            configurations.compile.filter { it.name.startsWith('jcl') } -
-            configurations.compile.filter { it.name.startsWith('commons-fileupload') } -
-            configurations.compile.filter { it.name.startsWith('xml-apis') } -
-            configurations.compile.filter { it.name.startsWith('xmldb-api') } -
-            configurations.compile.filter { it.name.startsWith('jaxb') } -
-            configurations.compile.filter { it.name.startsWith('milton') }
+def allLibs = configurations.runtime + configurations.compile -
+		configurations.compile.filter { it.name.startsWith('basex') } -
+		configurations.compile.filter { it.name.startsWith('jcl') } -
+		configurations.compile.filter { it.name.startsWith('commons-fileupload') } -
+		configurations.compile.filter { it.name.startsWith('xml-apis') } -
+		configurations.compile.filter { it.name.startsWith('xmldb-api') } -
+		configurations.compile.filter { it.name.startsWith('jaxb') } -
+		configurations.compile.filter { it.name.startsWith('slf4j-log4j12') } -
+		configurations.compile.filter { it.name.startsWith('milton') }
+
+jar {
+	into('lib') {
+		from allLibs
+	}
 }
 
-task showCompileDep << {
-    configurations.compile.each { println it }
+def gmlGeoXInstallPath = System.getProperty("user.home")+
+		File.separator + "BaseX" +
+		File.separator + "BaseXRepo" +
+        File.separator +group.replace(".", File.separator)
+
+task copyGmlGeoXToRepo(dependsOn: jar) << {
+	copy {
+		from jar
+		into "$gmlGeoXInstallPath"
+        rename '.*', 'GmlGeoX.jar'
+	}
+	println "Copied GmlGeoX to $gmlGeoXInstallPath"
+}
+
+install {
+	dependsOn = ["copyGmlGeoXToRepo"]
 }
