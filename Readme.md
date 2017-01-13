@@ -19,8 +19,29 @@ ETF component version numbers comply with the [Semantic Versioning Specification
 
 ETF is an open source test framework developed by [interactive instruments](http://www.interactive-instruments.de/en) for testing geo network services and data.
 
+## Installation in BaseX 8.6 (IDE used for developing executable test suites)
+[Download and install BaseX 8.6](http://basex.org/products/download/all-downloads).
+
+Click on the batch "latest version" in this repository to download the GmlGeoX plugin. In BaseX click on 
+Options -> Packages... -> Install... and select the downloaded file. The package name
+de.interactive_instruments.etf.bsxm.GmlGeoX should appear in the package dialog, if it has been successfully installed.
+
+The plugin can be used by importing the module **de.interactive_instruments.etf.bsxm.GmlGeoX**: 
+
+```xquery
+import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';
+
+let $gml := fn:parse-xml(
+  "<gml:posList xmlns:gml='http://www.opengis.net/gml/3.2' count='2'>0 0 1 0</gml:posList>")
+
+return ggeo:validateAndReport($gml)
+```
+
+This is a simple quickstart example, see the Wiki for further information!
+
 ## Installation in the etf-webapp
-Currently there are external libraries that can not be initialized from within the package ClassLoader. Therefore you have to extract the content of the jar archive (jar xf etf-gmlgeox-x.jar) and copy the libraries from the root to the lib sub folder of your Basex testdriver _$driver/bsx/lib_ where the $driver directory is configured in your _etf-config.properties_ configuration file as variable _etf.testdrivers.dir_.
+<s>Currently there are external libraries that can not be initialized from within the package ClassLoader. Therefore you have to extract the content of the jar archive (jar xf etf-gmlgeox-x.jar) and copy the libraries from the root to the lib sub folder of your Basex testdriver _$driver/bsx/lib_ where the $driver directory is configured in your _etf-config.properties_ configuration file as variable _etf.testdrivers.dir_.</s>
+The GmlGeoX plugin is packaged and installed by the etf-bsxtd test driver.
 
 ## Updating
 Update the test driver and repeat the installation step.
