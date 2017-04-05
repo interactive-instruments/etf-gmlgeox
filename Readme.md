@@ -40,7 +40,7 @@ return ggeo:validateAndReport($gml)
 This is a simple quickstart example, see the Wiki for further information!
 
 ## Updating
-Uninstall the package Options -> Packages... -> select de.interactive_instruments.etf.bsxm.GmlGeoX -> Delete... and install it again.
+Uninstall the package Options -> Packages... -> select de.interactive_instruments.etf.bsxm.GmlGeoX -> Delete... and install the new version as described above.
 
 ## Geometry Support
 The implementation of the module depends to a large extent on the deegree framework. The default geometry implementation of deegree does not support parsing all GML types, primarily the GML 3.3 types. Also, in a number of cases spatial operations are not supported for parsed geometries. This is primarily due to the fact that deegree relies on JTS to perform these operations, and that therefore the geometries must be simplified/linearized - which is not implemented for all geometry types that can be parsed by deegree. There is even a case where an incomplete JTS representations of a deegree geometry is accepted and used for spatial operations (for a surface with multiple polygon patches only the first is used)!
