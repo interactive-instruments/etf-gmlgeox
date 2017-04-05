@@ -1,4 +1,4 @@
-# Gml geometry validation library (preview version)
+# Gml geometry validation library
 
 [![Apache License 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 [![Latest version](http://img.shields.io/badge/latest%20version-1.1.0-blue.svg)](https://services.interactive-instruments.de/etfdev-af/etf-public-dev/de/interactive_instruments/etf/bsxm/etf-gmlgeox/1.1.0-SNAPSHOT/etf-gmlgeox-1.1.0-20170112.165838-2.jar)
@@ -40,7 +40,7 @@ return ggeo:validateAndReport($gml)
 This is a simple quickstart example, see the Wiki for further information!
 
 ## Updating
-Update the test driver and repeat the installation step.
+Uninstall the package Options -> Packages... -> select de.interactive_instruments.etf.bsxm.GmlGeoX -> Delete... and install it again.
 
 ## Geometry Support
 The implementation of the module depends to a large extent on the deegree framework. The default geometry implementation of deegree does not support parsing all GML types, primarily the GML 3.3 types. Also, in a number of cases spatial operations are not supported for parsed geometries. This is primarily due to the fact that deegree relies on JTS to perform these operations, and that therefore the geometries must be simplified/linearized - which is not implemented for all geometry types that can be parsed by deegree. There is even a case where an incomplete JTS representations of a deegree geometry is accepted and used for spatial operations (for a surface with multiple polygon patches only the first is used)!
