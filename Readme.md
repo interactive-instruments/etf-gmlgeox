@@ -39,10 +39,6 @@ return ggeo:validateAndReport($gml)
 
 This is a simple quickstart example, see the Wiki for further information!
 
-## Installation in the etf-webapp
-<s>Currently there are external libraries that can not be initialized from within the package ClassLoader. Therefore you have to extract the content of the jar archive (jar xf etf-gmlgeox-x.jar) and copy the libraries from the root to the lib sub folder of your Basex testdriver _$driver/bsx/lib_ where the $driver directory is configured in your _etf-config.properties_ configuration file as variable _etf.testdrivers.dir_.</s>
-The GmlGeoX plugin is packaged and installed by the etf-bsxtd test driver.
-
 ## Updating
 Update the test driver and repeat the installation step.
 
