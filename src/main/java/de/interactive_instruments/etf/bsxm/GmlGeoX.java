@@ -15,6 +15,7 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
+import java.io.File;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -42,14 +43,17 @@ import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 
 import org.basex.api.dom.BXElem;
 import org.basex.api.dom.BXNode;
+import org.basex.core.Context;
 import org.basex.data.Data;
 import org.basex.query.QueryException;
 import org.basex.query.QueryModule;
+import org.basex.query.QueryProcessor;
 import org.basex.query.value.Value;
 import org.basex.query.value.node.ANode;
 import org.basex.query.value.node.DBNode;
 import org.basex.query.value.seq.Empty;
 import org.basex.util.InputInfo;
+import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
 import org.dom4j.io.SAXReader;
 import org.slf4j.Logger;
@@ -80,10 +84,9 @@ public class GmlGeoX extends QueryModule {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GmlGeoX.class);
 
-	private static final Pattern INTERSECTIONPATTERN = Pattern
-			.compile("[0-2\\*TF]{9}");
+	private static final Pattern INTERSECTIONPATTERN = Pattern.compile("[0-2\\*TF]{9}");
 
-	protected final GmlGeoXUtils geoutils = new GmlGeoXUtils();
+	protected final GmlGeoXUtils geoutils = new GmlGeoXUtils(this);
 
 	private final Set<String> gmlGeometries = new TreeSet<String>();
 
@@ -113,6 +116,41 @@ public class GmlGeoX extends QueryModule {
 
 		registerGmlGeometry("Ring");
 		registerGmlGeometry("LineString");
+	}
+
+	/**
+	 * Loads SRS configuration files from the given directory, to be used when
+	 * looking up SRS names for creating geometry objects.
+	 * 
+	 * @param configurationDirectoryPathName
+	 *            Path to a directory that contains SRS configuration files
+	 * @throws QueryException
+	 *             in case that the SRS configuration directory does not exist,
+	 *             is not a directory, cannot be read, or an exception occurred
+	 *             while loading the configuration files
+	 */
+	@Requires(Permission.NONE)
+	public void configureSpatialReferenceSystems(String configurationDirectoryPathName) throws QueryException {
+
+		try {
+
+			File configurationDirectory = new File(configurationDirectoryPathName);
+
+			if (!configurationDirectory.exists() || !configurationDirectory.isDirectory()
+					|| !configurationDirectory.canRead()) {
+
+				throw new IllegalArgumentException(
+						"Given path name does not identify a directory that exists and that can be read.");
+
+			} else {
+
+				CRSManager crsMgr = new CRSManager();
+				crsMgr.init(configurationDirectory);
+			}
+
+		} catch (Exception e) {
+			throw new QueryException(e);
+		}
 	}
 
 	/**
@@ -248,13 +286,11 @@ public class GmlGeoX extends QueryModule {
 	 *         </ul>
 	 * @throws QueryException
 	 */
-	public Element validateAndReport(Object o, String testMask)
-			throws QueryException {
+	public Element validateAndReport(Object o, String testMask) throws QueryException {
 
 		ValidationReport vr = this.executeValidate(o, testMask);
 
-		DocumentBuilderFactory docFactory = DocumentBuilderFactory
-				.newInstance();
+		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		docFactory.setNamespaceAware(true);
 
 		DocumentBuilder docBuilder;
@@ -365,14 +401,12 @@ public class GmlGeoX extends QueryModule {
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
-	ValidationReport executeValidate(Object o, String testMask)
-			throws QueryException {
+	ValidationReport executeValidate(Object o, String testMask) throws QueryException {
 
 		try {
 
 			// determine which tests to execute
-			boolean isTestGeonovum, isTestPolygonPatchConnectivity,
-					isTestRepetitionInCurveSegments;
+			boolean isTestGeonovum, isTestPolygonPatchConnectivity, isTestRepetitionInCurveSegments;
 
 			if (testMask == null) {
 
@@ -382,12 +416,9 @@ public class GmlGeoX extends QueryModule {
 
 			} else {
 
-				isTestGeonovum = (testMask.length() >= 1
-						&& testMask.charAt(0) == '1') ? true : false;
-				isTestPolygonPatchConnectivity = (testMask.length() >= 2
-						&& testMask.charAt(1) == '1') ? true : false;
-				isTestRepetitionInCurveSegments = (testMask.length() >= 3
-						&& testMask.charAt(2) == '1') ? true : false;
+				isTestGeonovum = (testMask.length() >= 1 && testMask.charAt(0) == '1') ? true : false;
+				isTestPolygonPatchConnectivity = (testMask.length() >= 2 && testMask.charAt(1) == '1') ? true : false;
+				isTestRepetitionInCurveSegments = (testMask.length() >= 3 && testMask.charAt(2) == '1') ? true : false;
 			}
 
 			boolean isValidGeonovum = false;
@@ -395,16 +426,25 @@ public class GmlGeoX extends QueryModule {
 			boolean noRepetitionInCurveSegment = false;
 
 			BXNode elem;
+			String srsName;
 
 			if (o instanceof ANode) {
-				elem = ((ANode) o).toJava();
+
+				ANode node = (ANode) o;
+				srsName = determineSrsNameAsString(node);
+
+				elem = node.toJava();
+
 			} else if (o instanceof BXNode) {
+
+				ANode node = ((BXNode) o).getNode();
+				srsName = determineSrsNameAsString(node);
+
 				elem = (BXNode) o;
 			} else {
 				// unknown type encountered
 				throw new IllegalArgumentException(
-						"Object type '" + o.getClass().getName()
-								+ "' is not supported for this method.");
+						"Object type '" + o.getClass().getName() + "' is not supported for this method.");
 			}
 
 			List<ValidatorMessage> validationMessages = new ArrayList<ValidatorMessage>();
@@ -415,8 +455,7 @@ public class GmlGeoX extends QueryModule {
 
 				ValidatorContext ctx = new ValidatorContext();
 
-				GeometryElementHandler handler = new GeometryElementHandler(ctx,
-						null);
+				GeometryElementHandler handler = new GeometryElementHandler(ctx, null, srsName);
 				/*
 				 * configure handler with GML geometries specified through this
 				 * class
@@ -443,13 +482,11 @@ public class GmlGeoX extends QueryModule {
 				}
 			}
 
-			if (isTestPolygonPatchConnectivity
-					|| isTestRepetitionInCurveSegments) {
+			if (isTestPolygonPatchConnectivity || isTestRepetitionInCurveSegments) {
 
 				ValidatorContext ctx = new ValidatorContext();
 				SecondaryGeometryElementValidationHandler handler = new SecondaryGeometryElementValidationHandler(
-						isTestPolygonPatchConnectivity,
-						isTestRepetitionInCurveSegments, ctx);
+						isTestPolygonPatchConnectivity, isTestRepetitionInCurveSegments, ctx, srsName, this);
 
 				/*
 				 * configure handler with GML geometries specified through this
@@ -469,19 +506,16 @@ public class GmlGeoX extends QueryModule {
 				// ================
 				// Test: polygon patches of a surface are connected
 				if (isTestPolygonPatchConnectivity) {
-					polygonPatchesAreConnected = handler
-							.arePolygonPatchesConnected();
+					polygonPatchesAreConnected = handler.arePolygonPatchesConnected();
 				}
 
 				// ================
 				// Test: point repetition in curve segment
 				if (isTestRepetitionInCurveSegments) {
-					noRepetitionInCurveSegment = handler
-							.isNoRepetitionInCurveSegments();
+					noRepetitionInCurveSegment = handler.isNoRepetitionInCurveSegments();
 				}
 
-				if (!polygonPatchesAreConnected
-						|| !noRepetitionInCurveSegment) {
+				if (!polygonPatchesAreConnected || !noRepetitionInCurveSegment) {
 					List<ValidatorMessage> vmsgs = ctx.getMessages();
 					validationMessages.addAll(vmsgs);
 					for (ValidatorMessage msg : vmsgs) {
@@ -544,8 +578,7 @@ public class GmlGeoX extends QueryModule {
 	@Deterministic
 	public boolean contains(Object arg1, Object arg2) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.CONTAINS);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.CONTAINS);
 	}
 
 	/**
@@ -572,11 +605,9 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public boolean contains(Object arg1, Object arg2, boolean matchAll)
-			throws QueryException {
+	public boolean contains(Object arg1, Object arg2, boolean matchAll) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.CONTAINS, matchAll);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.CONTAINS, matchAll);
 	}
 
 	/**
@@ -599,8 +630,7 @@ public class GmlGeoX extends QueryModule {
 	@Deterministic
 	public boolean crosses(Object arg1, Object arg2) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.CROSSES);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.CROSSES);
 	}
 
 	/**
@@ -627,11 +657,9 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public boolean crosses(Object arg1, Object arg2, boolean matchAll)
-			throws QueryException {
+	public boolean crosses(Object arg1, Object arg2, boolean matchAll) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.CROSSES, matchAll);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.CROSSES, matchAll);
 	}
 
 	/**
@@ -654,8 +682,7 @@ public class GmlGeoX extends QueryModule {
 	@Deterministic
 	public boolean equals(Object arg1, Object arg2) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.EQUALS);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.EQUALS);
 	}
 
 	/**
@@ -682,11 +709,9 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public boolean equals(Object arg1, Object arg2, boolean matchAll)
-			throws QueryException {
+	public boolean equals(Object arg1, Object arg2, boolean matchAll) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.EQUALS, matchAll);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.EQUALS, matchAll);
 	}
 
 	/**
@@ -709,37 +734,102 @@ public class GmlGeoX extends QueryModule {
 	@Deterministic
 	public boolean intersects(Object arg1, Object arg2) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.INTERSECTS);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.INTERSECTS);
 	}
 
-	public com.vividsolutions.jts.geom.Geometry parseGeometry(Object arg)
-			throws QueryException {
+	/**
+	 * Determine the name of the SRS that applies to the given geometry element.
+	 * The SRS is either defined by the element itself, in the 'srsName', or by
+	 * the nearest ancestor that either has an 'srsName' attribute or a child
+	 * element with local name 'boundedBy' (like gml:boundedBy) that itself
+	 * contains a child element (like gml:Envelope) that has an 'srsName'
+	 * attribute. NOTE: The underlying query is independent of a specific GML
+	 * namespace.
+	 * 
+	 * @param geometryElement
+	 * @return the value of the applicable 'srsName' attribute, if found,
+	 *         otherwise the empty sequence
+	 * @throws QueryException
+	 */
+	@Requires(Permission.NONE)
+	@Deterministic
+	public Value determineSrsName(Value geometryElement) throws QueryException {
+
+		String query = "declare variable $geom external; "
+				+ "let $elementWithSrsName := $geom/ancestor-or-self::*[@srsName or *[local-name() = 'boundedBy']/*/@srsName][1] "
+				+ "return if (empty($elementWithSrsName)) then () "
+				+ "else if($elementWithSrsName/@srsName) then $elementWithSrsName/data(@srsName) else "
+				+ "$elementWithSrsName/*[local-name() = 'boundedBy']/*/data(@srsName)";
+
+		Context ctx = queryContext.context;
+
+		try (QueryProcessor qp = new QueryProcessor(query, ctx)) {
+
+			// Bind to context:
+			qp.bind("geom", geometryElement);
+			qp.context(geometryElement);
+
+			Value value = qp.value();
+
+			return value;
+		}
+	}
+
+	public com.vividsolutions.jts.geom.Geometry parseGeometry(Object arg) throws QueryException {
 
 		try {
 			if (arg instanceof ANode) {
 
-				return geoutils.toJTSGeometry((ANode) arg);
+				ANode node = (ANode) arg;
+
+				return geoutils.toJTSGeometry(node);
 
 			} else if (arg instanceof BXElem) {
 
-				return geoutils.toJTSGeometry((Element) arg);
+				BXElem tmp = (BXElem) arg;
+				ANode node = tmp.getNode();
+
+				return geoutils.toJTSGeometry(node);
 
 			} else if (arg instanceof com.vividsolutions.jts.geom.Geometry) {
 
 				return (com.vividsolutions.jts.geom.Geometry) arg;
 
 			} else {
-				throw new IllegalArgumentException(
-						"First argument is neither a single node nor a JTS geometry.");
+				throw new IllegalArgumentException("First argument is neither a single node nor a JTS geometry.");
 			}
 		} catch (Exception e) {
 			throw new QueryException(e);
 		}
 	}
 
-	private boolean performSpatialRelationshipOperation(Object arg1,
-			Object arg2, SpatialRelOp op) throws QueryException {
+	/**
+	 * Internal method to get the SRS name that applies to a geometry element as
+	 * a string.
+	 * 
+	 * @param node
+	 *            The geometry element
+	 * @return SRS name that applies to the element, can be <code>null</code> in
+	 *         case that no such name was found
+	 * @throws QueryException
+	 *             if querying for the SRS name resulted in an exception
+	 */
+	String determineSrsNameAsString(ANode node) throws QueryException {
+
+		Value srsNameValue = determineSrsName(node);
+		String srsName;
+		if (srsNameValue.isEmpty()) {
+			srsName = null;
+		} else {
+			srsName = srsNameValue.toString();
+			// remove any occurrence of " and '
+			srsName = srsName.replaceAll("\"|'", "");
+		}
+		return srsName;
+	}
+
+	private boolean performSpatialRelationshipOperation(Object arg1, Object arg2, SpatialRelOp op)
+			throws QueryException {
 
 		try {
 
@@ -756,13 +846,14 @@ public class GmlGeoX extends QueryModule {
 
 			return applySpatialRelationshipOperator(geom1, geom2, op);
 
-		} catch (Exception e) {
+		} catch (
+
+		Exception e) {
 			throw new QueryException(e);
 		}
 	}
 
-	private boolean applySpatialRelationshipOperator(
-			com.vividsolutions.jts.geom.Geometry geom1,
+	private boolean applySpatialRelationshipOperator(com.vividsolutions.jts.geom.Geometry geom1,
 			com.vividsolutions.jts.geom.Geometry geom2, SpatialRelOp op) {
 
 		switch (op) {
@@ -783,13 +874,11 @@ public class GmlGeoX extends QueryModule {
 		case TOUCHES:
 			return geom1.touches(geom2);
 		default:
-			throw new IllegalArgumentException(
-					"Unknown spatial relationship operator: " + op.toString());
+			throw new IllegalArgumentException("Unknown spatial relationship operator: " + op.toString());
 		}
 	}
 
-	private boolean performSpatialRelationshipOperation(Object arg1,
-			Object arg2, SpatialRelOp op, boolean matchAll)
+	private boolean performSpatialRelationshipOperation(Object arg1, Object arg2, SpatialRelOp op, boolean matchAll)
 			throws QueryException {
 
 		try {
@@ -877,11 +966,9 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public boolean intersects(Object arg1, Object arg2, boolean matchAll)
-			throws QueryException {
+	public boolean intersects(Object arg1, Object arg2, boolean matchAll) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.INTERSECTS, matchAll);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.INTERSECTS, matchAll);
 	}
 
 	/**
@@ -904,8 +991,7 @@ public class GmlGeoX extends QueryModule {
 	@Deterministic
 	public boolean isDisjoint(Object arg1, Object arg2) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.ISDISJOINT);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.ISDISJOINT);
 	}
 
 	/**
@@ -933,11 +1019,9 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public boolean isDisjoint(Object arg1, Object arg2, boolean matchAll)
-			throws QueryException {
+	public boolean isDisjoint(Object arg1, Object arg2, boolean matchAll) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.ISDISJOINT, matchAll);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.ISDISJOINT, matchAll);
 	}
 
 	/**
@@ -960,8 +1044,7 @@ public class GmlGeoX extends QueryModule {
 	@Deterministic
 	public boolean isWithin(Object arg1, Object arg2) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.ISWITHIN);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.ISWITHIN);
 	}
 
 	/**
@@ -988,11 +1071,9 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public boolean isWithin(Object arg1, Object arg2, boolean matchAll)
-			throws QueryException {
+	public boolean isWithin(Object arg1, Object arg2, boolean matchAll) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.ISWITHIN, matchAll);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.ISWITHIN, matchAll);
 	}
 
 	/**
@@ -1015,8 +1096,7 @@ public class GmlGeoX extends QueryModule {
 	@Deterministic
 	public boolean overlaps(Object arg1, Object arg2) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.OVERLAPS);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.OVERLAPS);
 	}
 
 	/**
@@ -1043,11 +1123,9 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public boolean overlaps(Object arg1, Object arg2, boolean matchAll)
-			throws QueryException {
+	public boolean overlaps(Object arg1, Object arg2, boolean matchAll) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.OVERLAPS, matchAll);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.OVERLAPS, matchAll);
 	}
 
 	/**
@@ -1070,8 +1148,7 @@ public class GmlGeoX extends QueryModule {
 	@Deterministic
 	public boolean touches(Object arg1, Object arg2) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.TOUCHES);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.TOUCHES);
 	}
 
 	/**
@@ -1098,11 +1175,9 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public boolean touches(Object arg1, Object arg2, boolean matchAll)
-			throws QueryException {
+	public boolean touches(Object arg1, Object arg2, boolean matchAll) throws QueryException {
 
-		return performSpatialRelationshipOperation(arg1, arg2,
-				SpatialRelOp.TOUCHES, matchAll);
+		return performSpatialRelationshipOperation(arg1, arg2, SpatialRelOp.TOUCHES, matchAll);
 	}
 
 	/**
@@ -1157,23 +1232,19 @@ public class GmlGeoX extends QueryModule {
 
 	@Requires(Permission.NONE)
 	@Deterministic
-	public com.vividsolutions.jts.geom.Geometry union(Object arg1, Object arg2)
-			throws QueryException {
+	public com.vividsolutions.jts.geom.Geometry union(Object arg1, Object arg2) throws QueryException {
 
 		try {
 
 			List<com.vividsolutions.jts.geom.Geometry> geoms = new ArrayList<com.vividsolutions.jts.geom.Geometry>();
 
-			com.vividsolutions.jts.geom.Geometry geom1 = geoutils
-					.toJTSGeometry(arg1);
+			com.vividsolutions.jts.geom.Geometry geom1 = geoutils.toJTSGeometry(arg1);
 			geoms.add(geom1);
 
-			com.vividsolutions.jts.geom.Geometry geom2 = geoutils
-					.toJTSGeometry(arg2);
+			com.vividsolutions.jts.geom.Geometry geom2 = geoutils.toJTSGeometry(arg2);
 			geoms.add(geom2);
 
-			com.vividsolutions.jts.geom.GeometryCollection gc = geoutils
-					.toJTSGeometryCollection(geoms, true);
+			com.vividsolutions.jts.geom.GeometryCollection gc = geoutils.toJTSGeometryCollection(geoms, true);
 
 			return gc.union();
 
@@ -1184,19 +1255,16 @@ public class GmlGeoX extends QueryModule {
 
 	@Requires(Permission.NONE)
 	@Deterministic
-	public com.vividsolutions.jts.geom.Geometry union(Object arg)
-			throws QueryException {
+	public com.vividsolutions.jts.geom.Geometry union(Object arg) throws QueryException {
 
 		try {
 
 			List<com.vividsolutions.jts.geom.Geometry> geoms = new ArrayList<com.vividsolutions.jts.geom.Geometry>();
 
-			com.vividsolutions.jts.geom.Geometry geom = geoutils
-					.toJTSGeometry(arg);
+			com.vividsolutions.jts.geom.Geometry geom = geoutils.toJTSGeometry(arg);
 			geoms.add(geom);
 
-			com.vividsolutions.jts.geom.GeometryCollection gc = geoutils
-					.toJTSGeometryCollection(geoms, true);
+			com.vividsolutions.jts.geom.GeometryCollection gc = geoutils.toJTSGeometryCollection(geoms, true);
 
 			return gc.union();
 
@@ -1262,8 +1330,7 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public boolean isClosed(Object o, boolean onlyCheckCurveGeometries)
-			throws QueryException {
+	public boolean isClosed(Object o, boolean onlyCheckCurveGeometries) throws QueryException {
 
 		try {
 
@@ -1273,11 +1340,9 @@ public class GmlGeoX extends QueryModule {
 
 			} else {
 
-				com.vividsolutions.jts.geom.Geometry geom = geoutils
-						.toJTSGeometry(o);
+				com.vividsolutions.jts.geom.Geometry geom = geoutils.toJTSGeometry(o);
 
-				List<com.vividsolutions.jts.geom.Geometry> gc = geoutils
-						.toFlattenedJTSGeometryCollection(geom);
+				List<com.vividsolutions.jts.geom.Geometry> gc = geoutils.toFlattenedJTSGeometryCollection(geom);
 
 				for (com.vividsolutions.jts.geom.Geometry g : gc) {
 
@@ -1342,9 +1407,7 @@ public class GmlGeoX extends QueryModule {
 
 					} else {
 						// should not happen
-						throw new Exception(
-								"Unexpected geometry type encountered: "
-										+ g.getClass().getName());
+						throw new Exception("Unexpected geometry type encountered: " + g.getClass().getName());
 					}
 				}
 
@@ -1372,8 +1435,7 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public com.vividsolutions.jts.geom.Geometry holes(
-			com.vividsolutions.jts.geom.Geometry geom) {
+	public com.vividsolutions.jts.geom.Geometry holes(com.vividsolutions.jts.geom.Geometry geom) {
 
 		if (isEmpty(geom)) {
 
@@ -1383,9 +1445,7 @@ public class GmlGeoX extends QueryModule {
 
 			List<com.vividsolutions.jts.geom.Polygon> extractedPolygons = new ArrayList<com.vividsolutions.jts.geom.Polygon>();
 
-			GeometryExtracter.extract(geom,
-					com.vividsolutions.jts.geom.Polygon.class,
-					extractedPolygons);
+			GeometryExtracter.extract(geom, com.vividsolutions.jts.geom.Polygon.class, extractedPolygons);
 
 			if (extractedPolygons.isEmpty()) {
 
@@ -1403,10 +1463,8 @@ public class GmlGeoX extends QueryModule {
 
 						// for each hole, convert it to a polygon
 						for (int i = 0; i < polygon.getNumInteriorRing(); i++) {
-							com.vividsolutions.jts.geom.LineString ls = polygon
-									.getInteriorRingN(i);
-							com.vividsolutions.jts.geom.Polygon holeAsPolygon = geoutils
-									.toJTSPolygon(ls);
+							com.vividsolutions.jts.geom.LineString ls = polygon.getInteriorRingN(i);
+							com.vividsolutions.jts.geom.Polygon holeAsPolygon = geoutils.toJTSPolygon(ls);
 							holes.add(holeAsPolygon);
 						}
 					}
@@ -1444,19 +1502,16 @@ public class GmlGeoX extends QueryModule {
 			Value v = (Value) o;
 
 			if (v.size() > 1) {
-				throw new IllegalArgumentException(
-						"Single value expected where multiple were provided.");
+				throw new IllegalArgumentException("Single value expected where multiple were provided.");
 			}
 
 		} else if (o instanceof Object[]) {
-			throw new IllegalArgumentException(
-					"Single object expected where multiple were provided.");
+			throw new IllegalArgumentException("Single object expected where multiple were provided.");
 		}
 
 		// unknown type encountered
 		throw new IllegalArgumentException(
-				"Object type '" + o.getClass().getName()
-						+ "' is not supported for this method.");
+				"Object type '" + o.getClass().getName() + "' is not supported for this method.");
 	}
 
 	/**
@@ -1482,8 +1537,7 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public boolean relate(Object arg1, Object arg2, String intersectionPattern)
-			throws QueryException {
+	public boolean relate(Object arg1, Object arg2, String intersectionPattern) throws QueryException {
 
 		checkIntersectionPattern(intersectionPattern);
 
@@ -1534,8 +1588,8 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public boolean relate(Object arg1, Object arg2, String intersectionPattern,
-			boolean matchAll) throws QueryException {
+	public boolean relate(Object arg1, Object arg2, String intersectionPattern, boolean matchAll)
+			throws QueryException {
 
 		checkIntersectionPattern(intersectionPattern);
 
@@ -1600,8 +1654,7 @@ public class GmlGeoX extends QueryModule {
 		}
 	}
 
-	private void checkIntersectionPattern(String intersectionPattern)
-			throws QueryException {
+	private void checkIntersectionPattern(String intersectionPattern) throws QueryException {
 
 		if (intersectionPattern == null) {
 
@@ -1634,8 +1687,7 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public com.vividsolutions.jts.geom.Geometry intersection(Object arg1,
-			Object arg2) throws QueryException {
+	public com.vividsolutions.jts.geom.Geometry intersection(Object arg1, Object arg2) throws QueryException {
 
 		try {
 
@@ -1680,13 +1732,11 @@ public class GmlGeoX extends QueryModule {
 			if (arg instanceof Empty) {
 				env = geoutils.emptyJTSGeometry().getEnvelopeInternal();
 			} else if (arg instanceof com.vividsolutions.jts.geom.Geometry) {
-				env = ((com.vividsolutions.jts.geom.Geometry) arg)
-						.getEnvelopeInternal();
+				env = ((com.vividsolutions.jts.geom.Geometry) arg).getEnvelopeInternal();
 			} else {
 				env = geoutils.toJTSGeometry(arg).getEnvelopeInternal();
 			}
-			Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(),
-					env.getMaxY()};
+			Object[] res = { env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY() };
 			return res;
 
 		} catch (Exception e) {
@@ -1733,8 +1783,7 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public Object[] search(Object minx, Object miny, Object maxx, Object maxy)
-			throws QueryException {
+	public Object[] search(Object minx, Object miny, Object maxx, Object maxy) throws QueryException {
 
 		try {
 			double x1;
@@ -1760,20 +1809,17 @@ public class GmlGeoX extends QueryModule {
 
 			if (mgr == null)
 				mgr = new GeometryManager();
-			Iterable<IndexEntry> iter = mgr
-					.search(Geometries.rectangle(x1, y1, x2, y2));
+			Iterable<IndexEntry> iter = mgr.search(Geometries.rectangle(x1, y1, x2, y2));
 			List<DBNode> nodelist = new ArrayList<DBNode>();
 			for (IndexEntry entry : iter) {
-				Data d = queryContext.resources.database(entry.dbname,
-						new InputInfo("xpath", 0, 0));
+				Data d = queryContext.resources.database(entry.dbname, new InputInfo("xpath", 0, 0));
 				DBNode n = new DBNode(d, entry.pre);
 				if (n != null)
 					nodelist.add(n);
 			}
 			if (++count % 5000 == 0) {
-				logMemUsage("GmlGeoX#search " + count + ". Box: (" + x1 + ", "
-						+ y1 + ") (" + x2 + ", " + y2 + ")" + ". Hits: "
-						+ nodelist.size());
+				logMemUsage("GmlGeoX#search " + count + ". Box: (" + x1 + ", " + y1 + ") (" + x2 + ", " + y2 + ")"
+						+ ". Hits: " + nodelist.size());
 			}
 
 			return nodelist.toArray();
@@ -1797,14 +1843,12 @@ public class GmlGeoX extends QueryModule {
 			Iterable<IndexEntry> iter = mgr.search();
 			List<DBNode> nodelist = new ArrayList<DBNode>();
 			for (IndexEntry entry : iter) {
-				Data d = queryContext.resources.database(entry.dbname,
-						new InputInfo("xpath", 0, 0));
+				Data d = queryContext.resources.database(entry.dbname, new InputInfo("xpath", 0, 0));
 				DBNode n = new DBNode(d, entry.pre);
 				if (n != null)
 					nodelist.add(n);
 			}
-			logMemUsage(
-					"GmlGeoX#search " + count + ". Hits: " + nodelist.size());
+			logMemUsage("GmlGeoX#search " + count + ". Hits: " + nodelist.size());
 
 			return nodelist.toArray();
 
@@ -1824,12 +1868,8 @@ public class GmlGeoX extends QueryModule {
 		if (debug) {
 			final MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
 			memory.gc();
-			LOGGER.debug(progress + ". Memory: "
-					+ Math.round(
-							memory.getHeapMemoryUsage().getUsed() / 1048576)
-					+ " MB of "
-					+ Math.round(memory.getHeapMemoryUsage().getMax() / 1048576)
-					+ " MB.");
+			LOGGER.debug(progress + ". Memory: " + Math.round(memory.getHeapMemoryUsage().getUsed() / 1048576)
+					+ " MB of " + Math.round(memory.getHeapMemoryUsage().getMax() / 1048576) + " MB.");
 		}
 	}
 
@@ -1872,31 +1912,24 @@ public class GmlGeoX extends QueryModule {
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
-	public void index(Object pre, Object dbname, Object id, Object geom)
-			throws QueryException {
+	public void index(Object pre, Object dbname, Object id, Object geom) throws QueryException {
 		if (mgr == null)
 			mgr = new GeometryManager();
 
-		if (pre instanceof BigInteger && dbname instanceof String
-				&& (id instanceof BXNode || id instanceof String)
-				&& (geom instanceof BXElem
-						|| geom instanceof com.vividsolutions.jts.geom.Geometry))
+		if (pre instanceof BigInteger && dbname instanceof String && (id instanceof BXNode || id instanceof String)
+				&& (geom instanceof BXElem || geom instanceof com.vividsolutions.jts.geom.Geometry))
 			try {
-				IndexEntry entry = new IndexEntry((String) dbname,
-						((BigInteger) pre).intValue());
-				String _id = id instanceof String ? (String) id
-						: ((BXNode) id).getNodeValue();
+				IndexEntry entry = new IndexEntry((String) dbname, ((BigInteger) pre).intValue());
+				String _id = id instanceof String ? (String) id : ((BXNode) id).getNodeValue();
 				com.vividsolutions.jts.geom.Geometry _geom = geom instanceof BXElem
-						? geoutils.singleObjectToJTSGeometry(geom)
-						: ((com.vividsolutions.jts.geom.Geometry) geom);
+						? geoutils.singleObjectToJTSGeometry(geom) : ((com.vividsolutions.jts.geom.Geometry) geom);
 				Envelope env = _geom.getEnvelopeInternal();
 				if (!env.isNull()) {
 					if (env.getHeight() == 0.0 && env.getWidth() == 0.0)
-						mgr.index(entry,
-								Geometries.point(env.getMinX(), env.getMinY()));
+						mgr.index(entry, Geometries.point(env.getMinX(), env.getMinY()));
 					else
-						mgr.index(entry, Geometries.rectangle(env.getMinX(),
-								env.getMinY(), env.getMaxX(), env.getMaxY()));
+						mgr.index(entry,
+								Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()));
 
 					// add to geometry cache
 					if (_id != null)
@@ -1932,8 +1965,7 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public com.vividsolutions.jts.geom.Geometry getGeometry(Object id,
-			Object defgeom) throws QueryException {
+	public com.vividsolutions.jts.geom.Geometry getGeometry(Object id, Object defgeom) throws QueryException {
 		if (++count2 % 5000 == 0) {
 			logMemUsage("GmlGeoX#getGeometry.start " + count2);
 		}
@@ -1948,20 +1980,17 @@ public class GmlGeoX extends QueryModule {
 			idx = ((BXNode) id).getNodeValue();
 		} else
 			throw new QueryException(
-					"Failure to get geometry. An id uses an incorrect type: "
-							+ id.getClass().getCanonicalName());
+					"Failure to get geometry. An id uses an incorrect type: " + id.getClass().getCanonicalName());
 
 		com.vividsolutions.jts.geom.Geometry geom = mgr.get(idx);
 		if (geom == null) {
-			if (!(defgeom instanceof BXElem
-					|| defgeom instanceof com.vividsolutions.jts.geom.Geometry)) {
+			if (!(defgeom instanceof BXElem || defgeom instanceof com.vividsolutions.jts.geom.Geometry)) {
 				throw new QueryException(
 						"Failure to parse geometry. A geometry was not found or uses an incorrect type: "
 								+ defgeom.getClass().getCanonicalName());
 			}
 			try {
-				geom = defgeom instanceof BXElem
-						? geoutils.singleObjectToJTSGeometry(defgeom)
+				geom = defgeom instanceof BXElem ? geoutils.singleObjectToJTSGeometry(defgeom)
 						: ((com.vividsolutions.jts.geom.Geometry) defgeom);
 				if (geom != null)
 					mgr.put(idx, geom);
@@ -1971,8 +2000,7 @@ public class GmlGeoX extends QueryModule {
 			if (debug) {
 				long missCount = mgr.getMissCount();
 				if (missCount % 10000 == 0) {
-					LOGGER.debug("Cache misses: " + missCount + " of "
-							+ mgr.getCount());
+					LOGGER.debug("Cache misses: " + missCount + " of " + mgr.getCount());
 				}
 			}
 		}

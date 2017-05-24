@@ -42,6 +42,8 @@ import org.basex.query.value.Value;
 import org.basex.query.value.item.Item;
 import org.basex.query.value.item.Jav;
 import org.basex.query.value.node.ANode;
+import org.deegree.cs.coordinatesystems.ICRS;
+import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
 import org.deegree.geometry.composite.CompositeCurve;
 import org.deegree.geometry.composite.CompositeGeometry;
@@ -59,7 +61,6 @@ import org.deegree.geometry.standard.AbstractDefaultGeometry;
 import org.deegree.gml.GMLInputFactory;
 import org.deegree.gml.GMLStreamReader;
 import org.deegree.gml.GMLVersion;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /**
@@ -72,11 +73,22 @@ import org.w3c.dom.Node;
 public class GmlGeoXUtils {
 
 	protected XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+	protected GmlGeoX gmlGeoX;
 
 	/**
 	 * Used to built JTS geometries.
 	 */
 	protected com.vividsolutions.jts.geom.GeometryFactory jtsFactory = new com.vividsolutions.jts.geom.GeometryFactory();
+
+	/**
+	 * @param gmlGeoX
+	 *            Reference to GmlGeoX QueryModule, in case that retrieval of
+	 *            certain information (example: srsName) requires execution of
+	 *            xqueries (by the QueryModule).
+	 */
+	public GmlGeoXUtils(GmlGeoX gmlGeoX) {
+		this.gmlGeoX = gmlGeoX;
+	}
 
 	/**
 	 * Creates a JTS Polygon from the given deegree PolygonPatch.
@@ -124,8 +136,9 @@ public class GmlGeoXUtils {
 	}
 
 	/**
-	 * Creates a JTS GeometryCollection from the list of JTS geometry objects. If the geometries are
-	 * homogeneous, ie only points, line strings, or polygons, create the specific geometric aggregate
+	 * Creates a JTS GeometryCollection from the list of JTS geometry objects.
+	 * If the geometries are homogeneous, ie only points, line strings, or
+	 * polygons, create the specific geometric aggregate
 	 *
 	 * @param gList
 	 * @param forceGeometryCollection
@@ -133,7 +146,8 @@ public class GmlGeoXUtils {
 	 *         <code>null</code> or empty)
 	 */
 	public GeometryCollection toJTSGeometryCollection(
-			List<com.vividsolutions.jts.geom.Geometry> gList, boolean forceGeometryCollection) {
+			List<com.vividsolutions.jts.geom.Geometry> gList,
+			boolean forceGeometryCollection) {
 
 		if (gList == null || gList.isEmpty()) {
 
@@ -142,7 +156,8 @@ public class GmlGeoXUtils {
 		}
 
 		/*
-		 * Before processing the list of geometries, first remove all empty geometry collections from the list
+		 * Before processing the list of geometries, first remove all empty
+		 * geometry collections from the list
 		 */
 		List<com.vividsolutions.jts.geom.Geometry> gListClean = new ArrayList<com.vividsolutions.jts.geom.Geometry>();
 		for (com.vividsolutions.jts.geom.Geometry g : gList) {
@@ -159,8 +174,9 @@ public class GmlGeoXUtils {
 
 		} else if (forceGeometryCollection) {
 
-			gc = jtsFactory.createGeometryCollection(
-					gListClean.toArray(new com.vividsolutions.jts.geom.Geometry[gListClean.size()]));
+			gc = jtsFactory.createGeometryCollection(gListClean
+					.toArray(new com.vividsolutions.jts.geom.Geometry[gListClean
+							.size()]));
 
 		} else {
 
@@ -179,14 +195,17 @@ public class GmlGeoXUtils {
 			}
 
 			if (point) {
-				gc = jtsFactory.createMultiPoint(
-						gListClean.toArray(new com.vividsolutions.jts.geom.Point[gListClean.size()]));
+				gc = jtsFactory.createMultiPoint(gListClean.toArray(
+						new com.vividsolutions.jts.geom.Point[gListClean
+								.size()]));
 			} else if (linestring) {
-				gc = jtsFactory.createMultiLineString(
-						gListClean.toArray(new com.vividsolutions.jts.geom.LineString[gListClean.size()]));
+				gc = jtsFactory.createMultiLineString(gListClean.toArray(
+						new com.vividsolutions.jts.geom.LineString[gListClean
+								.size()]));
 			} else if (polygon) {
-				gc = jtsFactory.createMultiPolygon(
-						gListClean.toArray(new com.vividsolutions.jts.geom.Polygon[gListClean.size()]));
+				gc = jtsFactory.createMultiPolygon(gListClean.toArray(
+						new com.vividsolutions.jts.geom.Polygon[gListClean
+								.size()]));
 			} else {
 				if (gListClean.size() == 1) {
 					com.vividsolutions.jts.geom.Geometry g = gListClean.get(0);
@@ -195,8 +214,9 @@ public class GmlGeoXUtils {
 				}
 
 				if (gc == null) {
-					gc = jtsFactory.createGeometryCollection(
-							gListClean.toArray(new com.vividsolutions.jts.geom.Geometry[gListClean.size()]));
+					gc = jtsFactory.createGeometryCollection(gListClean.toArray(
+							new com.vividsolutions.jts.geom.Geometry[gListClean
+									.size()]));
 				}
 			}
 		}
@@ -489,38 +509,6 @@ public class GmlGeoXUtils {
 		}
 	}
 
-	/**
-	 * Computes a JTS geometry from the given element (which must represent a
-	 * GML geometry).
-	 * <p>
-	 * See {{@link #toJTSGeometry(Geometry)} for a list of supported and
-	 * unsupported geometry types.
-	 *
-	 * @param e
-	 * @return
-	 * @throws Exception
-	 */
-	public com.vividsolutions.jts.geom.Geometry toJTSGeometry(Element e)
-			throws Exception {
-
-		if (e == null) {
-
-			throw new IllegalArgumentException(
-					"Cannot compute JTS geometry because given element is null.");
-
-		} else {
-
-			Geometry geom = parseGeometry(e);
-
-			return toJTSGeometry(geom);
-		}
-	}
-
-	public Geometry parseGeometry(ANode aNode) throws Exception {
-		BXNode node = aNode.toJava();
-		return parseGeometry(node);
-	}
-
 	public com.vividsolutions.jts.geom.Geometry toJTSGeometry(Object o)
 			throws Exception {
 
@@ -571,7 +559,10 @@ public class GmlGeoXUtils {
 
 		if (o instanceof BXElem) {
 
-			return toJTSGeometry((Element) o);
+			BXElem elem = (BXElem) o;
+			ANode node = elem.getNode();
+
+			return toJTSGeometry(node);
 
 		} else if (o instanceof Value) {
 
@@ -615,7 +606,11 @@ public class GmlGeoXUtils {
 	 * @return the geometry represented by the node
 	 * @throws Exception
 	 */
-	public Geometry parseGeometry(Node node) throws Exception {
+	public Geometry parseGeometry(ANode aNode) throws Exception {
+
+		String srsName = gmlGeoX.determineSrsNameAsString(aNode);
+
+		BXNode node = aNode.toJava();
 
 		String namespaceURI = node.getNamespaceURI();
 
@@ -642,6 +637,13 @@ public class GmlGeoXUtils {
 
 		GMLStreamReader gmlStream = GMLInputFactory
 				.createGMLStreamReader(gmlVersion, xmlStream);
+		
+		ICRS defaultCRS = null;
+		if (srsName != null) {			
+			defaultCRS = CRSManager.getCRSRef(srsName);
+		}
+				
+		gmlStream.setDefaultCRS(defaultCRS);
 
 		Geometry result = gmlStream.readGeometry();
 
@@ -659,9 +661,11 @@ public class GmlGeoXUtils {
 			throws TransformerException {
 
 		if (node instanceof BXNode) {
-			// BXNode does not support the getPrefix(), which is required by saxon.
+			// BXNode does not support the getPrefix(), which is required by
+			// saxon.
 			try {
-				return new ByteArrayInputStream(((BXNode) node).getNode().serialize().toArray());
+				return new ByteArrayInputStream(
+						((BXNode) node).getNode().serialize().toArray());
 			} catch (QueryIOException e) {
 				throw new TransformerException(e);
 			}

@@ -50,18 +50,27 @@ public class BasicXQueryTest {
 	public static final String referenceDir = "src/test/resources/reference/";
 
 	@Test
-	public void test() {
+	public void test_validation() {
+		xmlTest("test_geometry_validation.xq", "geometryRelationship/GeometryRelationshipTest.xml");
+	}
 
-		/*
-		 * Test the geometry validation
-		 */
-		xmlTest("test_geometry_validation.xq",
-				"geometryRelationship/GeometryRelationshipTest.xml");
-
-		/*
-		 * Test the isClosed methods
-		 */
+	@Test
+	public void test_isClosed() {
 		xmlTest("test_geometry_isClosed.xq", "GeometryIsClosedTest.xml");
+	}
+
+	@Test
+	public void test_3d() {
+		xmlTest("test_geometry_3d.xq");
+	}
+
+	@Test
+	public void test_SRS() {
+		xmlTest("test_geometry_SRS.xq");
+	}
+
+	private void xmlTest(String xquery) {
+		xmlTest(xquery, null);
 	}
 
 	private void xmlTest(String xquery, String doc) {
@@ -69,18 +78,19 @@ public class BasicXQueryTest {
 		try {
 			String filename = FilenameUtils.getBaseName(xquery) + ".xml";
 
-			String query = new String(
-					Files.readAllBytes(Paths.get(queryDir + xquery)));
+			String query = new String(Files.readAllBytes(Paths.get(queryDir + xquery)));
 
 			XQuery xq = new XQuery(query);
 
-			/*
-			 * The XQuery must declare external variable 'docPath' that expects
-			 * the path to the input XML.
-			 *
-			 * Example: declare variable $docPath external := '...';
-			 */
-			xq.bind("docPath", xmlDir + doc);
+			if (doc != null) {
+				/*
+				 * The XQuery must declare external variable 'docPath' that
+				 * expects the path to the input XML.
+				 *
+				 * Example: declare variable $docPath external := '...';
+				 */
+				xq.bind("docPath", xmlDir + doc);
+			}
 
 			String queryresult = xq.execute(context);
 
@@ -93,8 +103,7 @@ public class BasicXQueryTest {
 			similar(result, reference);
 
 		} catch (Exception e) {
-			fail("Exception occurred while executing test with xquery '"
-					+ xquery + "': " + e.getMessage());
+			fail("Exception occurred while executing test with xquery '" + xquery + "': " + e.getMessage());
 		}
 	}
 
@@ -113,13 +122,10 @@ public class BasicXQueryTest {
 		}
 		try {
 			Diff myDiff = new Diff(myControlXML, myTestXML);
-			assertTrue(
-					"XML: " + xmlFileName + " similar to "
-							+ referenceXmlFileName + " - " + myDiff.toString(),
+			assertTrue("XML: " + xmlFileName + " similar to " + referenceXmlFileName + " - " + myDiff.toString(),
 					myDiff.similar());
 		} catch (Exception e) {
-			fail("Could not compare " + xmlFileName + " and "
-					+ referenceXmlFileName);
+			fail("Could not compare " + xmlFileName + " and " + referenceXmlFileName);
 		}
 	}
 

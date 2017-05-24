@@ -35,7 +35,9 @@ import nl.vrom.roo.validator.core.dom4j.handlers.ValidationUtil;
 import nl.vrom.roo.validator.core.errorlocation.IdErrorLocation;
 
 import org.deegree.commons.xml.XMLParsingException;
+import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.exceptions.UnknownCRSException;
+import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
 import org.deegree.geometry.composite.CompositeGeometry;
 import org.deegree.geometry.composite.CompositeSolid;
@@ -73,13 +75,11 @@ import org.slf4j.LoggerFactory;
  *         <dot> de)
  *
  */
-public class SecondaryGeometryElementValidationHandler
-		implements ElementHandler {
+public class SecondaryGeometryElementValidationHandler implements ElementHandler {
 
-	private static final Logger LOGGER = LoggerFactory
-			.getLogger(SecondaryGeometryElementValidationHandler.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SecondaryGeometryElementValidationHandler.class);
 
-	protected GmlGeoXUtils geoutils = new GmlGeoXUtils();
+	protected GmlGeoXUtils geoutils;
 
 	private final ValidatorContext validatorContext;
 
@@ -97,6 +97,8 @@ public class SecondaryGeometryElementValidationHandler
 	private boolean noRepetitionInCurveSegments = true;
 	private boolean polygonPatchesAreConnected = true;
 
+	private String defaultSrsName;
+
 	/**
 	 * @param isTestPolygonPatchConnectivity
 	 *            - <code>true</code> if polygon patch connectivity shall be
@@ -105,16 +107,28 @@ public class SecondaryGeometryElementValidationHandler
 	 *            - <code>true</code> if repetition of consecutive points in
 	 *            curve segments shall be checked
 	 * @param validatorContext
+	 * @param srsName
+	 *            the name of the default SRS to use when validating a geometry
+	 *            (especially important in case of geometries with 3D
+	 *            coordinates, and srsName is not defined on the geometry
+	 *            element itself)
+	 * @param gmlGeoX
+	 *            Reference to GmlGeoX QueryModule, in case that retrieval of
+	 *            certain information (example: srsName) requires execution of
+	 *            xqueries (by the QueryModule).
 	 */
-	public SecondaryGeometryElementValidationHandler(
-			boolean isTestPolygonPatchConnectivity,
-			boolean isTestRepetitionInCurveSegments,
-			ValidatorContext validatorContext) {
+	public SecondaryGeometryElementValidationHandler(boolean isTestPolygonPatchConnectivity,
+			boolean isTestRepetitionInCurveSegments, ValidatorContext validatorContext, String srsName,
+			GmlGeoX gmlGeoX) {
 
 		this.isTestPolygonPatchConnectivity = isTestPolygonPatchConnectivity;
 		this.isTestRepetitionInCurveSegments = isTestRepetitionInCurveSegments;
 
 		this.validatorContext = validatorContext;
+
+		this.defaultSrsName = srsName;
+
+		this.geoutils = new GmlGeoXUtils(gmlGeoX);
 
 		registerGmlGeometry("Point");
 		registerGmlGeometry("Polygon");
@@ -160,17 +174,12 @@ public class SecondaryGeometryElementValidationHandler
 				try {
 					validate(validatorContext, currentElement);
 				} catch (XMLParsingException e) {
-					LOGGER.error(
-							"Unexpected error detected while validating geometry",
-							e);
+					LOGGER.error("Unexpected error detected while validating geometry", e);
 				} catch (UnknownCRSException e) {
-					LOGGER.error(
-							"Unexpected error detected while validating geometry",
-							e);
+					LOGGER.error("Unexpected error detected while validating geometry", e);
 				}
 			} else {
-				LOGGER.trace("Element {} is part of another geometry",
-						nodeName);
+				LOGGER.trace("Element {} is part of another geometry", nodeName);
 			}
 		}
 	}
@@ -181,14 +190,13 @@ public class SecondaryGeometryElementValidationHandler
 		Namespace namespace = element.getNamespace();
 		String namespaceURI = namespace == null ? null : namespace.getURI();
 
-		if (namespace == null || (!geoutils.isGML32Namespace(namespaceURI)
-				&& !geoutils.isGML31Namespace(namespaceURI))) {
+		if (namespace == null
+				|| (!geoutils.isGML32Namespace(namespaceURI) && !geoutils.isGML31Namespace(namespaceURI))) {
 
-			LOGGER.error("Unable to determine GML version. Namespace= {}",
+			LOGGER.error("Unable to determine GML version. Namespace= {}", namespaceURI);
+
+			String errMessage = ValidatorMessageBundle.getMessage("validator.core.validation.geometry.no-gml",
 					namespaceURI);
-
-			String errMessage = ValidatorMessageBundle.getMessage(
-					"validator.core.validation.geometry.no-gml", namespaceURI);
 
 			validatorContext.addError(errMessage);
 			return;
@@ -196,23 +204,19 @@ public class SecondaryGeometryElementValidationHandler
 
 		if (!isGMLVersionReported) {
 			if (geoutils.isGML32Namespace(namespaceURI)) {
-				validatorContext.addNotice(ValidatorMessageBundle.getMessage(
-						"validator.core.validation.geometry.gmlversion",
-						"3.2"));
+				validatorContext.addNotice(
+						ValidatorMessageBundle.getMessage("validator.core.validation.geometry.gmlversion", "3.2"));
 			} else if (geoutils.isGML31Namespace(namespaceURI)) {
-				validatorContext.addNotice(ValidatorMessageBundle.getMessage(
-						"validator.core.validation.geometry.gmlversion",
-						"3.1"));
+				validatorContext.addNotice(
+						ValidatorMessageBundle.getMessage("validator.core.validation.geometry.gmlversion", "3.1"));
 			}
 			isGMLVersionReported = true;
 		}
 
 		try {
-			ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(
-					element.asXML().getBytes());
+			ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(element.asXML().getBytes());
 
-			XMLStreamReader xmlStream = XMLInputFactory.newInstance()
-					.createXMLStreamReader(byteArrayInputStream);
+			XMLStreamReader xmlStream = XMLInputFactory.newInstance().createXMLStreamReader(byteArrayInputStream);
 
 			GMLVersion gmlVersion = null;
 			if (geoutils.isGML32Namespace(namespaceURI)) {
@@ -224,8 +228,14 @@ public class SecondaryGeometryElementValidationHandler
 				throw new Exception("Cannot determine GML version");
 			}
 
-			GMLStreamReader gmlStream = GMLInputFactory
-					.createGMLStreamReader(gmlVersion, xmlStream);
+			GMLStreamReader gmlStream = GMLInputFactory.createGMLStreamReader(gmlVersion, xmlStream);
+
+			ICRS defaultCRS = null;
+			if (defaultSrsName != null) {
+				defaultCRS = CRSManager.getCRSRef(defaultSrsName);
+			}
+
+			gmlStream.setDefaultCRS(defaultCRS);
 
 			Geometry geom = gmlStream.readGeometry();
 
@@ -251,28 +261,24 @@ public class SecondaryGeometryElementValidationHandler
 
 			String currentGmlId = Dom4JHelper.findGmlId(element);
 
-			String message = getLocationDescription(element, currentGmlId)
-					+ ": " + e.getMessage();
+			String message = getLocationDescription(element, currentGmlId) + ": " + e.getMessage();
 
-			validatorContext.addError(message,
-					new IdErrorLocation(currentGmlId));
+			validatorContext.addError(message, new IdErrorLocation(currentGmlId));
 
 			LOGGER.error(e.getMessage(), e);
 
 		} catch (FactoryConfigurationError e) {
 
 			LOGGER.error(e.getMessage(), e);
-			validatorContext.addError(ValidatorMessageBundle.getMessage(
-					"validator.core.validation.geometry.unknown-exception"));
+			validatorContext.addError(
+					ValidatorMessageBundle.getMessage("validator.core.validation.geometry.unknown-exception"));
 
 		} catch (Exception e) {
 			String currentGmlId = Dom4JHelper.findGmlId(element);
 
-			String message = getLocationDescription(element, currentGmlId)
-					+ ": " + e.getMessage();
+			String message = getLocationDescription(element, currentGmlId) + ": " + e.getMessage();
 
-			validatorContext.addError(message,
-					new IdErrorLocation(currentGmlId));
+			validatorContext.addError(message, new IdErrorLocation(currentGmlId));
 
 			LOGGER.error(e.getMessage(), e);
 		}
@@ -280,13 +286,9 @@ public class SecondaryGeometryElementValidationHandler
 
 	private String getLocationDescription(Element element, String gmlId) {
 
-		return ValidatorMessageBundle
-				.getMessage(
-						"validator.core.validation.geometry.coordinates-position",
-						new Object[]{element.getName(),
-								currentGmlGeometryCounters
-										.get(element.getName()),
-								currentElement.getName(), gmlId});
+		return ValidatorMessageBundle.getMessage("validator.core.validation.geometry.coordinates-position",
+				new Object[] { element.getName(), currentGmlGeometryCounters.get(element.getName()),
+						currentElement.getName(), gmlId });
 	}
 
 	/**
@@ -317,16 +319,13 @@ public class SecondaryGeometryElementValidationHandler
 			// the geometry is the only XML that is validated
 
 			String namespaceURI = elementPath.getCurrent().getNamespaceURI();
-			return (geoutils.isGML32Namespace(namespaceURI)
-					|| geoutils.isGML31Namespace(namespaceURI));
+			return (geoutils.isGML32Namespace(namespaceURI) || geoutils.isGML31Namespace(namespaceURI));
 
 		} else {
 
 			// if the parent namespace is not a GML one, we have a main geometry
-			String namespaceURI = elementPath.getCurrent().getParent()
-					.getNamespaceURI();
-			return (!geoutils.isGML32Namespace(namespaceURI)
-					&& !geoutils.isGML31Namespace(namespaceURI));
+			String namespaceURI = elementPath.getCurrent().getParent().getNamespaceURI();
+			return (!geoutils.isGML32Namespace(namespaceURI) && !geoutils.isGML31Namespace(namespaceURI));
 		}
 	}
 
@@ -386,8 +385,7 @@ public class SecondaryGeometryElementValidationHandler
 	 *         encountered and if a surface is not connected.
 	 * @throws Exception
 	 */
-	protected boolean checkConnectivityOfPolygonPatches(Geometry geom)
-			throws Exception {
+	protected boolean checkConnectivityOfPolygonPatches(Geometry geom) throws Exception {
 
 		if (geom instanceof Surface) {
 
@@ -410,8 +408,7 @@ public class SecondaryGeometryElementValidationHandler
 				 * patches has been created). Otherwise the surface is not
 				 * connected.
 				 */
-				com.vividsolutions.jts.geom.Geometry g = geoutils
-						.toJTSGeometry(geom);
+				com.vividsolutions.jts.geom.Geometry g = geoutils.toJTSGeometry(geom);
 
 				if (g instanceof com.vividsolutions.jts.geom.Polygon) {
 
@@ -427,20 +424,17 @@ public class SecondaryGeometryElementValidationHandler
 						gmlid = "null";
 					}
 
-					validatorContext.addError(ValidatorMessageBundle.getMessage(
-							"validator.core.validation.geometry.surfacepatchesnotconnected",
-							gmlid));
+					validatorContext.addError(ValidatorMessageBundle
+							.getMessage("validator.core.validation.geometry.surfacepatchesnotconnected", gmlid));
 					return false;
 				}
 			}
 
-		} else if (geom instanceof MultiSolid || geom instanceof CompositeSolid
-				|| geom instanceof Solid) {
+		} else if (geom instanceof MultiSolid || geom instanceof CompositeSolid || geom instanceof Solid) {
 
 			return false;
 
-		} else if (geom instanceof MultiGeometry
-				|| geom instanceof CompositeGeometry) {
+		} else if (geom instanceof MultiGeometry || geom instanceof CompositeGeometry) {
 
 			// MultiSurface extends MultiGeometry
 			// CompositeSurface extends CompositeGeometry
@@ -500,8 +494,7 @@ public class SecondaryGeometryElementValidationHandler
 
 			List<CurveSegment> segments = curve.getCurveSegments();
 
-			for (int segmentIdx = 0; segmentIdx < segments
-					.size(); segmentIdx++) {
+			for (int segmentIdx = 0; segmentIdx < segments.size(); segmentIdx++) {
 
 				CurveSegment segment = segments.get(segmentIdx);
 
@@ -552,15 +545,11 @@ public class SecondaryGeometryElementValidationHandler
 								s0 = "null";
 							}
 
-							String s1 = ValidationUtil.getAffectedCoordinates(
-									curve.getCurveSegments().get(segmentIdx),
+							String s1 = ValidationUtil.getAffectedCoordinates(curve.getCurveSegments().get(segmentIdx),
 									null);
-							String s2 = ValidationUtil
-									.getProblemLocation(point);
-							validatorContext
-									.addError(ValidatorMessageBundle.getMessage(
-											"validator.core.validation.geometry.repetitionincurvesegment",
-											s0, s1, s2));
+							String s2 = ValidationUtil.getProblemLocation(point);
+							validatorContext.addError(ValidatorMessageBundle.getMessage(
+									"validator.core.validation.geometry.repetitionincurvesegment", s0, s1, s2));
 							return false;
 						}
 					}
@@ -602,8 +591,7 @@ public class SecondaryGeometryElementValidationHandler
 
 			return true;
 
-		} else if (geom instanceof MultiGeometry
-				|| geom instanceof CompositeGeometry) {
+		} else if (geom instanceof MultiGeometry || geom instanceof CompositeGeometry) {
 
 			@SuppressWarnings("rawtypes")
 			List l = (List) geom;

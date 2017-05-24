@@ -28,7 +28,7 @@ public class GeometricValidationImpl extends AbstractDom4JValidation {
 	@Override
 	public void validateTemplate(final ValidatorContext validatorContext, Reader reader) throws ValidationException {
 
-		this.read(reader, new GeometryElementHandler(validatorContext, parameters));
+		this.read(reader, new GeometryElementHandler(validatorContext, parameters, null));
 
 		if (validatorContext.isSuccessful(this)) {
 			validatorContext.addNotice(ValidatorMessageBundle.getMessage(

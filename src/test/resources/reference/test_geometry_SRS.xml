@@ -1,0 +1,19 @@
+<test_SRS>
+  <validationtest>
+    <test id="Curve_1">
+      <isValid>true</isValid>
+      <result>VVV</result>
+      <messages/>
+    </test>
+    <test id="Curve_2">
+      <isValid>true</isValid>
+      <result>VVV</result>
+      <messages/>
+    </test>
+  </validationtest>
+  <relationshiptest>
+    <test geom1="Curve_1" geom2="Curve_2">
+      <intersects>true</intersects>
+    </test>
+  </relationshiptest>
+</test_SRS>

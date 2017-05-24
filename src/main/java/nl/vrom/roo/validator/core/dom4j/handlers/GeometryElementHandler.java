@@ -21,7 +21,9 @@ import nl.vrom.roo.validator.core.dom4j.Dom4JHelper;
 import nl.vrom.roo.validator.core.errorlocation.IdErrorLocation;
 
 import org.deegree.commons.xml.XMLParsingException;
+import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.exceptions.UnknownCRSException;
+import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.standard.AbstractDefaultGeometry;
 import org.deegree.geometry.validation.GeometryValidator;
 import org.deegree.gml.GMLInputFactory;
@@ -49,11 +51,10 @@ import com.vividsolutions.jts.operation.valid.TopologyValidationError;
  */
 public class GeometryElementHandler implements ElementHandler {
 
-	private static final Logger LOGGER = LoggerFactory
-			.getLogger(GeometryElementHandler.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GeometryElementHandler.class);
 
-	private static final NumberFormat COORD_FORMAT = new DecimalFormat(
-			"0.000#######", new DecimalFormatSymbols(Locale.ENGLISH));
+	private static final NumberFormat COORD_FORMAT = new DecimalFormat("0.000#######",
+			new DecimalFormatSymbols(Locale.ENGLISH));
 
 	private static final String NODE_NAME_FEATURE_MEMBER = "featureMember";
 
@@ -67,6 +68,8 @@ public class GeometryElementHandler implements ElementHandler {
 
 	private boolean isGMLVersionReported;
 
+	private String defaultSrsName;
+
 	/**
 	 * Instantiates a new geometry element handler.
 	 *
@@ -74,10 +77,17 @@ public class GeometryElementHandler implements ElementHandler {
 	 *            the validatorContext used during handling
 	 * @param parameters
 	 *            the parameters for handling
+	 * @param srsName
+	 *            the name of the default SRS to use when validating a geometry
+	 *            (especially important in case of geometries with 3D
+	 *            coordinates, and srsName is not defined on the geometry
+	 *            element itself)
 	 */
-	public GeometryElementHandler(ValidatorContext validatorContext,
-			Map<String, Object> parameters) {
+	public GeometryElementHandler(ValidatorContext validatorContext, Map<String, Object> parameters, String srsName) {
+
 		this.validatorContext = validatorContext;
+
+		this.defaultSrsName = srsName;
 
 		registerGmlGeometry("Point");
 		registerGmlGeometry("Polygon");
@@ -107,8 +117,7 @@ public class GeometryElementHandler implements ElementHandler {
 
 		String currentPath = elementPath.getPath();
 
-		if (NODE_NAME_FEATURE_MEMBER.equals(Dom4JHelper
-				.getNodeFromPath(Dom4JHelper.getParentPath(currentPath)))) {
+		if (NODE_NAME_FEATURE_MEMBER.equals(Dom4JHelper.getNodeFromPath(Dom4JHelper.getParentPath(currentPath)))) {
 			currentFeatureMember = Dom4JHelper.getNodeFromPath(currentPath);
 			resetGmlGeometryCounters();
 		}
@@ -126,17 +135,12 @@ public class GeometryElementHandler implements ElementHandler {
 				try {
 					validate(validatorContext, elementPath.getCurrent());
 				} catch (XMLParsingException e) {
-					LOGGER.error(
-							"Unexpected error detected while validating geometry",
-							e);
+					LOGGER.error("Unexpected error detected while validating geometry", e);
 				} catch (UnknownCRSException e) {
-					LOGGER.error(
-							"Unexpected error detected while validating geometry",
-							e);
+					LOGGER.error("Unexpected error detected while validating geometry", e);
 				}
 			} else {
-				LOGGER.trace("Element {} is part of another geometry",
-						nodeName);
+				LOGGER.trace("Element {} is part of another geometry", nodeName);
 			}
 		}
 	}
@@ -147,14 +151,12 @@ public class GeometryElementHandler implements ElementHandler {
 		Namespace namespace = element.getNamespace();
 		String namespaceURI = namespace == null ? null : namespace.getURI();
 
-		if (namespace == null || (!isGML32Namespace(namespaceURI)
-				&& !isGML31Namespace(namespaceURI))) {
+		if (namespace == null || (!isGML32Namespace(namespaceURI) && !isGML31Namespace(namespaceURI))) {
 
-			LOGGER.error("Unable to determine GML version. Namespace= {}",
+			LOGGER.error("Unable to determine GML version. Namespace= {}", namespaceURI);
+
+			String errMessage = ValidatorMessageBundle.getMessage("validator.core.validation.geometry.no-gml",
 					namespaceURI);
-
-			String errMessage = ValidatorMessageBundle.getMessage(
-					"validator.core.validation.geometry.no-gml", namespaceURI);
 
 			validatorContext.addError(errMessage);
 			return;
@@ -162,23 +164,19 @@ public class GeometryElementHandler implements ElementHandler {
 
 		if (!isGMLVersionReported) {
 			if (isGML32Namespace(namespaceURI)) {
-				validatorContext.addNotice(ValidatorMessageBundle.getMessage(
-						"validator.core.validation.geometry.gmlversion",
-						"3.2"));
+				validatorContext.addNotice(
+						ValidatorMessageBundle.getMessage("validator.core.validation.geometry.gmlversion", "3.2"));
 			} else if (isGML31Namespace(namespaceURI)) {
-				validatorContext.addNotice(ValidatorMessageBundle.getMessage(
-						"validator.core.validation.geometry.gmlversion",
-						"3.1"));
+				validatorContext.addNotice(
+						ValidatorMessageBundle.getMessage("validator.core.validation.geometry.gmlversion", "3.1"));
 			}
 			isGMLVersionReported = true;
 		}
 
 		try {
-			ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(
-					element.asXML().getBytes());
+			ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(element.asXML().getBytes());
 
-			XMLStreamReader xmlStream = XMLInputFactory.newInstance()
-					.createXMLStreamReader(byteArrayInputStream);
+			XMLStreamReader xmlStream = XMLInputFactory.newInstance().createXMLStreamReader(byteArrayInputStream);
 
 			GMLVersion gmlVersion = null;
 			if (isGML32Namespace(namespaceURI)) {
@@ -190,13 +188,19 @@ public class GeometryElementHandler implements ElementHandler {
 				throw new Exception("Cannot determine GML version");
 			}
 
-			GMLStreamReader gmlStream = GMLInputFactory
-					.createGMLStreamReader(gmlVersion, xmlStream);
+			GMLStreamReader gmlStream = GMLInputFactory.createGMLStreamReader(gmlVersion, xmlStream);
+			
+			ICRS defaultCRS = null;
+			if (defaultSrsName != null) {
+				defaultCRS = CRSManager.getCRSRef(defaultSrsName);
+			}
+						
+			gmlStream.setDefaultCRS(defaultCRS);
 
 			org.deegree.geometry.Geometry geom = gmlStream.readGeometry();
 
-			GMLValidationEventHandler eventHandler = new GMLValidationEventHandler(
-					validatorContext, element, gmlVersion == GMLVersion.GML_31);
+			GMLValidationEventHandler eventHandler = new GMLValidationEventHandler(validatorContext, element,
+					gmlVersion == GMLVersion.GML_31);
 
 			GeometryValidator validator = new GeometryValidator(eventHandler);
 
@@ -213,28 +217,24 @@ public class GeometryElementHandler implements ElementHandler {
 
 			String currentGmlId = Dom4JHelper.findGmlId(element);
 
-			String message = getLocationDescription(element, currentGmlId)
-					+ ": " + e.getMessage();
+			String message = getLocationDescription(element, currentGmlId) + ": " + e.getMessage();
 
-			validatorContext.addError(message,
-					new IdErrorLocation(currentGmlId));
+			validatorContext.addError(message, new IdErrorLocation(currentGmlId));
 
 			LOGGER.error(e.getMessage(), e);
 
 		} catch (FactoryConfigurationError e) {
 
 			LOGGER.error(e.getMessage(), e);
-			validatorContext.addError(ValidatorMessageBundle.getMessage(
-					"validator.core.validation.geometry.unknown-exception"));
+			validatorContext.addError(
+					ValidatorMessageBundle.getMessage("validator.core.validation.geometry.unknown-exception"));
 
 		} catch (Exception e) {
 			String currentGmlId = Dom4JHelper.findGmlId(element);
 
-			String message = getLocationDescription(element, currentGmlId)
-					+ ": " + e.getMessage();
+			String message = getLocationDescription(element, currentGmlId) + ": " + e.getMessage();
 
-			validatorContext.addError(message,
-					new IdErrorLocation(currentGmlId));
+			validatorContext.addError(message, new IdErrorLocation(currentGmlId));
 
 			LOGGER.error(e.getMessage(), e);
 		}
@@ -318,38 +318,29 @@ public class GeometryElementHandler implements ElementHandler {
 	 * @param geom
 	 * @param element
 	 */
-	private void handleDeegree3GMLJTSValidation(
-			org.deegree.geometry.Geometry geom, Element element) {
+	private void handleDeegree3GMLJTSValidation(org.deegree.geometry.Geometry geom, Element element) {
 
 		if (geom instanceof AbstractDefaultGeometry) {
 			try {
-				Geometry jtsGeometry = ((AbstractDefaultGeometry) geom)
-						.getJTSGeometry();
+				Geometry jtsGeometry = ((AbstractDefaultGeometry) geom).getJTSGeometry();
 				handleGMLJtsValidation(jtsGeometry, element);
 			} catch (IllegalArgumentException e) {
 				String currentGmlId = Dom4JHelper.findGmlId(element);
 
-				LOGGER.debug(
-						"{} {} within element with gml:id {} is not supported: {}",
-						new Object[] { element.getName(),
-								currentGmlGeometryCounters
-										.get(element.getName()),
+				LOGGER.debug("{} {} within element with gml:id {} is not supported: {}",
+						new Object[] { element.getName(), currentGmlGeometryCounters.get(element.getName()),
 								currentGmlId, e.getMessage() });
 
 				String currentOnderdeelName = element.getQualifiedName();
 
-				String errMessage = ValidatorMessageBundle.getMessage(
-						"validator.core.validation.geometry.unsupported",
+				String errMessage = ValidatorMessageBundle.getMessage("validator.core.validation.geometry.unsupported",
 						currentGmlId, currentOnderdeelName, e.getMessage());
 
-				this.validatorContext.addError(errMessage,
-						new IdErrorLocation(currentGmlId));
+				this.validatorContext.addError(errMessage, new IdErrorLocation(currentGmlId));
 			}
 
 		} else {
-			throw new IllegalArgumentException(
-					"Don't know how to handle geometry of type "
-							+ geom.getClass());
+			throw new IllegalArgumentException("Don't know how to handle geometry of type " + geom.getClass());
 		}
 	}
 
@@ -390,8 +381,7 @@ public class GeometryElementHandler implements ElementHandler {
 	// }
 	//
 
-	private void handleGMLJtsValidation(
-			com.vividsolutions.jts.geom.Geometry jtsGeometry, Element element) {
+	private void handleGMLJtsValidation(com.vividsolutions.jts.geom.Geometry jtsGeometry, Element element) {
 
 		IsValidOp ivo = new IsValidOp(jtsGeometry);
 		// Optimization: ivo.isValid() is the same as topError==null. Otherwise
@@ -401,24 +391,18 @@ public class GeometryElementHandler implements ElementHandler {
 		String currentGmlId = Dom4JHelper.findGmlId(element);
 		if (topError == null) {
 
-			LOGGER.trace("{} {} within element with gml:id {} is valid",
-					new Object[] { element.getName(),
-							currentGmlGeometryCounters.get(element.getName()),
-							currentGmlId });
+			LOGGER.trace("{} {} within element with gml:id {} is valid", new Object[] { element.getName(),
+					currentGmlGeometryCounters.get(element.getName()), currentGmlId });
 		} else {
-			String coordinatesText = generateCoordinatesText(
-					jtsGeometry.getCoordinates(), topError.getCoordinate());
+			String coordinatesText = generateCoordinatesText(jtsGeometry.getCoordinates(), topError.getCoordinate());
 
-			LOGGER.trace("{} {} within element with gml:id {} is invalid",
-					new Object[] { element.getName(),
-							currentGmlGeometryCounters.get(element.getName()),
-							currentGmlId });
+			LOGGER.trace("{} {} within element with gml:id {} is invalid", new Object[] { element.getName(),
+					currentGmlGeometryCounters.get(element.getName()), currentGmlId });
 
-			String message = getLocationDescription(element, currentGmlId)
-					+ ": " + topError.getMessage() + ". " + coordinatesText;
+			String message = getLocationDescription(element, currentGmlId) + ": " + topError.getMessage() + ". "
+					+ coordinatesText;
 
-			validatorContext.addError(message,
-					new IdErrorLocation(currentGmlId));
+			validatorContext.addError(message, new IdErrorLocation(currentGmlId));
 		}
 	}
 
@@ -428,17 +412,12 @@ public class GeometryElementHandler implements ElementHandler {
 																			// is
 																			// not
 																			// empty
-		return ValidatorMessageBundle
-				.getMessage(
-						"validator.core.validation.geometry.coordinates-position",
-						new Object[] { element.getName(),
-								currentGmlGeometryCounters
-										.get(element.getName()),
-								currentFeatureMember, gmlId });
+		return ValidatorMessageBundle.getMessage("validator.core.validation.geometry.coordinates-position",
+				new Object[] { element.getName(), currentGmlGeometryCounters.get(element.getName()),
+						currentFeatureMember, gmlId });
 	}
 
-	private String generateCoordinatesText(Coordinate[] coordinates,
-			Coordinate coordProblem) {
+	private String generateCoordinatesText(Coordinate[] coordinates, Coordinate coordProblem) {
 		String coordinatesText = null;
 
 		if (coordinates.length > 0) {
@@ -448,19 +427,14 @@ public class GeometryElementHandler implements ElementHandler {
 			if (coordProblem == null) {
 				coordinatesText = ValidatorMessageBundle.getMessage(
 						"validator.core.validation.geometry.coordinates-text-simple",
-						new Object[] { formatValue(coordBegin.x),
-								formatValue(coordBegin.y),
-								formatValue(coordEnd.x),
+						new Object[] { formatValue(coordBegin.x), formatValue(coordBegin.y), formatValue(coordEnd.x),
 								formatValue(coordEnd.y) });
 			} else {
-				coordinatesText = ValidatorMessageBundle.getMessage(
-						"validator.core.validation.geometry.coordinates-text",
-						new Object[] { formatValue(coordBegin.x),
-								formatValue(coordBegin.y),
-								formatValue(coordEnd.x),
-								formatValue(coordEnd.y),
-								formatValue(coordProblem.x),
-								formatValue(coordProblem.y) });
+				coordinatesText = ValidatorMessageBundle
+						.getMessage("validator.core.validation.geometry.coordinates-text",
+								new Object[] { formatValue(coordBegin.x), formatValue(coordBegin.y),
+										formatValue(coordEnd.x), formatValue(coordEnd.y), formatValue(coordProblem.x),
+										formatValue(coordProblem.y) });
 			}
 		}
 		return coordinatesText;
@@ -509,10 +483,8 @@ public class GeometryElementHandler implements ElementHandler {
 		} else {
 
 			// if the parent namespace is not a GML one, we have a main geometry
-			String namespaceURI = elementPath.getCurrent().getParent()
-					.getNamespaceURI();
-			return (!isGML32Namespace(namespaceURI)
-					&& !isGML31Namespace(namespaceURI));
+			String namespaceURI = elementPath.getCurrent().getParent().getNamespaceURI();
+			return (!isGML32Namespace(namespaceURI) && !isGML31Namespace(namespaceURI));
 		}
 	}
 
@@ -525,18 +497,19 @@ public class GeometryElementHandler implements ElementHandler {
 	 */
 	private boolean isMainGeometry(Element element) {
 		String namespaceURI = element.getParent().getNamespaceURI();
-		return (!isGML32Namespace(namespaceURI)
-				&& !isGML31Namespace(namespaceURI));
+		return (!isGML32Namespace(namespaceURI) && !isGML31Namespace(namespaceURI));
 	}
 
 	public void registerGmlGeometry(String nodeName) {
 		gmlGeometries.add(nodeName);
 		currentGmlGeometryCounters.put(nodeName, 0);
 	}
+
 	public void unregisterGmlGeometry(String nodeName) {
 		gmlGeometries.remove(nodeName);
 		currentGmlGeometryCounters.remove(nodeName);
 	}
+
 	public void unregisterAllGmlGeometries() {
 		gmlGeometries.clear();
 		currentGmlGeometryCounters.clear();
