@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2016 interactive instruments GmbH
+ * Copyright 2010-2017 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,8 +287,8 @@ public class SecondaryGeometryElementValidationHandler implements ElementHandler
 	private String getLocationDescription(Element element, String gmlId) {
 
 		return ValidatorMessageBundle.getMessage("validator.core.validation.geometry.coordinates-position",
-				new Object[] { element.getName(), currentGmlGeometryCounters.get(element.getName()),
-						currentElement.getName(), gmlId });
+				new Object[]{element.getName(), currentGmlGeometryCounters.get(element.getName()),
+						currentElement.getName(), gmlId});
 	}
 
 	/**

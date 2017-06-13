@@ -22,17 +22,17 @@ ETF is an open source test framework developed by [interactive instruments](http
 ## Installation in BaseX 8.6 (IDE used for developing executable test suites)
 [Download and install BaseX 8.6](http://basex.org/products/download/all-downloads).
 
-Click on the batch "latest version" in this repository to download the GmlGeoX plugin. In BaseX click on 
+Click on the batch "latest version" in this repository to download the GmlGeoX plugin. In BaseX click on
 Options -> Packages... -> Install... and select the downloaded file. The package name
 de.interactive_instruments.etf.bsxm.GmlGeoX should appear in the package dialog, if it has been successfully installed.
 
-The plugin can be used by importing the module **de.interactive_instruments.etf.bsxm.GmlGeoX**: 
+The plugin can be used by importing the module **de.interactive_instruments.etf.bsxm.GmlGeoX**:
 
 ```xquery
 import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';
 
 let $gml := fn:parse-xml(
-  "<gml:posList xmlns:gml='http://www.opengis.net/gml/3.2' count='2'>0 0 1 0</gml:posList>")
+"<gml:posList xmlns:gml='http://www.opengis.net/gml/3.2' count='2'>0 0 1 0</gml:posList>")
 
 return ggeo:validateAndReport($gml)
 ```

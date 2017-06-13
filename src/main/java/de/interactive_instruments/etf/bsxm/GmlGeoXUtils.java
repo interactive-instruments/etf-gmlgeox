@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2016 interactive instruments GmbH
+ * Copyright 2010-2017 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -637,12 +637,12 @@ public class GmlGeoXUtils {
 
 		GMLStreamReader gmlStream = GMLInputFactory
 				.createGMLStreamReader(gmlVersion, xmlStream);
-		
+
 		ICRS defaultCRS = null;
-		if (srsName != null) {			
+		if (srsName != null) {
 			defaultCRS = CRSManager.getCRSRef(srsName);
 		}
-				
+
 		gmlStream.setDefaultCRS(defaultCRS);
 
 		Geometry result = gmlStream.readGeometry();

@@ -3,7 +3,6 @@ import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';
 declare namespace gml = 'http://www.opengis.net/gml/3.2';
 declare namespace ii = 'http://www.interactive-instruments.de/test';
 
-let $dummy := ggeo:configureSpatialReferenceSystems('src/test/resources/srsConfiguration')
 let $doc := <ii:GeometryCollection
  xmlns:gml="http://www.opengis.net/gml/3.2"
  xmlns:ii="http://www.interactive-instruments.de/test"
@@ -11,7 +10,7 @@ let $doc := <ii:GeometryCollection
  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
  <gml:boundedBy>
   <gml:Envelope
-   srsName="urn:ogc:def:crs:epsg:4979111111"/>
+   srsName="http://www.opengis.net/def/crs/epsg/0/5555"/>
  </gml:boundedBy>
  <ii:member>
   <gml:Curve
@@ -26,7 +25,7 @@ let $doc := <ii:GeometryCollection
  </ii:member>
  <ii:member>
   <gml:Curve
-   gml:id="Curve_2" srsName="urn:ogc:def:crs:epsg:4979111111">
+   gml:id="Curve_2" srsName="http://www.opengis.net/def/crs/EPSG/0/5555">
    <gml:segments>
     <gml:LineStringSegment
      interpolation="linear">

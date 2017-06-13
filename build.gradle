@@ -54,6 +54,8 @@ configurations {
 
 dependencies {
 
+    // compile group: 'de.interactive_instruments', name: 'ii-commons-util', version: '2.0.0' + project.snapshotSuffix
+
 	// Validator dependencies
 	compile('org.bouncycastle:bcprov-jdk15on:1.53')
 	compile('com.thoughtworks.xstream:xstream:1.4.8')
@@ -99,6 +101,7 @@ dependencies {
         exclude group: 'postgresql'
         exclude group: 'commons-logging'
         exclude group: 'log4j'
+        exclude group: 'xerces'
     }
 	*/
 
@@ -139,6 +142,15 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: etf_junitTestVersion
 	testCompile group: 'ch.qos.logback', name: 'logback-classic', version: etf_logbackVersion
 	testCompile "xmlunit:xmlunit:1.3"
+}
+
+sourceSets {
+  test {
+    resources {
+      srcDir 'src/test/resources'
+      srcDir 'src/main/resources'
+    }
+  }
 }
 
 jar.doFirst {

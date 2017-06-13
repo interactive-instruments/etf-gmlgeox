@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2016 interactive instruments GmbH
+ * Copyright 2010-2017 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package de.interactive_instruments.etf.bsxm;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -41,6 +42,7 @@ import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.util.GeometryExtracter;
 import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 
+import org.apache.commons.io.FileUtils;
 import org.basex.api.dom.BXElem;
 import org.basex.api.dom.BXNode;
 import org.basex.core.Context;
@@ -49,6 +51,7 @@ import org.basex.query.QueryException;
 import org.basex.query.QueryModule;
 import org.basex.query.QueryProcessor;
 import org.basex.query.value.Value;
+import org.basex.query.value.item.Jav;
 import org.basex.query.value.node.ANode;
 import org.basex.query.value.node.DBNode;
 import org.basex.query.value.seq.Empty;
@@ -77,6 +80,8 @@ public class GmlGeoX extends QueryModule {
 
 	public static final String NS = "de.interactive_instruments.etf.bsxm.GmlGeoX";
 	public static final String PREFIX = "ggeo";
+
+	public static final String ETF_GMLGEOX_SRSCONFIG_DIR = "etf.gmlgeox.srsconfigdir";
 
 	public enum SpatialRelOp {
 		CONTAINS, CROSSES, EQUALS, INTERSECTS, ISDISJOINT, ISWITHIN, OVERLAPS, TOUCHES
@@ -116,12 +121,92 @@ public class GmlGeoX extends QueryModule {
 
 		registerGmlGeometry("Ring");
 		registerGmlGeometry("LineString");
+
+		loadGmlGeoXSrsConfiguration();
+	}
+
+	private void loadGmlGeoXSrsConfiguration() throws QueryException {
+
+		String val = System.getenv(ETF_GMLGEOX_SRSCONFIG_DIR);
+		String srsConfigDirPath = val == null ? System.getProperty(ETF_GMLGEOX_SRSCONFIG_DIR, null) : val;
+
+		if (srsConfigDirPath != null) {
+
+			File srsConfigDirectory = new File(srsConfigDirPath);
+			if (!srsConfigDirectory.exists() || !srsConfigDirectory.isDirectory() || !srsConfigDirectory.canRead()) {
+
+				throw new QueryException("Value of property '" + ETF_GMLGEOX_SRSCONFIG_DIR
+						+ "' does not identify a directory that exists and that can be read.");
+
+			} else {
+
+				try {
+					CRSManager crsMgr = new CRSManager();
+					crsMgr.init(srsConfigDirectory);
+				} catch (Exception e) {
+					throw new QueryException(
+							"Could not load SRS configuration files from directory referenced from GmlGeoX property '"
+									+ ETF_GMLGEOX_SRSCONFIG_DIR + "'. Reference is: " + srsConfigDirPath
+									+ " Exception message is: " + e.getMessage());
+				}
+			}
+
+		} else {
+
+			try {
+
+				/*
+				 * NOTE: During tests, the crs-definitions file could not be
+				 * deleted on exit. When temporary directories with random name
+				 * were generated, that led to an increasing number of folders.
+				 * We just need a unique folder to extract the SRS configuration
+				 * files to. Before extraction, we can attempt to delete files
+				 * from a previous run. This way, we use the same folder each
+				 * time an instance of GmlGeoX is created. The configuration
+				 * files will not be deleted upon exit. That shouldn't be a
+				 * problem since we always use the same folder.
+				 */
+				String tempDirPath = System.getProperty("java.io.tmpdir");
+				File tempDir = new File(tempDirPath, "gmlGeoXSrsConfig");
+
+				if (tempDir.exists()) {
+					FileUtils.deleteQuietly(tempDir);
+				}
+
+				copyResourceToFile("/srsConfiguration/default.xml", new File(tempDir, "default.xml"));
+				copyResourceToFile("/srsConfiguration/deegree/d3/config/ntv2/beta2007.gsb",
+						new File(tempDir, "deegree/d3/config/ntv2/beta2007.gsb"));
+				copyResourceToFile("/srsConfiguration/deegree/d3/parser-files.xml",
+						new File(tempDir, "deegree/d3/parser-files.xml"));
+				copyResourceToFile("/srsConfiguration/deegree/d3/config/crs-definitions.xml",
+						new File(tempDir, "deegree/d3/config/crs-definitions.xml"));
+				copyResourceToFile("/srsConfiguration/deegree/d3/config/datum-definitions.xml",
+						new File(tempDir, "deegree/d3/config/datum-definitions.xml"));
+				copyResourceToFile("/srsConfiguration/deegree/d3/config/ellipsoid-definitions.xml",
+						new File(tempDir, "deegree/d3/config/ellipsoid-definitions.xml"));
+				copyResourceToFile("/srsConfiguration/deegree/d3/config/pm-definitions.xml",
+						new File(tempDir, "deegree/d3/config/pm-definitions.xml"));
+				copyResourceToFile("/srsConfiguration/deegree/d3/config/projection-definitions.xml",
+						new File(tempDir, "deegree/d3/config/projection-definitions.xml"));
+				copyResourceToFile("/srsConfiguration/deegree/d3/config/transformation-definitions.xml",
+						new File(tempDir, "deegree/d3/config/transformation-definitions.xml"));
+
+				CRSManager crsMgr = new CRSManager();
+				crsMgr.init(tempDir);
+
+			} catch (IOException e) {
+
+				throw new QueryException(
+						"Exception occurred while extracting the SRS configuration files provided by GmlGeoX to a temporary directory and loading them from there. Exception message is: "
+								+ e.getMessage());
+			}
+		}
 	}
 
 	/**
 	 * Loads SRS configuration files from the given directory, to be used when
 	 * looking up SRS names for creating geometry objects.
-	 * 
+	 *
 	 * @param configurationDirectoryPathName
 	 *            Path to a directory that contains SRS configuration files
 	 * @throws QueryException
@@ -154,20 +239,19 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Calls the {@link #validate(Object, String)} method, with
-	 * <code>null</code> as the bitmask, resulting in a validation with all
-	 * tests enabled.
+	 * Calls the {@link #validate(Value, String)} method, with <code>null</code>
+	 * as the bitmask, resulting in a validation with all tests enabled.
 	 * <p>
-	 * See the documentation of the {@link #validate(Object, String)} method for
+	 * See the documentation of the {@link #validate(Value, String)} method for
 	 * a description of the supported geometry types.
 	 *
-	 * @param o
+	 * @param v
 	 * @return
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
-	public String validate(Object o) throws QueryException {
-		return this.validate(o, null);
+	public String validate(ANode node) throws QueryException {
+		return this.validate(node, null);
 	}
 
 	/**
@@ -239,13 +323,13 @@ public class GmlGeoX extends QueryModule {
 	 *         third failed.
 	 * @throws QueryException
 	 */
-	public String validate(Object o, String testMask) throws QueryException {
-		ValidationReport vr = this.executeValidate(o, testMask);
+	public String validate(ANode node, String testMask) throws QueryException {
+		ValidationReport vr = this.executeValidate(node, testMask);
 		return vr.getValidationResult();
 	}
 
-	public Element validateAndReport(Object o) throws QueryException {
-		return validateAndReport(o, null);
+	public Element validateAndReport(ANode node) throws QueryException {
+		return validateAndReport(node, null);
 	}
 
 	/**
@@ -286,9 +370,9 @@ public class GmlGeoX extends QueryModule {
 	 *         </ul>
 	 * @throws QueryException
 	 */
-	public Element validateAndReport(Object o, String testMask) throws QueryException {
+	public Element validateAndReport(ANode node, String testMask) throws QueryException {
 
-		ValidationReport vr = this.executeValidate(o, testMask);
+		ValidationReport vr = this.executeValidate(node, testMask);
 
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		docFactory.setNamespaceAware(true);
@@ -401,7 +485,7 @@ public class GmlGeoX extends QueryModule {
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
-	ValidationReport executeValidate(Object o, String testMask) throws QueryException {
+	ValidationReport executeValidate(ANode node, String testMask) throws QueryException {
 
 		try {
 
@@ -425,27 +509,9 @@ public class GmlGeoX extends QueryModule {
 			boolean polygonPatchesAreConnected = false;
 			boolean noRepetitionInCurveSegment = false;
 
-			BXNode elem;
-			String srsName;
+			String srsName = determineSrsNameAsString(node);
 
-			if (o instanceof ANode) {
-
-				ANode node = (ANode) o;
-				srsName = determineSrsNameAsString(node);
-
-				elem = node.toJava();
-
-			} else if (o instanceof BXNode) {
-
-				ANode node = ((BXNode) o).getNode();
-				srsName = determineSrsNameAsString(node);
-
-				elem = (BXNode) o;
-			} else {
-				// unknown type encountered
-				throw new IllegalArgumentException(
-						"Object type '" + o.getClass().getName() + "' is not supported for this method.");
-			}
+			BXNode elem = node.toJava();
 
 			List<ValidatorMessage> validationMessages = new ArrayList<ValidatorMessage>();
 			// ================
@@ -745,7 +811,7 @@ public class GmlGeoX extends QueryModule {
 	 * contains a child element (like gml:Envelope) that has an 'srsName'
 	 * attribute. NOTE: The underlying query is independent of a specific GML
 	 * namespace.
-	 * 
+	 *
 	 * @param geometryElement
 	 * @return the value of the applicable 'srsName' attribute, if found,
 	 *         otherwise the empty sequence
@@ -775,25 +841,18 @@ public class GmlGeoX extends QueryModule {
 		}
 	}
 
-	public com.vividsolutions.jts.geom.Geometry parseGeometry(Object arg) throws QueryException {
+	public com.vividsolutions.jts.geom.Geometry parseGeometry(Value v) throws QueryException {
 
 		try {
-			if (arg instanceof ANode) {
+			if (v instanceof ANode) {
 
-				ANode node = (ANode) arg;
-
-				return geoutils.toJTSGeometry(node);
-
-			} else if (arg instanceof BXElem) {
-
-				BXElem tmp = (BXElem) arg;
-				ANode node = tmp.getNode();
+				ANode node = (ANode) v;
 
 				return geoutils.toJTSGeometry(node);
 
-			} else if (arg instanceof com.vividsolutions.jts.geom.Geometry) {
+			} else if (v instanceof Jav && ((Jav) v).toJava() instanceof com.vividsolutions.jts.geom.Geometry) {
 
-				return (com.vividsolutions.jts.geom.Geometry) arg;
+				return (com.vividsolutions.jts.geom.Geometry) ((Jav) v).toJava();
 
 			} else {
 				throw new IllegalArgumentException("First argument is neither a single node nor a JTS geometry.");
@@ -806,7 +865,7 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Internal method to get the SRS name that applies to a geometry element as
 	 * a string.
-	 * 
+	 *
 	 * @param node
 	 *            The geometry element
 	 * @return SRS name that applies to the element, can be <code>null</code> in
@@ -1481,37 +1540,15 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	@Requires(Permission.NONE)
-	public boolean isValid(Object o) throws QueryException {
+	public boolean isValid(ANode node) throws QueryException {
 
-		if (o == null || o instanceof Empty) {
+		String validationResult = validate(node);
 
+		if (validationResult.toLowerCase().indexOf('f') > -1) {
 			return false;
-
-		} else if (o instanceof BXElem || o instanceof ANode) {
-
-			String validationResult = validate(o);
-
-			if (validationResult.toLowerCase().indexOf('f') > -1) {
-				return false;
-			} else {
-				return true;
-			}
-
-		} else if (o instanceof Value) {
-
-			Value v = (Value) o;
-
-			if (v.size() > 1) {
-				throw new IllegalArgumentException("Single value expected where multiple were provided.");
-			}
-
-		} else if (o instanceof Object[]) {
-			throw new IllegalArgumentException("Single object expected where multiple were provided.");
+		} else {
+			return true;
 		}
-
-		// unknown type encountered
-		throw new IllegalArgumentException(
-				"Object type '" + o.getClass().getName() + "' is not supported for this method.");
 	}
 
 	/**
@@ -1736,7 +1773,7 @@ public class GmlGeoX extends QueryModule {
 			} else {
 				env = geoutils.toJTSGeometry(arg).getEnvelopeInternal();
 			}
-			Object[] res = { env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY() };
+			Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()};
 			return res;
 
 		} catch (Exception e) {
@@ -2014,5 +2051,13 @@ public class GmlGeoX extends QueryModule {
 		}
 
 		return geom;
+	}
+
+	private void copyResourceToFile(String resourcePath, File destination) throws IOException {
+
+		// URL url = getClass().getResource(resourcePath);
+		// FileUtils.copyURLToFile(url, destination);
+
+		FileUtils.copyInputStreamToFile(this.getClass().getResourceAsStream(resourcePath), destination);
 	}
 }
