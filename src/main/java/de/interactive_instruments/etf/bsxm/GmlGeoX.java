@@ -21,10 +21,7 @@ import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,6 +61,9 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import de.interactive_instruments.IFile;
+import de.interactive_instruments.properties.PropertyUtils;
+
 /**
  * This module supports the validation of geometries as well as computing the
  * spatial relationship between geometries.
@@ -81,7 +81,7 @@ public class GmlGeoX extends QueryModule {
 	public static final String NS = "de.interactive_instruments.etf.bsxm.GmlGeoX";
 	public static final String PREFIX = "ggeo";
 
-	public static final String ETF_GMLGEOX_SRSCONFIG_DIR = "etf.gmlgeox.srsconfigdir";
+	public static final String ETF_GMLGEOX_SRSCONFIG_DIR = "etf.gmlgeox.srsconfig.dir";
 
 	public enum SpatialRelOp {
 		CONTAINS, CROSSES, EQUALS, INTERSECTS, ISDISJOINT, ISWITHIN, OVERLAPS, TOUCHES
@@ -127,34 +127,22 @@ public class GmlGeoX extends QueryModule {
 
 	private void loadGmlGeoXSrsConfiguration() throws QueryException {
 
-		String val = System.getenv(ETF_GMLGEOX_SRSCONFIG_DIR);
-		String srsConfigDirPath = val == null ? System.getProperty(ETF_GMLGEOX_SRSCONFIG_DIR, null) : val;
-
+		final String srsConfigDirPath = PropertyUtils.getenvOrProperty(ETF_GMLGEOX_SRSCONFIG_DIR, null);
 		if (srsConfigDirPath != null) {
-
-			File srsConfigDirectory = new File(srsConfigDirPath);
-			if (!srsConfigDirectory.exists() || !srsConfigDirectory.isDirectory() || !srsConfigDirectory.canRead()) {
-
-				throw new QueryException("Value of property '" + ETF_GMLGEOX_SRSCONFIG_DIR
-						+ "' does not identify a directory that exists and that can be read.");
-
-			} else {
-
-				try {
-					CRSManager crsMgr = new CRSManager();
-					crsMgr.init(srsConfigDirectory);
-				} catch (Exception e) {
-					throw new QueryException(
-							"Could not load SRS configuration files from directory referenced from GmlGeoX property '"
-									+ ETF_GMLGEOX_SRSCONFIG_DIR + "'. Reference is: " + srsConfigDirPath
-									+ " Exception message is: " + e.getMessage());
-				}
-			}
-
-		} else {
+			final IFile srsConfigDirectory = new IFile(srsConfigDirPath, ETF_GMLGEOX_SRSCONFIG_DIR);
 
 			try {
-
+				srsConfigDirectory.expectDirIsWritable();
+				final CRSManager crsMgr = new CRSManager();
+				crsMgr.init(srsConfigDirectory);
+			} catch (Exception e) {
+				throw new QueryException(
+						"Could not load SRS configuration files from directory referenced from GmlGeoX property '"
+								+ ETF_GMLGEOX_SRSCONFIG_DIR + "'. Reference is: " + srsConfigDirPath
+								+ " Exception message is: " + e.getMessage());
+			}
+		} else {
+			try {
 				/*
 				 * NOTE: During tests, the crs-definitions file could not be
 				 * deleted on exit. When temporary directories with random name
@@ -166,38 +154,39 @@ public class GmlGeoX extends QueryModule {
 				 * files will not be deleted upon exit. That shouldn't be a
 				 * problem since we always use the same folder.
 				 */
-				String tempDirPath = System.getProperty("java.io.tmpdir");
-				File tempDir = new File(tempDirPath, "gmlGeoXSrsConfig");
+				final String tempDirPath = System.getProperty("java.io.tmpdir");
+				final File tempDir = new File(tempDirPath, "gmlGeoXSrsConfig");
 
 				if (tempDir.exists()) {
 					FileUtils.deleteQuietly(tempDir);
 				}
+				tempDir.mkdirs();
 
-				copyResourceToFile("/srsConfiguration/default.xml", new File(tempDir, "default.xml"));
+				copyResourceToFile("/srsConfiguration/default.xml", new IFile(tempDir, "default.xml"));
 				copyResourceToFile("/srsConfiguration/deegree/d3/config/ntv2/beta2007.gsb",
-						new File(tempDir, "deegree/d3/config/ntv2/beta2007.gsb"));
+						new IFile(tempDir, "deegree/d3/config/ntv2/beta2007.gsb"));
 				copyResourceToFile("/srsConfiguration/deegree/d3/parser-files.xml",
-						new File(tempDir, "deegree/d3/parser-files.xml"));
+						new IFile(tempDir, "deegree/d3/parser-files.xml"));
 				copyResourceToFile("/srsConfiguration/deegree/d3/config/crs-definitions.xml",
-						new File(tempDir, "deegree/d3/config/crs-definitions.xml"));
+						new IFile(tempDir, "deegree/d3/config/crs-definitions.xml"));
 				copyResourceToFile("/srsConfiguration/deegree/d3/config/datum-definitions.xml",
-						new File(tempDir, "deegree/d3/config/datum-definitions.xml"));
+						new IFile(tempDir, "deegree/d3/config/datum-definitions.xml"));
 				copyResourceToFile("/srsConfiguration/deegree/d3/config/ellipsoid-definitions.xml",
-						new File(tempDir, "deegree/d3/config/ellipsoid-definitions.xml"));
+						new IFile(tempDir, "deegree/d3/config/ellipsoid-definitions.xml"));
 				copyResourceToFile("/srsConfiguration/deegree/d3/config/pm-definitions.xml",
-						new File(tempDir, "deegree/d3/config/pm-definitions.xml"));
+						new IFile(tempDir, "deegree/d3/config/pm-definitions.xml"));
 				copyResourceToFile("/srsConfiguration/deegree/d3/config/projection-definitions.xml",
-						new File(tempDir, "deegree/d3/config/projection-definitions.xml"));
+						new IFile(tempDir, "deegree/d3/config/projection-definitions.xml"));
 				copyResourceToFile("/srsConfiguration/deegree/d3/config/transformation-definitions.xml",
-						new File(tempDir, "deegree/d3/config/transformation-definitions.xml"));
+						new IFile(tempDir, "deegree/d3/config/transformation-definitions.xml"));
 
-				CRSManager crsMgr = new CRSManager();
+				final CRSManager crsMgr = new CRSManager();
 				crsMgr.init(tempDir);
 
 			} catch (IOException e) {
-
 				throw new QueryException(
-						"Exception occurred while extracting the SRS configuration files provided by GmlGeoX to a temporary directory and loading them from there. Exception message is: "
+						"Exception occurred while extracting the SRS configuration files provided by GmlGeoX to a temporary "
+								+ "directory and loading them from there. Exception message is: "
 								+ e.getMessage());
 			}
 		}
@@ -499,10 +488,9 @@ public class GmlGeoX extends QueryModule {
 				isTestRepetitionInCurveSegments = true;
 
 			} else {
-
-				isTestGeonovum = (testMask.length() >= 1 && testMask.charAt(0) == '1') ? true : false;
-				isTestPolygonPatchConnectivity = (testMask.length() >= 2 && testMask.charAt(1) == '1') ? true : false;
-				isTestRepetitionInCurveSegments = (testMask.length() >= 3 && testMask.charAt(2) == '1') ? true : false;
+				isTestGeonovum = testMask.length() >= 1 && testMask.charAt(0) == '1';
+				isTestPolygonPatchConnectivity = testMask.length() >= 2 && testMask.charAt(1) == '1';
+				isTestRepetitionInCurveSegments = testMask.length() >= 3 && testMask.charAt(2) == '1';
 			}
 
 			boolean isValidGeonovum = false;
@@ -2053,11 +2041,10 @@ public class GmlGeoX extends QueryModule {
 		return geom;
 	}
 
-	private void copyResourceToFile(String resourcePath, File destination) throws IOException {
-
-		// URL url = getClass().getResource(resourcePath);
-		// FileUtils.copyURLToFile(url, destination);
-
-		FileUtils.copyInputStreamToFile(this.getClass().getResourceAsStream(resourcePath), destination);
+	private void copyResourceToFile(final String resourcePath, final IFile destination) throws IOException {
+		destination.getParentFile().mkdirs();
+		destination.expectFileIsWritable();
+		destination.write(Objects.requireNonNull(
+				this.getClass().getResourceAsStream(resourcePath), "Resource " + resourcePath + " not found"));
 	}
 }
