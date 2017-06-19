@@ -14,7 +14,7 @@ buildscript {
 			}}
 	}
 	dependencies {
-		classpath group: 'de.interactive_instruments.bda', name: 'etf-bda', version:'1.0.23'
+		classpath group: 'de.interactive_instruments.bda', name: 'etf-bda', version:'1.0.24'
 	}
 	dependencies {
 		ant.unjar src: configurations.classpath.files.find {it.path.contains('etf')}, dest: 'build/gradle'
@@ -54,7 +54,7 @@ configurations {
 
 dependencies {
 
-    // compile group: 'de.interactive_instruments', name: 'ii-commons-util', version: '2.0.0' + project.snapshotSuffix
+    compile group: 'de.interactive_instruments', name: 'ii-commons-util', version: '2.0.0' + project.snapshotSuffix
 
 	// Validator dependencies
 	compile('org.bouncycastle:bcprov-jdk15on:1.53')
@@ -153,12 +153,14 @@ sourceSets {
   }
 }
 
-jar.doFirst {
-	manifest {
-		attributes(
-				// Other manifest attributes are added by ii-bda
-				'Main-Class': 'de.interactive_instruments.etf.bsxm.GmlGeoX',
-		)
+jar {
+	doFirst {
+		manifest {
+			attributes(
+					// Other manifest attributes are added by ii-bda
+					'Main-Class': 'de.interactive_instruments.etf.bsxm.GmlGeoX',
+			)
+		}
 	}
 }
 
@@ -183,13 +185,15 @@ def gmlGeoXInstallPath = System.getProperty("user.home")+
 		File.separator + "BaseXRepo" +
         File.separator +group.replace(".", File.separator)
 
-task copyGmlGeoXToRepo(dependsOn: jar) << {
-	copy {
-		from jar
-		into "$gmlGeoXInstallPath"
-        rename '.*', 'GmlGeoX.jar'
+task copyGmlGeoXToRepo(dependsOn: jar) {
+	doLast {
+		copy {
+			from jar
+			into "$gmlGeoXInstallPath"
+			rename '.*', 'GmlGeoX.jar'
+		}
+		println "Copied GmlGeoX to $gmlGeoXInstallPath"
 	}
-	println "Copied GmlGeoX to $gmlGeoXInstallPath"
 }
 
 install {
