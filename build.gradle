@@ -153,17 +153,6 @@ sourceSets {
   }
 }
 
-jar {
-	doFirst {
-		manifest {
-			attributes(
-					// Other manifest attributes are added by ii-bda
-					'Main-Class': 'de.interactive_instruments.etf.bsxm.GmlGeoX',
-			)
-		}
-	}
-}
-
 def allLibs = configurations.runtime + configurations.compile -
 		configurations.compile.filter { it.name.startsWith('basex') } -
 		configurations.compile.filter { it.name.startsWith('jcl') } -
@@ -175,10 +164,38 @@ def allLibs = configurations.runtime + configurations.compile -
 		configurations.compile.filter { it.name.startsWith('milton') }
 
 jar {
+	doFirst {
+		manifest {
+			attributes(
+					// Other manifest attributes are added by ii-bda
+					'Main-Class': 'de.interactive_instruments.etf.bsxm.GmlGeoX',
+			)
+		}
+	}
 	into('lib') {
 		from allLibs
 	}
 }
+
+javadoc {
+	destinationDir = file("$projectDir/docs/javadoc")
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	classifier = 'javadoc'
+	from javadoc.destinationDir
+}
+
+artifacts {
+	archives sourcesJar
+	// archives javadocJar
+}
+
 
 def gmlGeoXInstallPath = System.getProperty("user.home")+
 		File.separator + "BaseX" +
