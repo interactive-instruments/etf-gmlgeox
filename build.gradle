@@ -57,14 +57,14 @@ dependencies {
     compile group: 'de.interactive_instruments', name: 'ii-commons-util', version: '2.0.0' + project.snapshotSuffix
 
 	// Validator dependencies
-	compile('org.bouncycastle:bcprov-jdk15on:1.53')
-	compile('com.thoughtworks.xstream:xstream:1.4.8')
+	compile('org.bouncycastle:bcprov-jdk15on:1.57')
+	compile('com.thoughtworks.xstream:xstream:1.4.10')
 
 	compile('dom4j:dom4j:1.6.1') {
 		exclude group: 'xml-apis'
 	}
 
-	compile('org.apache.santuario:xmlsec:2.0.5') {
+	compile('org.apache.santuario:xmlsec:2.0.8') {
 		exclude group: 'org.slf4j'
 	}
 
@@ -115,10 +115,10 @@ dependencies {
 		exclude group: 'commons-logging'
 	}
 
-	compile('com.github.davidmoten:rtree:0.7.6')
+	compile('com.github.davidmoten:rtree:0.8.0.1')
 
-	compile('org.apache.commons:commons-jcs-core:2.0-beta-1')
-	compile 'com.github.ben-manes.caffeine:caffeine:2.3.1'
+	compile('org.apache.commons:commons-jcs-core:2.1')
+	compile 'com.github.ben-manes.caffeine:caffeine:2.5.2'
 
 	compile group: 'org.slf4j', name: 'slf4j-api', version: etf_slf4jApiVersion
 
