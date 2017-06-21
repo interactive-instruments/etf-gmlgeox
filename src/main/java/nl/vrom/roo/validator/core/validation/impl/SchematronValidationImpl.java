@@ -1,37 +1,11 @@
 package nl.vrom.roo.validator.core.validation.impl;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.channels.Channels;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.ErrorListener;
-import javax.xml.transform.Source;
-import javax.xml.transform.SourceLocator;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.URIResolver;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-
 import nl.vrom.roo.validator.core.TaskVersion;
 import nl.vrom.roo.validator.core.ValidatorContext;
 import nl.vrom.roo.validator.core.ValidatorMessageBundle;
 import nl.vrom.roo.validator.core.errorlocation.IdErrorLocation;
 import nl.vrom.roo.validator.core.exception.ValidationException;
 import nl.vrom.roo.validator.core.validation.AbstractValidation;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -39,6 +13,16 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.*;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.channels.Channels;
 
 public class SchematronValidationImpl extends AbstractValidation {
 

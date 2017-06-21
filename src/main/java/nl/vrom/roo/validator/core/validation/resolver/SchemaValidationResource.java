@@ -1,12 +1,8 @@
 package nl.vrom.roo.validator.core.validation.resolver;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.Reader;
-
 import org.w3c.dom.ls.LSInput;
+
+import java.io.*;
 
 /**
  * Implementation of LSInput for the SchemaValidationImpl

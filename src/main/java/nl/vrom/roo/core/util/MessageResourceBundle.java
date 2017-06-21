@@ -1,17 +1,13 @@
 package nl.vrom.roo.core.util;
 
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.util.*;
 
 
 /**
  * This MessageBundle class is accessible from anywhere and
  * contains all registered message bundles.
  *
- * Message bundles need to be registered using method {@link #registerBundle(ResourceBundle)}.
+ * Message bundles need to be registered using method {@link #registerBundle(ResourceBundle, Locale)}.
  *
  * @author rdool
  *  *copied from nl.vrom.roo.core.util
@@ -60,11 +56,7 @@ public final class MessageResourceBundle {
 		return theBundle;
 	}
 
-	/**
-	 * @return the startBundle
-	 */
 	protected static void setFirstRegisteredBundle(MessageResourceBundle bundle, Locale locale) {	// NOPMD
-
 		getMessageResourceBundlePerLocale().put(locale, bundle);
 	}
 

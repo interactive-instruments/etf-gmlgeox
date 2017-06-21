@@ -46,7 +46,7 @@ public class BasicXQueryTest {
 
 	public static final String queryDir = "src/test/resources/queries/";
 	public static final String xmlDir = "src/test/resources/xml/";
-	public static final String resultDir = "testResults/";
+	public static final String resultDir = "build/test-results/test/res/";
 	public static final String referenceDir = "src/test/resources/reference/";
 
 	@Test

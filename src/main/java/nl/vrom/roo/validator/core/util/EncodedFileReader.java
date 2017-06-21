@@ -1,16 +1,9 @@
 package nl.vrom.roo.validator.core.util;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.CharConversionException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UTFDataFormatException;
+import nl.vrom.roo.validator.core.ValidatorMessageBundle;
+import org.apache.xerces.impl.io.UTF8Reader;
+
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Locale;
@@ -18,8 +11,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.xerces.impl.io.UTF8Reader;
-import nl.vrom.roo.validator.core.ValidatorMessageBundle;
 
 //import com.sun.org.apache.xerces.internal.impl.io.UTF8Reader;
 

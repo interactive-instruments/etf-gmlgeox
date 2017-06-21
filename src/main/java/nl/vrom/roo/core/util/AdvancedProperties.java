@@ -1,13 +1,9 @@
 package nl.vrom.roo.core.util;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 /**
  * Extension off the default {@link Properties} to be able to resolve variables between <code>${}</code>

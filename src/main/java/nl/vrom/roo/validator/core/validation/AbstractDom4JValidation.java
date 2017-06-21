@@ -1,18 +1,17 @@
 package nl.vrom.roo.validator.core.validation;
 
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
-
 import nl.vrom.roo.validator.core.ValidatorContext;
 import nl.vrom.roo.validator.core.dom4j.Dom4JHelper;
 import nl.vrom.roo.validator.core.exception.ValidationException;
-
 import org.dom4j.DocumentException;
 import org.dom4j.ElementHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class AbstractDom4JValidation extends AbstractValidation {
 

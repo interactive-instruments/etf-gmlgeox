@@ -11,7 +11,7 @@ import java.util.ResourceBundle;
  * It is possible to use registered message bundles but it is also possible to supply
  * own resource bundles.
  *
- * Message bundles can be registered using {@link MessageBundleRegistration#registerBundle(String)}.
+ * Message bundles can be registered using {@link MessageBundleRegistration#registerBundle(String, Locale)}.
  *
  * @author rdool
  *
@@ -89,7 +89,7 @@ public final class MessageBundle {
 	 *
 	 * @param message the message
 	 * @param args supplied arguments
-	 * @param Locale the locale
+	 * @param locale the locale
 	 * @return the formatted message
 	 */
 	public static String formatMessage(String message, Locale locale, Object... args) {

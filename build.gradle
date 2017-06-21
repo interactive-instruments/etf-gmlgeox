@@ -200,7 +200,7 @@ artifacts {
 def gmlGeoXInstallPath = System.getProperty("user.home")+
 		File.separator + "BaseX" +
 		File.separator + "BaseXRepo" +
-        File.separator +group.replace(".", File.separator)
+        File.separator + group.replace(".", File.separator)
 
 task copyGmlGeoXToRepo(dependsOn: jar) {
 	doLast {

@@ -1,16 +1,15 @@
 package nl.vrom.roo.validator.core.dom4j.handlers;
 
+import nl.vrom.roo.validator.core.ValidatorMessageBundle;
+import org.deegree.geometry.primitive.Point;
+
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-import org.deegree.geometry.primitive.Point;
-
-import nl.vrom.roo.validator.core.ValidatorMessageBundle;
-
 /**
- * @author Johannes Echterhoff (echterhoff <at> interactive-instruments
- *         <dot> de)
+ * @author Johannes Echterhoff (echterhoff at interactive-instruments
+ *         dot de)
  *
  */
 public class ValidationUtil {

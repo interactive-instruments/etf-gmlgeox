@@ -1,8 +1,8 @@
 package nl.vrom.roo.validator.core;
 
-import java.util.Date;
-
 import nl.vrom.roo.validator.core.errorlocation.ErrorLocation;
+
+import java.util.Date;
 
 /**
  * This class is contains the validator message that is used to contain information about the validation
@@ -47,12 +47,10 @@ public class ValidatorMessage {
 	/**
 	 * ValidatorMessage constructor
 	 *
-	 * @param validationName
-	 * @param type
-	 *            the type of the message
-	 * @param message
-	 *            the message
-	 * @Param errorLocation an optional {@link ErrorLocation}
+	 * @param validationName validation name
+	 * @param type the type of the message
+	 * @param message the message
+	 * @param errorLocation an optional {@link ErrorLocation}
 	 */
 	public ValidatorMessage(String validationName, ValidatorMessageType type, String message,
 			ErrorLocation errorLocation) {

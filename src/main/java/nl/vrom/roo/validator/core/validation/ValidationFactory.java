@@ -1,9 +1,9 @@
 package nl.vrom.roo.validator.core.validation;
 
+import nl.vrom.roo.validator.core.validation.exception.ValidationFactoryException;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import nl.vrom.roo.validator.core.validation.exception.ValidationFactoryException;
 
 /**
  * Factory to instantiate validations. The intention of this factory is to make is possible to be able to configure all

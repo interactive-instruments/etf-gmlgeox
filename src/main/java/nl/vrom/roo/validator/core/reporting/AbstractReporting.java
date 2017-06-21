@@ -1,10 +1,10 @@
 package nl.vrom.roo.validator.core.reporting;
 
-import java.io.Reader;
-
 import nl.vrom.roo.validator.core.AbstractTask;
 import nl.vrom.roo.validator.core.ReporterContext;
 import nl.vrom.roo.validator.core.exception.ReportingException;
+
+import java.io.Reader;
 
 public abstract class AbstractReporting extends AbstractTask {
 

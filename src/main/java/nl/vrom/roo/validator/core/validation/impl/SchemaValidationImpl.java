@@ -1,32 +1,25 @@
 package nl.vrom.roo.validator.core.validation.impl;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-
-import javax.xml.XMLConstants;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-
 import nl.vrom.roo.validator.core.TaskVersion;
 import nl.vrom.roo.validator.core.ValidatorContext;
 import nl.vrom.roo.validator.core.ValidatorMessageBundle;
 import nl.vrom.roo.validator.core.errorlocation.PositionErrorLocation;
 import nl.vrom.roo.validator.core.validation.AbstractValidation;
 import nl.vrom.roo.validator.core.validation.resolver.AdvancedSchemaValidationResourceResolver;
-
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
-import org.xml.sax.SAXParseException;
+import org.xml.sax.*;
+
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
 
 /**
  * Schema based validation implementation which validates the content of the

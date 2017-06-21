@@ -24,7 +24,7 @@ import org.deegree.geometry.validation.GeometryValidationEventHandler;
 import org.deegree.geometry.validation.event.*;
 
 /**
- * @author Johannes Echterhoff (echterhoff <at> interactive-instruments <dot> de)
+ * @author Johannes Echterhoff (echterhoff at interactive-instruments dot de)
  *
  */
 public class GmlGeoXGeometryValidationEventHandler

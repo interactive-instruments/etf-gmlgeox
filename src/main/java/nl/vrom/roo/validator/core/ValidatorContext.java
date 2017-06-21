@@ -1,14 +1,10 @@
 package nl.vrom.roo.validator.core;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import nl.vrom.roo.validator.core.errorlocation.ErrorLocation;
 import nl.vrom.roo.validator.core.validation.AbstractValidation;
+
+import java.io.File;
+import java.util.*;
 
 /**
  * This class is contains the validator context information of the several validations executed by the validator.

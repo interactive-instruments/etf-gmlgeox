@@ -49,12 +49,9 @@ import org.deegree.geometry.composite.CompositeCurve;
 import org.deegree.geometry.composite.CompositeGeometry;
 import org.deegree.geometry.composite.CompositeSolid;
 import org.deegree.geometry.composite.CompositeSurface;
-import org.deegree.geometry.multi.*;
-import org.deegree.geometry.primitive.Curve;
-import org.deegree.geometry.primitive.OrientableCurve;
-import org.deegree.geometry.primitive.Point;
-import org.deegree.geometry.primitive.Ring;
-import org.deegree.geometry.primitive.Surface;
+import org.deegree.geometry.multi.MultiGeometry;
+import org.deegree.geometry.multi.MultiSolid;
+import org.deegree.geometry.primitive.*;
 import org.deegree.geometry.primitive.patches.PolygonPatch;
 import org.deegree.geometry.primitive.patches.SurfacePatch;
 import org.deegree.geometry.standard.AbstractDefaultGeometry;
@@ -66,8 +63,8 @@ import org.w3c.dom.Node;
 /**
  *
  *
- * @author Johannes Echterhoff (echterhoff <at> interactive-instruments
- *         <dot> de)
+ * @author Johannes Echterhoff (echterhoff at interactive-instruments
+ *         dot de)
  *
  */
 public class GmlGeoXUtils {
@@ -229,7 +226,7 @@ public class GmlGeoXUtils {
 	 * Supported geometry types:
 	 * <ul>
 	 * <li>GM_Point</li>
-	 * <li>Curve types:</li>
+	 * <li>Curve types:
 	 * <ul>
 	 * <li>GM_Curve</li>
 	 * <li>GM_Ring</li>
@@ -237,8 +234,8 @@ public class GmlGeoXUtils {
 	 * <li>GM_LineString</li>
 	 * <li>GM_OrientedCurve (orientation is ignored when computing the JTS
 	 * geometry)</li>
-	 * </ul>
-	 * <li>Curve segment types (linearization will often be used):</li>
+	 * </ul></li>
+	 * <li>Curve segment types (linearization will often be used):
 	 * <ul>
 	 * <li>GM_Arc (will be linearized)</li>
 	 * <li>GM_Circle (will be linearized)</li>
@@ -247,38 +244,38 @@ public class GmlGeoXUtils {
 	 * <li>GM_ArcString (will be linearized)</li>
 	 * <li>GM_GeodesicString (apparently no linearization - with code from
 	 * deegree 3.4-pre22-SNAPSHOT)</li>
-	 * </ul>
-	 * <li>Surface types:</li>
+	 * </ul></li>
+	 * <li>Surface types:
 	 * <ul>
 	 * <li>GM_Surface</li>
 	 * <li>GM_PolyhedralSurface</li>
 	 * <li>GM_OrientableSurface (orientation is ignored when computing the JTS
 	 * geometry)</li>
-	 * </ul>
-	 * <li>Surface patch types (also if a surface has more than one patch):</li>
+	 * </ul></li>
+	 * <li>Surface patch types (also if a surface has more than one patch):
 	 * <ul>
 	 * <li>GM_Polygon</li>
-	 * </ul>
-	 * <li>Composite types:</li>
+	 * </ul></li>
+	 * <li>Composite types:
 	 * <ul>
 	 * <li>GM_Composite (implemented as deegree CompositeGeometry)</li>
 	 * <li>GM_CompositePoint</li>
 	 * <li>GM_CompositeCurve</li>
 	 * <li>GM_CompositeSurface</li>
-	 * </ul>
-	 * <li>Multi geometry types:</li>
+	 * </ul></li>
+	 * <li>Multi geometry types:
 	 * <ul>
 	 * <li>GM_Aggregate (implemented as deegree MultiGeometry)</li>
 	 * <li>GM_MultiPoint</li>
 	 * <li>GM_MultiCurve</li>
 	 * <li>GM_MultiSurface</li>
-	 * </ul>
+	 * </ul></li>
 	 * </ul>
 	 * <p>
 	 * Geometry types that are NOT supported:
 	 * <ul>
 	 * <li>GM_Solid</li>
-	 * <li>Curve segment types:</li>
+	 * <li>Curve segment types:
 	 * <ul>
 	 * <li>GM_ArcByBulge</li>
 	 * <li>ArcByCenterPoint</li>
@@ -290,8 +287,8 @@ public class GmlGeoXUtils {
 	 * <li>GM_Geodesic</li>
 	 * <li>GM_OffsetCurve</li>
 	 * <li>GM_Conic</li>
-	 * </ul>
-	 * <li>Surface types:</li>
+	 * </ul></li>
+	 * <li>Surface types:
 	 * <ul>
 	 * <li>GM_TriangulatedSurface</li>
 	 * <li>GM_Tin</li>
@@ -303,15 +300,15 @@ public class GmlGeoXUtils {
 	 * <li>GM_Cylinder</li>
 	 * <li>GM_Sphere</li>
 	 * <li>GM_BSplineSurface</li>
-	 * </ul>
-	 * <li>Composite types:</li>
+	 * </ul></li>
+	 * <li>Composite types:
 	 * <ul>
 	 * <li>GM_CompositeSolid</li>
-	 * </ul>
-	 * <li>Multi geometry types:</li>
+	 * </ul></li>
+	 * <li>Multi geometry types:
 	 * <ul>
 	 * <li>GM_MultiSolid</li>
-	 * </ul>
+	 * </ul></li>
 	 * </ul>
 	 *
 	 * @param geom
@@ -601,8 +598,7 @@ public class GmlGeoXUtils {
 	/**
 	 * Reads a geometry from the given DOM node.
 	 *
-	 * @param node
-	 *            represents a GML geometry element
+	 * @param aNode represents a GML geometry element
 	 * @return the geometry represented by the node
 	 * @throws Exception
 	 */

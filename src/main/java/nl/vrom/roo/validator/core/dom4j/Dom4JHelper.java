@@ -1,17 +1,11 @@
 package nl.vrom.roo.validator.core.dom4j;
 
-import java.io.Reader;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.dom4j.Attribute;
-import org.dom4j.DocumentException;
-import org.dom4j.DocumentFactory;
-import org.dom4j.Element;
-import org.dom4j.ElementHandler;
-import org.dom4j.ElementPath;
+import org.dom4j.*;
 import org.dom4j.io.DOMWriter;
 import org.dom4j.io.SAXReader;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.Reader;
 
 public final class Dom4JHelper {
 

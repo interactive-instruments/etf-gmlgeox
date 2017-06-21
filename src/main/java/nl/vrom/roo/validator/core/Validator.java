@@ -1,8 +1,8 @@
 package nl.vrom.roo.validator.core;
 
-import java.util.List;
-
 import nl.vrom.roo.validator.core.validation.AbstractValidation;
+
+import java.util.List;
 
 
 /**

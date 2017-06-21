@@ -1,12 +1,5 @@
 package nl.vrom.roo.util;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.dom4j.dom.DOMNodeHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +7,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 
 

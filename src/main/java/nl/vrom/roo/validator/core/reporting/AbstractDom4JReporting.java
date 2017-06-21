@@ -1,12 +1,11 @@
 package nl.vrom.roo.validator.core.reporting;
 
-import java.io.Reader;
-
 import nl.vrom.roo.validator.core.dom4j.Dom4JHelper;
-
 import org.dom4j.DocumentException;
 import org.dom4j.ElementHandler;
 import org.w3c.dom.Element;
+
+import java.io.Reader;
 
 public abstract class AbstractDom4JReporting extends AbstractReporting {
 

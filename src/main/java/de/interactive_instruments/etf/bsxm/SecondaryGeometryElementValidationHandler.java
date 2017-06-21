@@ -16,12 +16,7 @@
 package de.interactive_instruments.etf.bsxm;
 
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLInputFactory;
@@ -44,19 +39,10 @@ import org.deegree.geometry.composite.CompositeSolid;
 import org.deegree.geometry.multi.MultiGeometry;
 import org.deegree.geometry.multi.MultiSolid;
 import org.deegree.geometry.points.Points;
-import org.deegree.geometry.primitive.Curve;
-import org.deegree.geometry.primitive.Point;
-import org.deegree.geometry.primitive.Ring;
-import org.deegree.geometry.primitive.Solid;
-import org.deegree.geometry.primitive.Surface;
+import org.deegree.geometry.primitive.*;
 import org.deegree.geometry.primitive.patches.PolygonPatch;
 import org.deegree.geometry.primitive.patches.SurfacePatch;
-import org.deegree.geometry.primitive.segments.Arc;
-import org.deegree.geometry.primitive.segments.ArcString;
-import org.deegree.geometry.primitive.segments.CubicSpline;
-import org.deegree.geometry.primitive.segments.CurveSegment;
-import org.deegree.geometry.primitive.segments.GeodesicString;
-import org.deegree.geometry.primitive.segments.LineStringSegment;
+import org.deegree.geometry.primitive.segments.*;
 import org.deegree.geometry.standard.points.PointsList;
 import org.deegree.gml.GMLInputFactory;
 import org.deegree.gml.GMLStreamReader;
@@ -71,8 +57,8 @@ import org.slf4j.LoggerFactory;
 /**
  * NOTE: Implementation is based on Geonovum's GeometryElementHandler.
  *
- * @author Johannes Echterhoff (echterhoff <at> interactive-instruments
- *         <dot> de)
+ * @author Johannes Echterhoff (echterhoff at interactive-instruments
+ *         dot de)
  *
  */
 public class SecondaryGeometryElementValidationHandler implements ElementHandler {
@@ -368,10 +354,8 @@ public class SecondaryGeometryElementValidationHandler implements ElementHandler
 	 * <ul>
 	 * <li>Surface (including PolyhedralSurface, CompositeSurface, and
 	 * OrientableSurface)</li>
-	 * <ul>
 	 * <li>Only PolygonPatch is allowed as surface patch - all surfaces that
 	 * contain a different type of surface patch are ignored.</li>
-	 * </ul>
 	 * <li>The elements of multi and composite geometries (except Multi- and
 	 * CompositeSolids).</li>
 	 * </ul>

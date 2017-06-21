@@ -1,11 +1,10 @@
 package nl.vrom.roo.validator.core.util;
 
-import java.util.Properties;
-
 import nl.vrom.roo.core.util.SystemPropertiesParameterUtil;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Properties;
 
 public abstract class SystemSettingsDependentFactory<T> {
 	

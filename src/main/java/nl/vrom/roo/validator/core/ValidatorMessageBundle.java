@@ -1,9 +1,9 @@
 package nl.vrom.roo.validator.core;
 
-import java.util.Locale;
-
 import nl.vrom.roo.core.util.MessageBundle;
 import nl.vrom.roo.core.util.MessageBundleRegistration;
+
+import java.util.Locale;
 
 public final class ValidatorMessageBundle {
 

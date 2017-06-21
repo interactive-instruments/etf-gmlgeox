@@ -1,30 +1,17 @@
 package nl.vrom.roo.validator.core.dom4j.handlers;
 
-import java.util.List;
-
 import nl.vrom.roo.validator.core.ValidatorContext;
 import nl.vrom.roo.validator.core.ValidatorMessageBundle;
 import nl.vrom.roo.validator.core.dom4j.Dom4JHelper;
-
 import org.deegree.geometry.primitive.Curve;
 import org.deegree.geometry.primitive.Point;
 import org.deegree.geometry.primitive.patches.PolygonPatch;
 import org.deegree.geometry.primitive.segments.CurveSegment;
 import org.deegree.geometry.validation.GeometryValidationEventHandler;
-import org.deegree.geometry.validation.event.CurveDiscontinuity;
-import org.deegree.geometry.validation.event.CurveSelfIntersection;
-import org.deegree.geometry.validation.event.DuplicatePoints;
-import org.deegree.geometry.validation.event.ExteriorRingOrientation;
-import org.deegree.geometry.validation.event.GeometryValidationEvent;
-import org.deegree.geometry.validation.event.InteriorRingIntersectsExterior;
-import org.deegree.geometry.validation.event.InteriorRingOrientation;
-import org.deegree.geometry.validation.event.InteriorRingOutsideExterior;
-import org.deegree.geometry.validation.event.InteriorRingTouchesExterior;
-import org.deegree.geometry.validation.event.InteriorRingsIntersect;
-import org.deegree.geometry.validation.event.InteriorRingsNested;
-import org.deegree.geometry.validation.event.InteriorRingsTouch;
-import org.deegree.geometry.validation.event.RingNotClosed;
+import org.deegree.geometry.validation.event.*;
 import org.dom4j.Element;
+
+import java.util.List;
 
 class GMLValidationEventHandler implements GeometryValidationEventHandler {
 

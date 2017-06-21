@@ -1,13 +1,13 @@
 package nl.vrom.roo.validator.core.validation;
 
-import java.io.Reader;
-
 import nl.vrom.roo.core.util.SystemPropertiesParameterUtil;
 import nl.vrom.roo.validator.core.AbstractTask;
 import nl.vrom.roo.validator.core.ValidatorContext;
 import nl.vrom.roo.validator.core.ValidatorMessageBundle;
 import nl.vrom.roo.validator.core.exception.ValidationException;
 import nl.vrom.roo.validator.core.util.SystemSettingsDependentFactory;
+
+import java.io.Reader;
 
 /**
  * This class is the framework of a general validation.
@@ -69,8 +69,7 @@ public abstract class AbstractValidation extends AbstractTask {
 	 * 
 	 * @param validatorContext
 	 *            context of the validator
-	 * @param inputStream
-	 *            the inputStream to the document to validate
+	 * @param reader the reader used to validate
 	 * @throws ValidationException
 	 */
 	protected abstract void validateTemplate(ValidatorContext validatorContext, Reader reader)

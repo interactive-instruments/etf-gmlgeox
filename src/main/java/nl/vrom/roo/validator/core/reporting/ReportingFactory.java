@@ -1,8 +1,8 @@
 package nl.vrom.roo.validator.core.reporting;
 
-import java.util.Map;
-
 import nl.vrom.roo.validator.core.reporting.exception.ReportingFactoryException;
+
+import java.util.Map;
 
 /**
  * Factory to instantiate reportings. The intention of this factory is to make is possible to be able to configure all

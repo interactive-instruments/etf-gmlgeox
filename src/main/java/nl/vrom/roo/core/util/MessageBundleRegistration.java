@@ -1,11 +1,7 @@
 package nl.vrom.roo.core.util;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.PropertyResourceBundle;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.ResourceBundle;
 // *copied from nl.vrom.roo.core.util
 public class MessageBundleRegistration {
 
@@ -64,7 +60,7 @@ public class MessageBundleRegistration {
 
 	/**
 	 * Sets the resource bundles
-	 * @param resourceBundleNames the names of the bundles
+	 * @param resourceBundlesLocalesMap the names of the bundles
 	 */
 	public static void setResourceBundles(Map<String,String> resourceBundlesLocalesMap, ClassLoader classLoader) {
 		
@@ -78,7 +74,7 @@ public class MessageBundleRegistration {
 	
 	/**
 	 * Sets the resource bundles
-	 * @param resourceBundleNames the names of the bundles
+	 * @param resourceBundlesLocalesMap the names of the bundles
 	 */
 	public static void setResourceBundles(Map<String,String> resourceBundlesLocalesMap) {
 		

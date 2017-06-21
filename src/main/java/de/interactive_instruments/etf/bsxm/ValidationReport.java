@@ -21,7 +21,7 @@ import java.util.List;
 import nl.vrom.roo.validator.core.ValidatorMessage;
 
 /**
- * @author Johannes Echterhoff (echterhoff <at> interactive-instruments <dot> de)
+ * @author Johannes Echterhoff (echterhoff at interactive-instruments dot de)
  *
  */
 public final class ValidationReport {

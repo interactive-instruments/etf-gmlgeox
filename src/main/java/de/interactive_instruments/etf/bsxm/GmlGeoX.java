@@ -71,9 +71,10 @@ import de.interactive_instruments.properties.PropertyUtils;
  * NOTE 1: the validation and spatial relationship methods only support specific
  * sets of geometry types - please see the documentation of the respective
  * methods for details on which geometry types are supported.
+ * </p>
  *
- * @author Johannes Echterhoff (echterhoff <at> interactive-instruments
- *         <dot> de)
+ * @author Johannes Echterhoff (echterhoff at interactive-instruments
+ *         dot de)
  *
  */
 public class GmlGeoX extends QueryModule {
@@ -228,14 +229,20 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Calls the {@link #validate(Value, String)} method, with <code>null</code>
+	 * Calls the {@link #validate(ANode, String)} method, with <code>null</code>
 	 * as the bitmask, resulting in a validation with all tests enabled.
 	 * <p>
-	 * See the documentation of the {@link #validate(Value, String)} method for
+	 * See the documentation of the {@link #validate(ANode, String)} method for
 	 * a description of the supported geometry types.
 	 *
-	 * @param v
-	 * @return
+	 * @param node Node
+	 * @return a mask with the test results, encoded as characters - one at each
+	 *         position (1-based index) of the available tests. 'V' indicates
+	 *         that the test passed, i.e. that the geometry is valid according
+	 *         to that test. 'F' indicates that the test failed. 'S' indicates
+	 *         that the test was skipped. Example: the string 'SVF' shows that
+	 *         the first test was skipped, while the second test passed and the
+	 *         third failed.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -264,7 +271,7 @@ public class GmlGeoX extends QueryModule {
 	 * <p>
 	 * The following tests are available:
 	 * <p>
-	 * <table>
+	 * <table summary="Available tests">
 	 * <tr>
 	 * <th>Position</th>
 	 * <th>Test Name</th>
@@ -301,8 +308,8 @@ public class GmlGeoX extends QueryModule {
 	 * performed.
 	 * </ul>
 	 *
-	 * @param o
-	 *            the GML geometry to validate
+	 * @param node the GML geometry to validate
+	 * @param testMask test mask
 	 * @return a mask with the test results, encoded as characters - one at each
 	 *         position (1-based index) of the available tests. 'V' indicates
 	 *         that the test passed, i.e. that the geometry is valid according
@@ -322,9 +329,9 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * @see #executeValidate(Object, String)
-	 * @param o
-	 * @param testMask
+	 * @see #executeValidate(ANode, String)
+	 * @param node Node
+	 * @param testMask test mask
 	 * @return a DOM element like the following:
 	 *
 	 *         <pre>
@@ -460,8 +467,7 @@ public class GmlGeoX extends QueryModule {
 	 * performed.
 	 * </ul>
 	 *
-	 * @param o
-	 *            the GML geometry to validate
+	 * @param node the GML geometry to validate
 	 * @return a validation report, with the validation result and validation
 	 *         message (providing further details about any errors). The
 	 *         validation result is encoded as a sequence of characters - one at

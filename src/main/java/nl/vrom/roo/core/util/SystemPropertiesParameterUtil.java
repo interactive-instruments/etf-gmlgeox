@@ -1,11 +1,11 @@
 package nl.vrom.roo.core.util;
 
-import java.util.Map;
-import java.util.Properties;
-import java.util.Map.Entry;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
 
 public class SystemPropertiesParameterUtil {
 

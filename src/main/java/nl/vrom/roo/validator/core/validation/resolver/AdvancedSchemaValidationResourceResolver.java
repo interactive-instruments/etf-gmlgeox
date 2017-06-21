@@ -1,14 +1,14 @@
 package nl.vrom.roo.validator.core.validation.resolver;
 
-import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
+
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * Implementation of LSResourceResolver which resolves dependent .xsd schema's based on the last part of the systemId.

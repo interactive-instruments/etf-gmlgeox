@@ -1,18 +1,17 @@
 package nl.vrom.roo.validator.core.impl;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.util.List;
-
 import nl.vrom.roo.validator.core.Validator;
 import nl.vrom.roo.validator.core.ValidatorContext;
 import nl.vrom.roo.validator.core.ValidatorMessageBundle;
 import nl.vrom.roo.validator.core.exception.ValidationException;
 import nl.vrom.roo.validator.core.util.EncodedFileReader;
 import nl.vrom.roo.validator.core.validation.AbstractValidation;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.util.List;
 
 /**
  * This class is responsible for validating the contents of an inputstream using the defined validation implementations
