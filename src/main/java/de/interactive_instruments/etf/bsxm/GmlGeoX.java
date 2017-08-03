@@ -534,11 +534,7 @@ public class GmlGeoX extends QueryModule {
 				isValidGeonovum = ctx.isSuccessful();
 
 				if (!isValidGeonovum) {
-					List<ValidatorMessage> vmsgs = ctx.getMessages();
-					validationMessages.addAll(vmsgs);
-					for (ValidatorMessage msg : vmsgs) {
-						LOGGER.error(msg.toString());
-					}
+					validationMessages.addAll(ctx.getMessages());
 				}
 			}
 
@@ -576,11 +572,7 @@ public class GmlGeoX extends QueryModule {
 				}
 
 				if (!polygonPatchesAreConnected || !noRepetitionInCurveSegment) {
-					List<ValidatorMessage> vmsgs = ctx.getMessages();
-					validationMessages.addAll(vmsgs);
-					for (ValidatorMessage msg : vmsgs) {
-						LOGGER.error(msg.toString());
-					}
+					validationMessages.addAll(ctx.getMessages());
 				}
 			}
 
