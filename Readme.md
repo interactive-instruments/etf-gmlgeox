@@ -1,30 +1,31 @@
-# Gml geometry validation library
+# GML geometry library for BaseX
 
-[![Apache License 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
-[![Latest version](http://img.shields.io/badge/latest%20version-1.1.0-blue.svg)](https://services.interactive-instruments.de/etfdev-af/etf-public-dev/de/interactive_instruments/etf/bsxm/etf-gmlgeox/1.1.0-SNAPSHOT/etf-gmlgeox-1.1.0-20170112.165838-2.jar)
-[![Build Status](https://services.interactive-instruments.de/etfdev-ci/buildStatus/icon?job=etf-gmlgeox)](https://services.interactive-instruments.de/etfdev-ci/job/etf-gmlgeox/)
+The library can be used by the [ETF BaseX test driver](https://github.com/interactive-instruments/etf-bsxtd) to validate GML geometries within XML documents, perform geometry operations and index GML geometries.
 
-The library can be used by the [ETF BaseX test driver](https://github.com/interactive-instruments/etf-bsxtd) to validate GML geometries within XML documents.
+[![European Union Public Licence 1.2](https://img.shields.io/badge/license-EUPL%201.2-blue.svg)](https://joinup.ec.europa.eu/software/page/eupl)
+-[![Latest version](http://img.shields.io/badge/latest%20version-1.1.2-blue.svg)](https://services.interactive-instruments.de/etfdev-af/etf-public-dev/de/interactive_instruments/etf/bsxm/etf-gmlgeox/1.1.2/etf-gmlgeox-1.1.2.jar)
+ -[![Build Status](https://services.interactive-instruments.de/etfdev-ci/buildStatus/icon?job=etf-gmlgeox)](https://services.interactive-instruments.de/etfdev-ci/job/etf-gmlgeox/)
 
-Please use the [etf-webapp project](https://github.com/interactive-instruments/etf-webapp) for
-reporting [issues](https://github.com/interactive-instruments/etf-webapp/issues) or
-[further documentation](https://github.com/interactive-instruments/etf-webapp/wiki).
+&copy; 2017 European Union, interactive instruments GmbH. Licensed under the EUPL.
+
+## About ETF
+
+ETF is an open source testing framework for validating spatial data, metadata and web services in Spatial Data Infrastructures (SDIs). For documentation about ETF, see [http://docs.etf-validator.net](http://docs.etf-validator.net/).
+
+Please report issues [in the GitHub issue tracker of the ETF Web Application](https://github.com/interactive-instruments/etf-webapp/issues).
+
+ETF component version numbers comply with the [Semantic Versioning Specification 2.0.0](http://semver.org/spec/v2.0.0.html).
+
+## Build information
 
 The project can be build and installed by running the gradlew.sh/.bat wrapper with:
 ```gradle
 $ gradlew build install
 ```
 
-ETF component version numbers comply with the [Semantic Versioning Specification 2.0.0](http://semver.org/spec/v2.0.0.html).
+## Use of the library in the BaseX GUI
 
-ETF is an open source test framework developed by [interactive instruments](http://www.interactive-instruments.de/en) for testing geo network services and data.
-
-## Installation in BaseX 8.6 (IDE used for developing executable test suites)
-[Download and install BaseX 8.6](http://basex.org/products/download/all-downloads).
-
-Click on the batch "latest version" in this repository to download the GmlGeoX plugin. In BaseX click on
-Options -> Packages... -> Install... and select the downloaded file. The package name
-de.interactive_instruments.etf.bsxm.GmlGeoX should appear in the package dialog, if it has been successfully installed.
+See [the ETF developer manual](http://docs.etf-validator.net/Developer_manuals/Developing_Executable_Test_Suites.html#_development_environment) for information how to install the library in the BaseX GUI.
 
 The plugin can be used by importing the module **de.interactive_instruments.etf.bsxm.GmlGeoX**:
 
@@ -37,7 +38,7 @@ let $gml := fn:parse-xml(
 return ggeo:validateAndReport($gml)
 ```
 
-This is a simple quickstart example, see the Wiki for further information!
+This is a simple quickstart example, see the wiki for more information!
 
 ## Updating
 Uninstall the package Options -> Packages... -> select de.interactive_instruments.etf.bsxm.GmlGeoX -> Delete... and install the new version as described above.
