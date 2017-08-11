@@ -3,6 +3,8 @@
 The library can be used by the [ETF BaseX test driver](https://github.com/interactive-instruments/etf-bsxtd) to validate GML geometries within XML documents, perform geometry operations and index GML geometries.
 
 [![European Union Public Licence 1.2](https://img.shields.io/badge/license-EUPL%201.2-blue.svg)](https://joinup.ec.europa.eu/software/page/eupl)
+-[![Latest version](http://img.shields.io/badge/latest%20version-1.1.2-blue.svg)](https://services.interactive-instruments.de/etfdev-af/etf-public-dev/de/interactive_instruments/etf/bsxm/etf-gmlgeox/1.1.2/etf-gmlgeox-1.1.2.jar)
+ -[![Build Status](https://services.interactive-instruments.de/etfdev-ci/buildStatus/icon?job=etf-gmlgeox)](https://services.interactive-instruments.de/etfdev-ci/job/etf-gmlgeox/)
 
 &copy; 2017 European Union, interactive instruments GmbH. Licensed under the EUPL.
 
