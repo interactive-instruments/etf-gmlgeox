@@ -181,8 +181,11 @@ public class GmlGeoX extends QueryModule {
 				copyResourceToFile("/srsConfiguration/deegree/d3/config/transformation-definitions.xml",
 						new IFile(tempDir, "deegree/d3/config/transformation-definitions.xml"));
 
+				final ClassLoader cl = Thread.currentThread().getContextClassLoader();
+				Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
 				final CRSManager crsMgr = new CRSManager();
 				crsMgr.init(tempDir);
+				Thread.currentThread().setContextClassLoader(cl);
 
 			} catch (IOException e) {
 				throw new QueryException(
