@@ -128,73 +128,72 @@ public class GmlGeoX extends QueryModule {
 		final ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		try {
 			Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-			loadGmlGeoXSrsConfiguration();
+			if (CRSManager.get("default") == null || CRSManager.get("default").getCRSByCode(
+					CRSCodeType.valueOf("http://www.opengis.net/def/crs/EPSG/0/5555")) == null) {
+				loadGmlGeoXSrsConfiguration();
+			}
 		} finally {
 			Thread.currentThread().setContextClassLoader(cl);
 		}
 	}
 
 	private void loadGmlGeoXSrsConfiguration() throws QueryException {
-
 		final String srsConfigDirPath = PropertyUtils.getenvOrProperty(ETF_GMLGEOX_SRSCONFIG_DIR, null);
 		final CRSManager crsMgr = new CRSManager();
-
 		// If the configuration for EPSG 5555 can be accessed, the CRSManger is already configured by
 		// the test driver.
-		if (CRSManager.get("default").getCRSByCode(CRSCodeType.valueOf("http://www.opengis.net/def/crs/EPSG/0/5555")) == null) {
-			if (srsConfigDirPath != null) {
-				final IFile srsConfigDirectory = new IFile(srsConfigDirPath, ETF_GMLGEOX_SRSCONFIG_DIR);
+		if (srsConfigDirPath != null) {
+			final IFile srsConfigDirectory = new IFile(srsConfigDirPath, ETF_GMLGEOX_SRSCONFIG_DIR);
 
-				try {
-					srsConfigDirectory.expectDirIsWritable();
-					crsMgr.init(srsConfigDirectory);
-				} catch (Exception e) {
-					throw new QueryException(
-							"Could not load SRS configuration files from directory referenced from GmlGeoX property '"
-									+ ETF_GMLGEOX_SRSCONFIG_DIR + "'. Reference is: " + srsConfigDirPath
-									+ " Exception message is: " + e.getMessage());
+			try {
+				srsConfigDirectory.expectDirIsWritable();
+				crsMgr.init(srsConfigDirectory);
+			} catch (Exception e) {
+				throw new QueryException(
+						"Could not load SRS configuration files from directory referenced from GmlGeoX property '"
+								+ ETF_GMLGEOX_SRSCONFIG_DIR + "'. Reference is: " + srsConfigDirPath
+								+ " Exception message is: " + e.getMessage());
+			}
+		} else {
+			try {
+				/*
+				 * We use the same folder each
+				 * time an instance of GmlGeoX is created. The configuration
+				 * files will not be deleted upon exit. That shouldn't be a
+				 * problem since we always use the same folder.
+				 */
+				final String tempDirPath = System.getProperty("java.io.tmpdir");
+				final File tempDir = new File(tempDirPath, "gmlGeoXSrsConfig");
+
+				if (tempDir.exists()) {
+					FileUtils.deleteQuietly(tempDir);
 				}
-			} else {
-				try {
-					/*
-					 * We use the same folder each
-					 * time an instance of GmlGeoX is created. The configuration
-					 * files will not be deleted upon exit. That shouldn't be a
-					 * problem since we always use the same folder.
-					 */
-					final String tempDirPath = System.getProperty("java.io.tmpdir");
-					final File tempDir = new File(tempDirPath, "gmlGeoXSrsConfig");
+				tempDir.mkdirs();
 
-					if (tempDir.exists()) {
-						FileUtils.deleteQuietly(tempDir);
-					}
-					tempDir.mkdirs();
+				IoUtils.copyResourceToFile(this, "/srsconfig/default.xml", new IFile(tempDir, "default.xml"));
+				IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/ntv2/beta2007.gsb",
+						new IFile(tempDir, "deegree/d3/config/ntv2/beta2007.gsb"));
+				IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/parser-files.xml",
+						new IFile(tempDir, "deegree/d3/parser-files.xml"));
+				IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/crs-definitions.xml",
+						new IFile(tempDir, "deegree/d3/config/crs-definitions.xml"));
+				IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/datum-definitions.xml",
+						new IFile(tempDir, "deegree/d3/config/datum-definitions.xml"));
+				IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/ellipsoid-definitions.xml",
+						new IFile(tempDir, "deegree/d3/config/ellipsoid-definitions.xml"));
+				IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/pm-definitions.xml",
+						new IFile(tempDir, "deegree/d3/config/pm-definitions.xml"));
+				IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/projection-definitions.xml",
+						new IFile(tempDir, "deegree/d3/config/projection-definitions.xml"));
+				IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/transformation-definitions.xml",
+						new IFile(tempDir, "deegree/d3/config/transformation-definitions.xml"));
 
-					IoUtils.copyResourceToFile(this, "/srsconfig/default.xml", new IFile(tempDir, "default.xml"));
-					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/ntv2/beta2007.gsb",
-							new IFile(tempDir, "deegree/d3/config/ntv2/beta2007.gsb"));
-					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/parser-files.xml",
-							new IFile(tempDir, "deegree/d3/parser-files.xml"));
-					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/crs-definitions.xml",
-							new IFile(tempDir, "deegree/d3/config/crs-definitions.xml"));
-					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/datum-definitions.xml",
-							new IFile(tempDir, "deegree/d3/config/datum-definitions.xml"));
-					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/ellipsoid-definitions.xml",
-							new IFile(tempDir, "deegree/d3/config/ellipsoid-definitions.xml"));
-					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/pm-definitions.xml",
-							new IFile(tempDir, "deegree/d3/config/pm-definitions.xml"));
-					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/projection-definitions.xml",
-							new IFile(tempDir, "deegree/d3/config/projection-definitions.xml"));
-					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/transformation-definitions.xml",
-							new IFile(tempDir, "deegree/d3/config/transformation-definitions.xml"));
-
-					crsMgr.init(tempDir);
-				} catch (IOException e) {
-					throw new QueryException(
-							"Exception occurred while extracting the SRS configuration files provided by GmlGeoX to a temporary "
-									+ "directory and loading them from there. Exception message is: "
-									+ e.getMessage());
-				}
+				crsMgr.init(tempDir);
+			} catch (IOException e) {
+				throw new QueryException(
+						"Exception occurred while extracting the SRS configuration files provided by GmlGeoX to a temporary "
+								+ "directory and loading them from there. Exception message is: "
+								+ e.getMessage());
 			}
 		}
 	}
