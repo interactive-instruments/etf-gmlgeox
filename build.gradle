@@ -32,8 +32,8 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'eclipse'
 
-ext.deegreeVersion = '3.3.17'
 ext.basexVersion = '8.5.5-ii'
+ext.deegreeVersion = '3.3.20'
 
 repositories {
 	maven {

@@ -53,6 +53,7 @@ import org.basex.query.value.node.ANode;
 import org.basex.query.value.node.DBNode;
 import org.basex.query.value.seq.Empty;
 import org.basex.util.InputInfo;
+import org.deegree.cs.CRSCodeType;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
 import org.dom4j.io.SAXReader;
@@ -62,6 +63,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import de.interactive_instruments.IFile;
+import de.interactive_instruments.IoUtils;
 import de.interactive_instruments.properties.PropertyUtils;
 
 /**
@@ -123,75 +125,76 @@ public class GmlGeoX extends QueryModule {
 		registerGmlGeometry("Ring");
 		registerGmlGeometry("LineString");
 
-		loadGmlGeoXSrsConfiguration();
+		final ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		try {
+			Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+			loadGmlGeoXSrsConfiguration();
+		} finally {
+			Thread.currentThread().setContextClassLoader(cl);
+		}
 	}
 
 	private void loadGmlGeoXSrsConfiguration() throws QueryException {
 
 		final String srsConfigDirPath = PropertyUtils.getenvOrProperty(ETF_GMLGEOX_SRSCONFIG_DIR, null);
-		if (srsConfigDirPath != null) {
-			final IFile srsConfigDirectory = new IFile(srsConfigDirPath, ETF_GMLGEOX_SRSCONFIG_DIR);
+		final CRSManager crsMgr = new CRSManager();
 
-			try {
-				srsConfigDirectory.expectDirIsWritable();
-				final CRSManager crsMgr = new CRSManager();
-				crsMgr.init(srsConfigDirectory);
-			} catch (Exception e) {
-				throw new QueryException(
-						"Could not load SRS configuration files from directory referenced from GmlGeoX property '"
-								+ ETF_GMLGEOX_SRSCONFIG_DIR + "'. Reference is: " + srsConfigDirPath
-								+ " Exception message is: " + e.getMessage());
-			}
-		} else {
-			try {
-				/*
-				 * NOTE: During tests, the crs-definitions file could not be
-				 * deleted on exit. When temporary directories with random name
-				 * were generated, that led to an increasing number of folders.
-				 * We just need a unique folder to extract the SRS configuration
-				 * files to. Before extraction, we can attempt to delete files
-				 * from a previous run. This way, we use the same folder each
-				 * time an instance of GmlGeoX is created. The configuration
-				 * files will not be deleted upon exit. That shouldn't be a
-				 * problem since we always use the same folder.
-				 */
-				final String tempDirPath = System.getProperty("java.io.tmpdir");
-				final File tempDir = new File(tempDirPath, "gmlGeoXSrsConfig");
+		// If the configuration for EPSG 5555 can be accessed, the CRSManger is already configured by
+		// the test driver.
+		if (CRSManager.get("default").getCRSByCode(CRSCodeType.valueOf("http://www.opengis.net/def/crs/EPSG/0/5555")) == null) {
+			if (srsConfigDirPath != null) {
+				final IFile srsConfigDirectory = new IFile(srsConfigDirPath, ETF_GMLGEOX_SRSCONFIG_DIR);
 
-				if (tempDir.exists()) {
-					FileUtils.deleteQuietly(tempDir);
+				try {
+					srsConfigDirectory.expectDirIsWritable();
+					crsMgr.init(srsConfigDirectory);
+				} catch (Exception e) {
+					throw new QueryException(
+							"Could not load SRS configuration files from directory referenced from GmlGeoX property '"
+									+ ETF_GMLGEOX_SRSCONFIG_DIR + "'. Reference is: " + srsConfigDirPath
+									+ " Exception message is: " + e.getMessage());
 				}
-				tempDir.mkdirs();
+			} else {
+				try {
+					/*
+					 * We use the same folder each
+					 * time an instance of GmlGeoX is created. The configuration
+					 * files will not be deleted upon exit. That shouldn't be a
+					 * problem since we always use the same folder.
+					 */
+					final String tempDirPath = System.getProperty("java.io.tmpdir");
+					final File tempDir = new File(tempDirPath, "gmlGeoXSrsConfig");
 
-				copyResourceToFile("/srsConfiguration/default.xml", new IFile(tempDir, "default.xml"));
-				copyResourceToFile("/srsConfiguration/deegree/d3/config/ntv2/beta2007.gsb",
-						new IFile(tempDir, "deegree/d3/config/ntv2/beta2007.gsb"));
-				copyResourceToFile("/srsConfiguration/deegree/d3/parser-files.xml",
-						new IFile(tempDir, "deegree/d3/parser-files.xml"));
-				copyResourceToFile("/srsConfiguration/deegree/d3/config/crs-definitions.xml",
-						new IFile(tempDir, "deegree/d3/config/crs-definitions.xml"));
-				copyResourceToFile("/srsConfiguration/deegree/d3/config/datum-definitions.xml",
-						new IFile(tempDir, "deegree/d3/config/datum-definitions.xml"));
-				copyResourceToFile("/srsConfiguration/deegree/d3/config/ellipsoid-definitions.xml",
-						new IFile(tempDir, "deegree/d3/config/ellipsoid-definitions.xml"));
-				copyResourceToFile("/srsConfiguration/deegree/d3/config/pm-definitions.xml",
-						new IFile(tempDir, "deegree/d3/config/pm-definitions.xml"));
-				copyResourceToFile("/srsConfiguration/deegree/d3/config/projection-definitions.xml",
-						new IFile(tempDir, "deegree/d3/config/projection-definitions.xml"));
-				copyResourceToFile("/srsConfiguration/deegree/d3/config/transformation-definitions.xml",
-						new IFile(tempDir, "deegree/d3/config/transformation-definitions.xml"));
+					if (tempDir.exists()) {
+						FileUtils.deleteQuietly(tempDir);
+					}
+					tempDir.mkdirs();
 
-				final ClassLoader cl = Thread.currentThread().getContextClassLoader();
-				Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-				final CRSManager crsMgr = new CRSManager();
-				crsMgr.init(tempDir);
-				Thread.currentThread().setContextClassLoader(cl);
+					IoUtils.copyResourceToFile(this, "/srsconfig/default.xml", new IFile(tempDir, "default.xml"));
+					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/ntv2/beta2007.gsb",
+							new IFile(tempDir, "deegree/d3/config/ntv2/beta2007.gsb"));
+					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/parser-files.xml",
+							new IFile(tempDir, "deegree/d3/parser-files.xml"));
+					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/crs-definitions.xml",
+							new IFile(tempDir, "deegree/d3/config/crs-definitions.xml"));
+					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/datum-definitions.xml",
+							new IFile(tempDir, "deegree/d3/config/datum-definitions.xml"));
+					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/ellipsoid-definitions.xml",
+							new IFile(tempDir, "deegree/d3/config/ellipsoid-definitions.xml"));
+					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/pm-definitions.xml",
+							new IFile(tempDir, "deegree/d3/config/pm-definitions.xml"));
+					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/projection-definitions.xml",
+							new IFile(tempDir, "deegree/d3/config/projection-definitions.xml"));
+					IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/transformation-definitions.xml",
+							new IFile(tempDir, "deegree/d3/config/transformation-definitions.xml"));
 
-			} catch (IOException e) {
-				throw new QueryException(
-						"Exception occurred while extracting the SRS configuration files provided by GmlGeoX to a temporary "
-								+ "directory and loading them from there. Exception message is: "
-								+ e.getMessage());
+					crsMgr.init(tempDir);
+				} catch (IOException e) {
+					throw new QueryException(
+							"Exception occurred while extracting the SRS configuration files provided by GmlGeoX to a temporary "
+									+ "directory and loading them from there. Exception message is: "
+									+ e.getMessage());
+				}
 			}
 		}
 	}
@@ -208,26 +211,24 @@ public class GmlGeoX extends QueryModule {
 	 *             while loading the configuration files
 	 */
 	@Requires(Permission.NONE)
-	public void configureSpatialReferenceSystems(String configurationDirectoryPathName) throws QueryException {
-
+	public void configureSpatialReferenceSystems(final String configurationDirectoryPathName) throws QueryException {
+		final ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		try {
-
-			File configurationDirectory = new File(configurationDirectoryPathName);
-
+			final File configurationDirectory = new File(configurationDirectoryPathName);
 			if (!configurationDirectory.exists() || !configurationDirectory.isDirectory()
 					|| !configurationDirectory.canRead()) {
-
 				throw new IllegalArgumentException(
 						"Given path name does not identify a directory that exists and that can be read.");
-
 			} else {
-
+				Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
 				CRSManager crsMgr = new CRSManager();
 				crsMgr.init(configurationDirectory);
 			}
 
 		} catch (Exception e) {
 			throw new QueryException(e);
+		} finally {
+			Thread.currentThread().setContextClassLoader(cl);
 		}
 	}
 
