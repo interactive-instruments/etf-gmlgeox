@@ -20,8 +20,7 @@ let $doc := <ii:GeometryCollection
  </ii:member>
  <ii:member>
   <gml:Point
-   gml:id="Point_2"
-   srsName="urn:ogc:def:crs:epsg:4979">
+   gml:id="Point_2" srsName="urn:ogc:def:crs:epsg:4979">
    <gml:pos>0.5 0 0</gml:pos>
   </gml:Point>
  </ii:member>

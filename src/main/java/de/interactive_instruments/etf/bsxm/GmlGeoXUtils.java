@@ -604,9 +604,9 @@ public class GmlGeoXUtils {
 	 */
 	public Geometry parseGeometry(ANode aNode) throws Exception {
 
-		String srsName = gmlGeoX.determineSrsNameAsString(aNode);
+		final String srsName = gmlGeoX.determineSrsName(aNode);
 
-		BXNode node = aNode.toJava();
+		final BXNode node = aNode.toJava();
 
 		String namespaceURI = node.getNamespaceURI();
 
@@ -622,28 +622,29 @@ public class GmlGeoXUtils {
 		final XMLStreamReader xmlStream = xmlInputFactory
 				.createXMLStreamReader(byteArrayInputStream);
 
-		GMLVersion gmlVersion = null;
+		final GMLVersion gmlVersion;
 		if (isGML32Namespace(namespaceURI)) {
 			gmlVersion = GMLVersion.GML_32;
 		} else if (isGML31Namespace(namespaceURI)) {
 			gmlVersion = GMLVersion.GML_31;
 		} else {
 			// cannot happen because we checked before
+			throw new IllegalStateException();
 		}
 
 		GMLStreamReader gmlStream = GMLInputFactory
 				.createGMLStreamReader(gmlVersion, xmlStream);
 
-		ICRS defaultCRS = null;
+		final ICRS defaultCRS;
 		if (srsName != null) {
 			defaultCRS = CRSManager.getCRSRef(srsName);
+		} else {
+			defaultCRS = null;
 		}
 
 		gmlStream.setDefaultCRS(defaultCRS);
 
-		Geometry result = gmlStream.readGeometry();
-
-		return result;
+		return gmlStream.readGeometry();
 	}
 
 	/**

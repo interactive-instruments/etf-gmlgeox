@@ -47,6 +47,7 @@ import org.basex.data.Data;
 import org.basex.query.QueryException;
 import org.basex.query.QueryModule;
 import org.basex.query.QueryProcessor;
+import org.basex.query.iter.BasicNodeIter;
 import org.basex.query.value.Value;
 import org.basex.query.value.item.Jav;
 import org.basex.query.value.node.ANode;
@@ -93,6 +94,13 @@ public class GmlGeoX extends QueryModule {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GmlGeoX.class);
 
 	private static final Pattern INTERSECTIONPATTERN = Pattern.compile("[0-2\\*TF]{9}");
+
+	// Byte comparisons
+	private static final byte[] srsNameB = new String("srsName").getBytes();
+
+	private static final byte[] boundedByB = new String("boundedBy").getBytes();
+
+	private static final byte[] envelopeB = new String("Envelope").getBytes();
 
 	protected final GmlGeoXUtils geoutils = new GmlGeoXUtils(this);
 
@@ -506,7 +514,7 @@ public class GmlGeoX extends QueryModule {
 			boolean polygonPatchesAreConnected = false;
 			boolean noRepetitionInCurveSegment = false;
 
-			String srsName = determineSrsNameAsString(node);
+			String srsName = determineSrsName(node);
 
 			BXNode elem = node.toJava();
 
@@ -801,33 +809,49 @@ public class GmlGeoX extends QueryModule {
 	 * attribute. NOTE: The underlying query is independent of a specific GML
 	 * namespace.
 	 *
-	 * @param geometryElement
+	 * @param geometryNode a gml geometry node
 	 * @return the value of the applicable 'srsName' attribute, if found,
 	 *         otherwise the empty sequence
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public Value determineSrsName(Value geometryElement) throws QueryException {
-
-		String query = "declare variable $geom external; "
-				+ "let $elementWithSrsName := $geom/ancestor-or-self::*[@srsName or *[local-name() = 'boundedBy']/*/@srsName][1] "
-				+ "return if (empty($elementWithSrsName)) then () "
-				+ "else if($elementWithSrsName/@srsName) then $elementWithSrsName/data(@srsName) else "
-				+ "$elementWithSrsName/*[local-name() = 'boundedBy']/*/data(@srsName)";
-
-		Context ctx = queryContext.context;
-
-		try (QueryProcessor qp = new QueryProcessor(query, ctx)) {
-
-			// Bind to context:
-			qp.bind("geom", geometryElement);
-			qp.context(geometryElement);
-
-			Value value = qp.value();
-
-			return value;
+	public String determineSrsName(final ANode geometryNode) {
+		String srsName = getSrsName(geometryNode);
+		if (srsName == null) {
+			// Check ancestors
+			for (ANode ancestor = geometryNode.ancestor().next(); ancestor != null; ancestor = ancestor.ancestor().next()) {
+				srsName = getSrsName(ancestor);
+				if (srsName != null) {
+					return srsName;
+				}
+			}
 		}
+		return srsName;
+	}
+
+	private String getSrsName(final ANode node) {
+		// Firstly, check for the srsName attribute
+		for (final ANode attribute : node.attributes()) {
+			if (Arrays.equals(srsNameB, attribute.qname().local())) {
+				return new String(attribute.string());
+			}
+		}
+		// Check for a boundedBy element
+		for (final ANode child : node.children()) {
+			if (Arrays.equals(boundedByB, child.qname().local())) {
+				for (final ANode envelope : child.children()) {
+					if (Arrays.equals(envelopeB, envelope.qname().local())) {
+						for (final ANode attribute : envelope.attributes()) {
+							if (Arrays.equals(srsNameB, attribute.qname().local())) {
+								return new String(attribute.string());
+							}
+						}
+					}
+				}
+			}
+		}
+		return null;
 	}
 
 	public com.vividsolutions.jts.geom.Geometry parseGeometry(Value v) throws QueryException {
@@ -849,31 +873,6 @@ public class GmlGeoX extends QueryModule {
 		} catch (Exception e) {
 			throw new QueryException(e);
 		}
-	}
-
-	/**
-	 * Internal method to get the SRS name that applies to a geometry element as
-	 * a string.
-	 *
-	 * @param node
-	 *            The geometry element
-	 * @return SRS name that applies to the element, can be <code>null</code> in
-	 *         case that no such name was found
-	 * @throws QueryException
-	 *             if querying for the SRS name resulted in an exception
-	 */
-	String determineSrsNameAsString(ANode node) throws QueryException {
-
-		Value srsNameValue = determineSrsName(node);
-		String srsName;
-		if (srsNameValue.isEmpty()) {
-			srsName = null;
-		} else {
-			srsName = srsNameValue.toString();
-			// remove any occurrence of " and '
-			srsName = srsName.replaceAll("\"|'", "");
-		}
-		return srsName;
 	}
 
 	private boolean performSpatialRelationshipOperation(Object arg1, Object arg2, SpatialRelOp op)
@@ -1681,15 +1680,10 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	private void checkIntersectionPattern(String intersectionPattern) throws QueryException {
-
 		if (intersectionPattern == null) {
-
 			throw new QueryException("intersectionPattern is null.");
-
 		} else {
-
-			Matcher m = INTERSECTIONPATTERN.matcher(intersectionPattern.trim());
-
+			final Matcher m = INTERSECTIONPATTERN.matcher(intersectionPattern.trim());
 			if (!m.matches()) {
 				throw new QueryException(
 						"intersectionPattern does not match the regular expression, which is: [0-2\\\\*TF]{9}");
@@ -1704,33 +1698,27 @@ public class GmlGeoX extends QueryModule {
 	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
 	 *
-	 * @param arg1
+	 * @param geometry1
 	 *            represents the first geometry
-	 * @param arg2
+	 * @param geometry2
 	 *            represents the second geometry
 	 * @return the point-set common to the two geometries
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public com.vividsolutions.jts.geom.Geometry intersection(Object arg1, Object arg2) throws QueryException {
-
+	public com.vividsolutions.jts.geom.Geometry intersection(final Object geometry1, final Object geometry2)
+			throws QueryException {
 		try {
-
-			if (arg1 instanceof Empty || arg2 instanceof Empty) {
-
+			if (geometry1 instanceof Empty || geometry2 instanceof Empty) {
 				return geoutils.emptyJTSGeometry();
-
 			} else {
 
-				com.vividsolutions.jts.geom.Geometry geom1, geom2;
-
-				geom1 = geoutils.toJTSGeometry(arg1);
-				geom2 = geoutils.toJTSGeometry(arg2);
-
+				final com.vividsolutions.jts.geom.Geometry geom1, geom2;
+				geom1 = geoutils.toJTSGeometry(geometry1);
+				geom2 = geoutils.toJTSGeometry(geometry2);
 				return geom1.intersection(geom2);
 			}
-
 		} catch (Exception e) {
 			throw new QueryException(e);
 		}
@@ -1743,28 +1731,25 @@ public class GmlGeoX extends QueryModule {
 	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
 	 * and unsupported geometry types.
 	 *
-	 * @param arg
+	 * @param geometry
 	 *            represents the geometry
 	 * @return The bounding box, an array { x1, y1, x2, y2 }
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public Object[] envelope(Object arg) throws QueryException {
-
+	public Object[] envelope(Object geometry) throws QueryException {
 		try {
-			Envelope env;
-
-			if (arg instanceof Empty) {
+			final Envelope env;
+			if (geometry instanceof Empty) {
 				env = geoutils.emptyJTSGeometry().getEnvelopeInternal();
-			} else if (arg instanceof com.vividsolutions.jts.geom.Geometry) {
-				env = ((com.vividsolutions.jts.geom.Geometry) arg).getEnvelopeInternal();
+			} else if (geometry instanceof com.vividsolutions.jts.geom.Geometry) {
+				env = ((com.vividsolutions.jts.geom.Geometry) geometry).getEnvelopeInternal();
 			} else {
-				env = geoutils.toJTSGeometry(arg).getEnvelopeInternal();
+				env = geoutils.toJTSGeometry(geometry).getEnvelopeInternal();
 			}
-			Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()};
+			final Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()};
 			return res;
-
 		} catch (Exception e) {
 			throw new QueryException(e);
 		}
@@ -1843,7 +1828,7 @@ public class GmlGeoX extends QueryModule {
 				if (n != null)
 					nodelist.add(n);
 			}
-			if (++count % 5000 == 0) {
+			if (debug && ++count % 5000 == 0) {
 				logMemUsage("GmlGeoX#search " + count + ". Box: (" + x1 + ", " + y1 + ") (" + x2 + ", " + y2 + ")"
 						+ ". Hits: " + nodelist.size());
 			}
@@ -1935,40 +1920,54 @@ public class GmlGeoX extends QueryModule {
 	 * @param geom
 	 *            represents the GML geometry to index; must be an BXElem
 	 *            instance
+	 *
+	 * @deprecated Do not use this method as CRS are not correctly detected
+	 *
 	 * @throws QueryException
 	 */
+	@Deprecated
 	@Requires(Permission.NONE)
 	public void index(Object pre, Object dbname, Object id, Object geom) throws QueryException {
-		if (mgr == null)
-			mgr = new GeometryManager();
+		throw new IllegalAccessError("This method is deprecated. "
+				+ "Upgrade your Queries: "
+				+ "ggeo:index( db:node-pre($F), db:name($F), $F/@gml:id, $geom) ---> "
+				+ "ggeo:index( $F, $F/@gml:id, $geom)");
+	}
 
-		if (pre instanceof BigInteger && dbname instanceof String && (id instanceof BXNode || id instanceof String)
-				&& (geom instanceof BXElem || geom instanceof com.vividsolutions.jts.geom.Geometry))
+	public void index(final ANode node, final Object objId, final ANode geometry) throws QueryException {
+		if ((objId instanceof BXNode || objId instanceof String)) {
+
+			if (mgr == null) {
+				mgr = new GeometryManager();
+			}
+
 			try {
-				IndexEntry entry = new IndexEntry((String) dbname, ((BigInteger) pre).intValue());
-				String _id = id instanceof String ? (String) id : ((BXNode) id).getNodeValue();
-				com.vividsolutions.jts.geom.Geometry _geom = geom instanceof BXElem
-						? geoutils.singleObjectToJTSGeometry(geom) : ((com.vividsolutions.jts.geom.Geometry) geom);
-				Envelope env = _geom.getEnvelopeInternal();
+				final com.vividsolutions.jts.geom.Geometry _geom = geoutils.singleObjectToJTSGeometry(geometry);
+				final Envelope env = _geom.getEnvelopeInternal();
 				if (!env.isNull()) {
-					if (env.getHeight() == 0.0 && env.getWidth() == 0.0)
+					final IndexEntry entry = new IndexEntry(node);
+					if (env.getHeight() == 0.0 && env.getWidth() == 0.0) {
 						mgr.index(entry, Geometries.point(env.getMinX(), env.getMinY()));
-					else
+					} else {
 						mgr.index(entry,
 								Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()));
+					}
 
 					// add to geometry cache
-					if (_id != null)
-						mgr.put(_id, _geom);
+					final String id = objId instanceof String ? (String) objId : ((BXNode) objId).getNodeValue();
+					if (id != null) {
+						mgr.put(id, _geom);
+					}
 				}
 
-				int size = mgr.indexSize();
-				if (size % 5000 == 0)
-					logMemUsage("GmlGeoX#index progress: " + size);
+				if (debug && mgr.indexSize() % 5000 == 0) {
+					logMemUsage("GmlGeoX#index progress: " + mgr.indexSize());
+				}
 
 			} catch (Exception e) {
 				throw new QueryException(e);
 			}
+		}
 	}
 
 	/**
@@ -1987,19 +1986,48 @@ public class GmlGeoX extends QueryModule {
 	 *            cached; must be a BXElem instance
 	 * @return the geometry of the indexed node, or null if no geometry was
 	 *         found
+	 *
+	 * @deprecated renamed method to {@link GmlGeoX#getOrSetGeometry(Object, Object)}
+	 *
+	 * @throws QueryException
+	 */
+	@Deprecated
+	@Requires(Permission.NONE)
+	@Deterministic
+	public com.vividsolutions.jts.geom.Geometry getGeometry(final Object id, final Object defgeom) throws QueryException {
+		return getOrSetGeometry(id, defgeom);
+	}
+
+	/**
+	 * Retrieve the geometry of an item as a JTS geometry. First try the cache
+	 * and if it is not in the cache construct it from the XML.
+	 * <p>
+	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
+	 * and unsupported geometry types.
+	 *
+	 * @param id
+	 *            the id for which the geometry should be retrieved, typically a
+	 *            gml:id of a GML feature element; must be a String or BXNode
+	 *            instance
+	 * @param defgeom
+	 *            represents the default GML geometry, if the geometry is not
+	 *            cached; must be a BXElem instance
+	 * @return the geometry of the indexed node, or null if no geometry was
+	 *         found
+	 *
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public com.vividsolutions.jts.geom.Geometry getGeometry(Object id, Object defgeom) throws QueryException {
-		if (++count2 % 5000 == 0) {
+	public com.vividsolutions.jts.geom.Geometry getOrSetGeometry(final Object id, final Object defgeom) throws QueryException {
+		if (debug && ++count2 % 5000 == 0) {
 			logMemUsage("GmlGeoX#getGeometry.start " + count2);
 		}
 
 		if (mgr == null)
 			mgr = new GeometryManager();
 
-		String idx;
+		final String idx;
 		if (id instanceof String) {
 			idx = (String) id;
 		} else if (id instanceof BXNode) {
@@ -2023,11 +2051,8 @@ public class GmlGeoX extends QueryModule {
 			} catch (Exception e) {
 				throw new QueryException(e);
 			}
-			if (debug) {
-				long missCount = mgr.getMissCount();
-				if (missCount % 10000 == 0) {
-					LOGGER.debug("Cache misses: " + missCount + " of " + mgr.getCount());
-				}
+			if (debug && mgr.getMissCount() % 10000 == 0) {
+				LOGGER.debug("Cache misses: " + mgr.getMissCount() + " of " + mgr.getCount());
 			}
 		}
 
@@ -2035,17 +2060,10 @@ public class GmlGeoX extends QueryModule {
 			geom = geoutils.emptyJTSGeometry();
 		}
 
-		if (count2 % 5000 == 0) {
+		if (debug && count2 % 5000 == 0) {
 			logMemUsage("GmlGeoX#getGeometry.end " + count2);
 		}
 
 		return geom;
-	}
-
-	private void copyResourceToFile(final String resourcePath, final IFile destination) throws IOException {
-		destination.getParentFile().mkdirs();
-		destination.expectFileIsWritable();
-		destination.write(Objects.requireNonNull(
-				this.getClass().getResourceAsStream(resourcePath), "Resource " + resourcePath + " not found"));
 	}
 }

@@ -421,7 +421,7 @@ public final class GmlGeoXTest extends QueryTest {
 								+ "\n"
 								+ "let $geom := /*/*/*\n"
 								+ "let $dummy := for $g in $geom\n"
-								+ " return ggeo:index(db:node-pre($g),db:name($g),$g/@gml:id,$g)\n"
+								+ " return ggeo:index($g,$g/@gml:id,$g)\n"
 								+ "let $geoms := for $g in $geom return ggeo:getGeometry($g/@gml:id,$g)\n"
 								+ "return (\n"
 								+ "  count(ggeo:search(4,2.4,8,8.5))=12,\n"

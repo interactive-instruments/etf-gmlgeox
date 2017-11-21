@@ -30,8 +30,12 @@ import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.basex.core.BaseXException;
 import org.basex.core.Context;
+import org.basex.core.cmd.CreateDB;
+import org.basex.core.cmd.DropDB;
 import org.basex.core.cmd.XQuery;
+import org.basex.query.func.db.DbExists;
 import org.custommonkey.xmlunit.Diff;
 import org.junit.Test;
 
@@ -62,6 +66,13 @@ public class BasicXQueryTest {
 	@Test
 	public void test_3d() {
 		xmlTest("test_geometry_3d.xq");
+	}
+
+	@Test
+	public void test_3d_indexed() throws BaseXException {
+		new DropDB("GmlGeoXUnitTestDB").execute(context);
+		new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/3DCoodinates.xml").execute(context);
+		xmlTest("test_geometry_3d_indexed.xq");
 	}
 
 	@Test

@@ -15,6 +15,9 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
+import org.basex.query.value.node.ANode;
+import org.basex.query.value.node.DBNode;
+
 /**
  * This class contains BaseX information to quickly access a node in the database. The
  * instances are stored in the spatial index.
@@ -23,11 +26,11 @@ package de.interactive_instruments.etf.bsxm;
  *
  */
 class IndexEntry {
-	int pre;
-	String dbname;
+	final int pre;
+	final String dbname;
 
-	IndexEntry(String dbn, int p) {
-		pre = p;
-		dbname = dbn;
+	IndexEntry(final ANode node) {
+		pre = ((DBNode) node).pre();
+		dbname = node.data().meta.name;
 	}
 }
