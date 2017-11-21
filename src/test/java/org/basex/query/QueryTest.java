@@ -16,7 +16,7 @@ import org.junit.Test;
 /**
  * This class tests the database commands.
  *
- * @author BaseX Team 2005-16, BSD License
+ * @author BaseX Team 2005-17, BSD License
  * @author Christian Gruen
  */
 public abstract class QueryTest extends SandboxTest {
@@ -36,17 +36,18 @@ public abstract class QueryTest extends SandboxTest {
       final String query = qu[correct ? 2 : 1].toString();
       final Value cmp = correct ? (Value) qu[1] : null;
 
-      try(final QueryProcessor qp = new QueryProcessor(query, context)) {
+      try(QueryProcessor qp = new QueryProcessor(query, context)) {
         final Value val = qp.value();
         if(!correct || !new DeepEqual().equal(val, cmp)) {
-          sb.append("[" + qu[0] + "] " + query);
-          sb.append("\n[E] " + cmp.size() + " result(s): ");
+          sb.append('[').append(qu[0]).append("] ").append(query);
+          sb.append("\n[E] ");
           if(correct) {
-            for(final Item it : cmp) sb.append(it.serialize()).append(", ");
+            sb.append(cmp.size()).append(" result(s): ");
+            for(final Item it : cmp) sb.append(it.serialize()).append("; ");
           } else {
             sb.append("error");
           }
-          sb.append("\n[F] " + val.size() + " result(s): ");
+          sb.append("\n[F] ").append(val.size()).append(" result(s): ");
           for(final Item it : val) sb.append(it.serialize()).append(", ");
           sb.append(details()).append('\n');
           ++fail;
@@ -55,8 +56,9 @@ public abstract class QueryTest extends SandboxTest {
         final String msg = ex.getMessage();
         if(correct || msg == null || msg.contains("mailman")) {
           final String cp = correct && cmp.data() != null ? cmp.toString() : "()";
-          sb.append("[" + qu[0] + "] " + query + "\n[E] " + cp + "\n[F] "
-                  + (msg == null ? Util.className(ex) : normNL(msg)) + ' ' + details() + '\n');
+          sb.append('[').append(qu[0]).append("] ").append(query).append("\n[E] ");
+          sb.append(cp).append("\n[F] ").append(msg == null ? Util.className(ex) : normNL(msg));
+          sb.append(' ').append(details()).append('\n');
           ex.printStackTrace();
           ++fail;
         }

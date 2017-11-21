@@ -9,6 +9,7 @@ import java.util.concurrent.*;
 import org.basex.*;
 import org.basex.api.client.*;
 import org.basex.core.cmd.*;
+import org.basex.core.jobs.*;
 import org.basex.core.users.*;
 import org.basex.io.*;
 import org.basex.io.out.*;
@@ -21,7 +22,7 @@ import org.basex.util.options.*;
 /**
  * If this class is extended, tests will be run in a sandbox.
  *
- * @author BaseX Team 2005-16, BSD License
+ * @author BaseX Team 2005-17, BSD License
  * @author Christian Gruen
  */
 public abstract class Sandbox {
@@ -61,9 +62,7 @@ public abstract class Sandbox {
             return cmd.execute(context);
         } catch(final BaseXException ex) {
             Util.stack(ex);
-            final AssertionError err = new AssertionError(ex.getMessage());
-            err.initCause(ex);
-            throw err;
+            throw new AssertionError(ex.getMessage(), ex);
         }
     }
 
@@ -84,6 +83,8 @@ public abstract class Sandbox {
     protected static String query(final String query) {
         try {
             return eval(query);
+        } catch(final JobException ex) {
+            return "";
         } catch(final QueryException | IOException ex) {
             Util.stack(ex);
             final AssertionError err = new AssertionError("Query failed:\n" + query);
@@ -101,10 +102,11 @@ public abstract class Sandbox {
      */
     protected static String eval(final String query) throws QueryException, IOException {
         final ArrayOutput ao = new ArrayOutput();
-        try(final QueryProcessor qp = new QueryProcessor(query, context)) {
-            qp.sc.baseURI(BASEURI);
+        try(QueryProcessor qp = new QueryProcessor(query, BASEURI, context)) {
+            // update flag will be set in parsing step
+            qp.parse();
             qp.register(context);
-            try(final Serializer ser = qp.getSerializer(ao)) {
+            try(Serializer ser = qp.getSerializer(ao)) {
                 qp.value().serialize(ser);
             } finally {
                 qp.unregister(context);
@@ -123,9 +125,7 @@ public abstract class Sandbox {
             file.write(token(data));
         } catch(final IOException ex) {
             Util.stack(ex);
-            final AssertionError err = new AssertionError(ex.getMessage());
-            err.initCause(ex);
-            throw err;
+            throw new AssertionError(ex.getMessage(), ex);
         }
     }
 
@@ -151,12 +151,8 @@ public abstract class Sandbox {
      */
     public static void finishSandbox() {
         context.close();
-        Prop.remove(StaticOptions.DBPATH);
-        Prop.remove(StaticOptions.WEBPATH);
-        Prop.remove(StaticOptions.RESTXQPATH);
-        Prop.remove(StaticOptions.REPOPATH);
-        Prop.remove(StaticOptions.SERVERPORT);
-        if(!sandbox().delete()) throw Util.notExpected("Sandbox could not be created.");
+        Prop.clear();
+        if(!sandbox().delete()) throw Util.notExpected("Sandbox could not be deleted.");
     }
 
     /**
@@ -176,7 +172,6 @@ public abstract class Sandbox {
     /**
      * Stops a server instance.
      * @param server server
-     * @throws IOException I/O exception
      */
     public static void stopServer(final BaseXServer server) throws IOException {
         if(server != null) server.stop();
@@ -199,7 +194,7 @@ public abstract class Sandbox {
      * @return database path
      */
     public static IOFile sandbox() {
-        return new IOFile(Prop.TMP, NAME);
+        return new IOFile(Prop.TMP, NAME + '/');
     }
 
     /**
