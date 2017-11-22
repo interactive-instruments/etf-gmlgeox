@@ -1966,7 +1966,7 @@ public class GmlGeoX extends QueryModule {
 				}
 
 			} catch (final Exception e) {
-				if(e instanceof XMLParsingException) {
+				if (e instanceof XMLParsingException) {
 					// otherwise the stacktrace "<< is empty >>" is included
 					throw new QueryException(e.getMessage());
 				}
