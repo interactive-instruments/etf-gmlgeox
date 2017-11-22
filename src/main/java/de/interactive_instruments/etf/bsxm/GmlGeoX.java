@@ -54,6 +54,7 @@ import org.basex.query.value.node.ANode;
 import org.basex.query.value.node.DBNode;
 import org.basex.query.value.seq.Empty;
 import org.basex.util.InputInfo;
+import org.deegree.commons.xml.XMLParsingException;
 import org.deegree.cs.CRSCodeType;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
@@ -1964,7 +1965,11 @@ public class GmlGeoX extends QueryModule {
 					logMemUsage("GmlGeoX#index progress: " + mgr.indexSize());
 				}
 
-			} catch (Exception e) {
+			} catch (final Exception e) {
+				if(e instanceof XMLParsingException) {
+					// otherwise the stacktrace "<< is empty >>" is included
+					throw new QueryException(e.getMessage());
+				}
 				throw new QueryException(e);
 			}
 		}

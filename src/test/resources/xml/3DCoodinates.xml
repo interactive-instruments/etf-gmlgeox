@@ -9,7 +9,7 @@
             <gml:upperCorner>10 10 10</gml:upperCorner>
         </gml:Envelope>
     </gml:boundedBy>
-    <!--ii:member gml:id="Mem.1">
+    <ii:member gml:id="Mem.1">
         <gml:LineString gml:id="ID.1.1">
             <gml:posList>5 10 1 0 10 1 0 0 1 5 0 1</gml:posList>
         </gml:LineString>
@@ -23,7 +23,7 @@
         <gml:LineString gml:id="ID.2.1.1">
             <gml:posList>5 0 1 5 5 1</gml:posList>
         </gml:LineString>
-    </ii:member-->
+    </ii:member>
     <ii:member gml:id="Mem.4">
         <gml:LineString gml:id="ID.2.2.1">
             <gml:posList>5 5 1 5 10 1</gml:posList>

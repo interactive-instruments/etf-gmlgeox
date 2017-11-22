@@ -26,7 +26,6 @@ return
   </validationtest>
   <geoIndexTest>
    {
-        let $envelope := $members/../*:boundedBy/*:Envelope
         let $geometryParsingErrors :=
         map:merge(for $member in $members
         let $geom := ($member//*[self::gml:Point or self::gml:LineString or self::gml:Curve or self::gml:Polygon or self::gml:PolyhedralSurface or self::gml:Surface or self::gml:MultiPoint or self::gml:MultiCurve or self::gml:MultiLineString or self::gml:MultiSurface or self::gml:MultiPolygon or self::gml:MultiGeometry])[1]
