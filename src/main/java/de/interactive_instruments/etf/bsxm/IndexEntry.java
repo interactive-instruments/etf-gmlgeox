@@ -29,8 +29,27 @@ class IndexEntry {
 	final int pre;
 	final String dbname;
 
+	/**
+	 * Create Index Entry from database node
+	 *
+	 * @param node Database node
+	 */
 	IndexEntry(final ANode node) {
 		pre = ((DBNode) node).pre();
 		dbname = node.data().meta.name;
+	}
+
+	/**
+	 * Index Entry
+	 *
+	 * @param dbn database name as String
+	 * @param p pre value as int
+	 * @deprecated removed in Version 1.3.0
+	 */
+	@Deprecated
+	IndexEntry(final String dbn, final int p) {
+		// TODO remove Ctor in GmlGeoX version 1.3.0
+		pre = p;
+		dbname = dbn;
 	}
 }

@@ -813,7 +813,6 @@ public class GmlGeoX extends QueryModule {
 	 * @param geometryNode a gml geometry node
 	 * @return the value of the applicable 'srsName' attribute, if found,
 	 *         otherwise the empty sequence
-	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
@@ -1922,19 +1921,75 @@ public class GmlGeoX extends QueryModule {
 	 *            represents the GML geometry to index; must be an BXElem
 	 *            instance
 	 *
-	 * @deprecated Do not use this method as CRS are not correctly detected
+	 * @deprecated This method does not support 3D indexing, use method
+	 * {@link GmlGeoX#index(ANode, Object, ANode)} instead.
+	 * This method is removed in Version 1.3.0
 	 *
 	 * @throws QueryException
 	 */
 	@Deprecated
 	@Requires(Permission.NONE)
 	public void index(Object pre, Object dbname, Object id, Object geom) throws QueryException {
-		throw new IllegalAccessError("This method is deprecated. "
-				+ "Upgrade your Queries: "
-				+ "ggeo:index( db:node-pre($F), db:name($F), $F/@gml:id, $geom) ---> "
-				+ "ggeo:index( $F, $F/@gml:id, $geom)");
+		// TODO remove method GmlGeoX version 1.3.0
+		if (mgr == null)
+			mgr = new GeometryManager();
+
+		if (pre instanceof BigInteger && dbname instanceof String && (id instanceof BXNode || id instanceof String)
+				&& (geom instanceof BXElem || geom instanceof com.vividsolutions.jts.geom.Geometry))
+			try {
+				IndexEntry entry = new IndexEntry((String) dbname, ((BigInteger) pre).intValue());
+				String _id = id instanceof String ? (String) id : ((BXNode) id).getNodeValue();
+				com.vividsolutions.jts.geom.Geometry _geom = geom instanceof BXElem
+						? geoutils.singleObjectToJTSGeometry(geom) : ((com.vividsolutions.jts.geom.Geometry) geom);
+				Envelope env = _geom.getEnvelopeInternal();
+				if (!env.isNull()) {
+					if (env.getHeight() == 0.0 && env.getWidth() == 0.0)
+						mgr.index(entry, Geometries.point(env.getMinX(), env.getMinY()));
+					else
+						mgr.index(entry,
+								Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()));
+
+					// add to geometry cache
+					if (_id != null)
+						mgr.put(_id, _geom);
+				}
+
+				int size = mgr.indexSize();
+				if (size % 5000 == 0)
+					logMemUsage("GmlGeoX#index progress: " + size);
+
+			} catch (final Exception e) {
+				throw new IllegalAccessError("The ggeo:index interface changed and 3D coordinate "
+						+ "validation is not supported with this method call. "
+						+ "Upgrade your Queries: "
+						+ "ggeo:index( db:node-pre($F), db:name($F), $F/@gml:id, $geom) ---> "
+						+ "ggeo:index( $F, $F/@gml:id, $geom). Error: " + e.getMessage());
+			}
 	}
 
+	/**
+	 * Indexes a list of id nodes (gml:id attribute of features) with their GML
+	 * geometries
+	 * <p>
+	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
+	 * and unsupported geometry types.
+	 * <p>
+	 * Both lists must have equal length.
+	 *
+	 * @param node
+	 *            represents the indexed item node (typically the gml:id of
+	 *            GML feature elements)
+	 * @param objId
+	 *            represents the id string of the item that should be indexed,
+	 *            typically the gml:id of GML feature elements; must be String
+	 *            instances
+	 * @param geometry
+	 *            represents the GML geometry to index; must be an ANode
+	 *            instance
+	 *
+	 * @throws QueryException
+	 */
+	@Requires(Permission.NONE)
 	public void index(final ANode node, final Object objId, final ANode geometry) throws QueryException {
 		if ((objId instanceof BXNode || objId instanceof String)) {
 
@@ -1964,7 +2019,6 @@ public class GmlGeoX extends QueryModule {
 				if (debug && mgr.indexSize() % 5000 == 0) {
 					logMemUsage("GmlGeoX#index progress: " + mgr.indexSize());
 				}
-
 			} catch (final Exception e) {
 				if (e instanceof XMLParsingException) {
 					// otherwise the stacktrace "<< is empty >>" is included
@@ -1992,7 +2046,7 @@ public class GmlGeoX extends QueryModule {
 	 * @return the geometry of the indexed node, or null if no geometry was
 	 *         found
 	 *
-	 * @deprecated renamed method to {@link GmlGeoX#getOrSetGeometry(Object, Object)}
+	 * @deprecated renamed method to {@link GmlGeoX#getOrCacheGeometry(Object, Object)}
 	 *
 	 * @throws QueryException
 	 */
@@ -2000,7 +2054,7 @@ public class GmlGeoX extends QueryModule {
 	@Requires(Permission.NONE)
 	@Deterministic
 	public com.vividsolutions.jts.geom.Geometry getGeometry(final Object id, final Object defgeom) throws QueryException {
-		return getOrSetGeometry(id, defgeom);
+		return getOrCacheGeometry(id, defgeom);
 	}
 
 	/**
@@ -2024,7 +2078,8 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
-	public com.vividsolutions.jts.geom.Geometry getOrSetGeometry(final Object id, final Object defgeom) throws QueryException {
+	public com.vividsolutions.jts.geom.Geometry getOrCacheGeometry(final Object id, final Object defgeom)
+			throws QueryException {
 		if (debug && ++count2 % 5000 == 0) {
 			logMemUsage("GmlGeoX#getGeometry.start " + count2);
 		}
