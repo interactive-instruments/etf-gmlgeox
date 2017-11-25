@@ -60,13 +60,13 @@ Validation of GML geometry elements within a given XML node is basically a SAX-b
 
 ## Indexing
 
-Feature geometries can be indexed using an r*-tree. To index a feature execute `ggeo:index( int pre, String dbName, String id, Node xmlGeometry )`. 'pre' is the index of the feature node in the database table that can be obtained using `db:node-pre($node)`. It is essential that the XML database is not updated as this will change the pre values. 'dbName' is the name of the database that contains the feature node and can be obtained using `db:name($node)`. The 'id' is a String id used for the geometry cache. Typically the gml:id of the feature is used. The 'xmlGeometry' is the XML node with the GML geometry element to index.
+Feature geometries can be indexed using an r*-tree. To index a feature execute `ggeo:index( Node featureNode, String id, Node xmlGeometry )`. 'featureNode' is the XML node with the feature to index. The 'id' is a String id used for the geometry cache. Typically the gml:id of the feature is used. The 'xmlGeometry' is the XML node with the GML geometry element to index. It is essential that the XML database is not updated after using this function otherwise the database index structures will change and the internal cache references will become obsolete.
 
 To index a node list of features (`$features`) simply execute (where 'ns:geometry' is the geometry property):
 
 ```
 let $dummy := for $feature in $features
-	return ggeo:index(db:node-pre($feature),db:name($feature),$feature/@gml:id,$feature/ns:geometry/*[1])
+	return ggeo:index($feature,$feature/@gml:id,$feature/ns:geometry/*[1])
 ```
 
 Once the index has been established, it can be searched to find all features whose bounding box overlaps with another bounding box. `ggeo:search( minx, miny, maxx, maxy )` returns a node list of indexed features overlapping with the search bounding box. For example:
