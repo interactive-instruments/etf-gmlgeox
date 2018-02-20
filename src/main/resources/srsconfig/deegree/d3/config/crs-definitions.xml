@@ -1373,11 +1373,8 @@
   <crs:UsedDatum>epsg:6324</crs:UsedDatum>
  </crs:GeographicCRS>
  <crs:GeographicCRS>
+ <!--  TODO JE -->
   <crs:Id>epsg:4326</crs:Id>
-  <crs:Id>urn:ogc:def:crs:EPSG::4326</crs:Id>
-  <crs:Id>urn:ogc:def:crs:epsg::4326</crs:Id>
-  <crs:Id>http://www.opengis.net/def/crs/EPSG/0/4326</crs:Id>
-  <crs:Id>http://www.opengis.net/def/crs/epsg/0/4326</crs:Id>
   <crs:Name>WGS 84</crs:Name>
   <crs:Version>2008-1-16T9:49</crs:Version>
   <crs:Description>Handmade proj4 geographic crs definition (parsed from nad/epsg).</crs:Description>
@@ -10247,6 +10244,9 @@
  </crs:GeographicCRS>
  <crs:GeographicCRS>
   <crs:Id>http://www.opengis.net/gml/srs/epsg.xml#4326</crs:Id>
+    <crs:Id>urn:ogc:def:crs:EPSG::4326</crs:Id>
+  <crs:Id>http://www.opengis.net/def/crs/EPSG/0/4326</crs:Id>
+  <crs:Id>http://www.opengis.net/def/crs/epsg/0/4326</crs:Id>
   <crs:Id>urn:ogc:def:crs:epsg:4326</crs:Id>
   <crs:Id>urn:ogc:def:crs:epsg::4326</crs:Id>
   <crs:Id>urn:opengis:def:crs:epsg::4326</crs:Id>

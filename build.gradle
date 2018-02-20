@@ -130,7 +130,11 @@ dependencies {
 		exclude group: 'xerces'
 		exclude group: 'xml-apis'
 	}
-
+	
+	compile 'org.apache.sis:core:0.8'
+	compile 'org.apache.sis:non-free:0.8'
+	compile group: 'org.apache.sis.non-free', name: 'sis-embedded-data', version: '0.8'
+	
 	compileOnly group: 'javax.xml.bind', name: 'jaxb-api', version:'2.2.12'
 
 	compileOnly "org.basex:basex:$basexVersion"

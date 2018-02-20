@@ -57,6 +57,11 @@ public class BasicXQueryTest {
 	public void test_validation() {
 		xmlTest("test_geometry_validation.xq", "geometryRelationship/GeometryRelationshipTest.xml");
 	}
+	
+	@Test
+	public void test_validation_leftHandedCRS() {
+		xmlTest("test_geometry_validation_leftHandedCRS.xq", "validation/ValidationOfGeometryWithLeftHandedCRS.xml");
+	}
 
 	@Test
 	public void test_isClosed() {

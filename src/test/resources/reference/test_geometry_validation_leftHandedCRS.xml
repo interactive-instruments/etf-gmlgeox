@@ -1,0 +1,12 @@
+<validationtest>
+  <test>
+    <isValid>true</isValid>
+    <result>VVV</result>
+    <messages/>
+  </test>
+  <test>
+    <isValid>true</isValid>
+    <result>VVV</result>
+    <messages/>
+  </test>
+</validationtest>

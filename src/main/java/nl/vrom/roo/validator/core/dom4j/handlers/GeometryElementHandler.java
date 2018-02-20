@@ -13,7 +13,6 @@ import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.exceptions.UnknownCRSException;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.standard.AbstractDefaultGeometry;
-import org.deegree.geometry.validation.GeometryValidator;
 import org.deegree.gml.GMLInputFactory;
 import org.deegree.gml.GMLStreamReader;
 import org.deegree.gml.GMLVersion;
@@ -182,12 +181,12 @@ public class GeometryElementHandler implements ElementHandler {
 			}
 
 			GMLStreamReader gmlStream = GMLInputFactory.createGMLStreamReader(gmlVersion, xmlStream);
-			
+
 			ICRS defaultCRS = null;
 			if (defaultSrsName != null) {
-				defaultCRS = CRSManager.getCRSRef(defaultSrsName);
+				defaultCRS = CRSManager.getCRSRef(defaultSrsName);				
 			}
-						
+
 			gmlStream.setDefaultCRS(defaultCRS);
 
 			org.deegree.geometry.Geometry geom = gmlStream.readGeometry();
@@ -195,7 +194,11 @@ public class GeometryElementHandler implements ElementHandler {
 			GMLValidationEventHandler eventHandler = new GMLValidationEventHandler(validatorContext, element,
 					gmlVersion == GMLVersion.GML_31);
 
-			GeometryValidator validator = new GeometryValidator(eventHandler);
+			/*
+			 * We need to use a custom geometry validator to handle left-handed
+			 * CRS when checking the orientation of surface boundaries.
+			 */
+			CustomGeometryValidator validator = new CustomGeometryValidator(eventHandler);
 
 			// Deegree3 based validation
 			boolean isValid = validator.validateGeometry(geom);

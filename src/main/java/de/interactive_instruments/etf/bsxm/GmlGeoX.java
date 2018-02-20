@@ -21,7 +21,11 @@ import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,25 +33,12 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import nl.vrom.roo.validator.core.ValidatorContext;
-import nl.vrom.roo.validator.core.ValidatorMessage;
-import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
-
-import com.github.davidmoten.rtree.geometry.Geometries;
-import com.google.common.base.Joiner;
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.util.GeometryExtracter;
-import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
-
 import org.apache.commons.io.FileUtils;
 import org.basex.api.dom.BXElem;
 import org.basex.api.dom.BXNode;
-import org.basex.core.Context;
 import org.basex.data.Data;
 import org.basex.query.QueryException;
 import org.basex.query.QueryModule;
-import org.basex.query.QueryProcessor;
-import org.basex.query.iter.BasicNodeIter;
 import org.basex.query.value.Value;
 import org.basex.query.value.item.Jav;
 import org.basex.query.value.node.ANode;
@@ -64,9 +55,18 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.github.davidmoten.rtree.geometry.Geometries;
+import com.google.common.base.Joiner;
+import com.vividsolutions.jts.geom.Envelope;
+import com.vividsolutions.jts.geom.util.GeometryExtracter;
+import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
+
 import de.interactive_instruments.IFile;
 import de.interactive_instruments.IoUtils;
 import de.interactive_instruments.properties.PropertyUtils;
+import nl.vrom.roo.validator.core.ValidatorContext;
+import nl.vrom.roo.validator.core.ValidatorMessage;
+import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
 
 /**
  * This module supports the validation of geometries as well as computing the
@@ -493,7 +493,7 @@ public class GmlGeoX extends QueryModule {
 	 */
 	@Requires(Permission.NONE)
 	ValidationReport executeValidate(ANode node, String testMask) throws QueryException {
-
+		
 		try {
 
 			// determine which tests to execute
