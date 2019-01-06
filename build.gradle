@@ -7,14 +7,15 @@
 buildscript {
 	repositories {
 		maven {
-			url "http://services.interactive-instruments.de/etfdev-af/plugins-releases-local"
+			url "https://services.interactive-instruments.de/etfdev-af/plugins-releases-local"
 			credentials {
+				// Our repository requires authenticating
 				username 'ii-bda'
-				password '6ozhS683'
+				password 'AP7mb4WA6F1ckdZkaE8Qx8GSowt'
 			}}
 	}
 	dependencies {
-		classpath group: 'de.interactive_instruments.bda', name: 'etf-bda', version:'1.0.24'
+		classpath group: 'de.interactive_instruments.bda', name: 'etf-bda', version: '[1.0.29,1.0.99]'
 	}
 	dependencies {
 		ant.unjar src: configurations.classpath.files.find {it.path.contains('etf')}, dest: 'build/gradle'
@@ -54,7 +55,7 @@ configurations {
 
 dependencies {
 
-    compile group: 'de.interactive_instruments', name: 'ii-commons-util', version: '2.0.0' + project.snapshotSuffix
+    compile group: 'de.interactive_instruments', name: 'ii-commons-util', version: '3.0.0' + project.snapshotSuffix
 
 	// Validator dependencies
 	compile('org.bouncycastle:bcprov-jdk15on:1.57')
