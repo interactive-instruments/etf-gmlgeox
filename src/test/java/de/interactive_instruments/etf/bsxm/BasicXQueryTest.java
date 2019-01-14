@@ -44,113 +44,113 @@ import org.junit.Test;
  */
 public class BasicXQueryTest {
 
-	private static Context context = new Context();
+    private static Context context = new Context();
 
-	public static final String queryDir = "src/test/resources/queries/";
-	public static final String xmlDir = "src/test/resources/xml/";
-	public static final String resultDir = "build/test-results/test/res/";
-	public static final String referenceDir = "src/test/resources/reference/";
+    public static final String queryDir = "src/test/resources/queries/";
+    public static final String xmlDir = "src/test/resources/xml/";
+    public static final String resultDir = "build/test-results/test/res/";
+    public static final String referenceDir = "src/test/resources/reference/";
 
-	@Test
-	public void test_validation() {
-		xmlTest("test_geometry_validation.xq", "geometryRelationship/GeometryRelationshipTest.xml");
-	}
+    @Test
+    public void test_validation() {
+        xmlTest("test_geometry_validation.xq", "geometryRelationship/GeometryRelationshipTest.xml");
+    }
 
-	@Test
-	public void test_isClosed() {
-		xmlTest("test_geometry_isClosed.xq", "GeometryIsClosedTest.xml");
-	}
+    @Test
+    public void test_isClosed() {
+        xmlTest("test_geometry_isClosed.xq", "GeometryIsClosedTest.xml");
+    }
 
-	@Test
-	public void test_3d() {
-		xmlTest("test_geometry_3d.xq");
-	}
+    @Test
+    public void test_3d() {
+        xmlTest("test_geometry_3d.xq");
+    }
 
-	@Test
-	public void test_3d_indexed() throws BaseXException {
-		new DropDB("GmlGeoXUnitTestDB").execute(context);
-		new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/3DCoodinates.xml").execute(context);
-		xmlTest("test_geometry_3d_indexed.xq");
-	}
+    @Test
+    public void test_3d_indexed() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/3DCoodinates.xml").execute(context);
+        xmlTest("test_geometry_3d_indexed.xq");
+    }
 
-	@Test
-	public void test_SRS_configByGmlGeoX() {
-		xmlTest("test_geometry_SRS_configByGmlGeoX.xq");
-	}
+    @Test
+    public void test_SRS_configByGmlGeoX() {
+        xmlTest("test_geometry_SRS_configByGmlGeoX.xq");
+    }
 
-	private void xmlTest(String xquery) {
-		xmlTest(xquery, null);
-	}
+    private void xmlTest(String xquery) {
+        xmlTest(xquery, null);
+    }
 
-	private void xmlTest(String xquery, String doc) {
+    private void xmlTest(String xquery, String doc) {
 
-		try {
-			String filename = FilenameUtils.getBaseName(xquery) + ".xml";
+        try {
+            String filename = FilenameUtils.getBaseName(xquery) + ".xml";
 
-			String query = new String(Files.readAllBytes(Paths.get(queryDir + xquery)));
+            String query = new String(Files.readAllBytes(Paths.get(queryDir + xquery)));
 
-			XQuery xq = new XQuery(query);
+            XQuery xq = new XQuery(query);
 
-			if (doc != null) {
-				/* The XQuery must declare external variable 'docPath' that expects the path to the input XML.
-				 *
-				 * Example: declare variable $docPath external := '...'; */
-				xq.bind("docPath", xmlDir + doc);
-			}
+            if (doc != null) {
+                /* The XQuery must declare external variable 'docPath' that expects the path to the input XML.
+                 *
+                 * Example: declare variable $docPath external := '...'; */
+                xq.bind("docPath", xmlDir + doc);
+            }
 
-			String queryresult = xq.execute(context);
+            String queryresult = xq.execute(context);
 
-			String result = resultDir + filename;
+            String result = resultDir + filename;
 
-			FileUtils.writeStringToFile(new File(result), queryresult, "utf-8");
+            FileUtils.writeStringToFile(new File(result), queryresult, "utf-8");
 
-			String reference = referenceDir + filename;
+            String reference = referenceDir + filename;
 
-			similar(result, reference);
+            similar(result, reference);
 
-		} catch (Exception e) {
-			fail("Exception occurred while executing test with xquery '" + xquery + "': " + e.getMessage());
-		}
-	}
+        } catch (Exception e) {
+            fail("Exception occurred while executing test with xquery '" + xquery + "': " + e.getMessage());
+        }
+    }
 
-	private void similar(String xmlFileName, String referenceXmlFileName) {
-		String myControlXML = null;
-		String myTestXML = null;
-		try {
-			myControlXML = readFile(referenceXmlFileName);
-		} catch (Exception e) {
-			fail("Could not read " + referenceXmlFileName);
-		}
-		try {
-			myTestXML = readFile(xmlFileName);
-		} catch (Exception e) {
-			fail("Could not read " + xmlFileName);
-		}
-		try {
-			Diff myDiff = new Diff(myControlXML, myTestXML);
-			assertTrue("XML: " + xmlFileName + " similar to " + referenceXmlFileName + " - " + myDiff.toString(),
-					myDiff.similar());
-		} catch (Exception e) {
-			fail("Could not compare " + xmlFileName + " and " + referenceXmlFileName);
-		}
-	}
+    private void similar(String xmlFileName, String referenceXmlFileName) {
+        String myControlXML = null;
+        String myTestXML = null;
+        try {
+            myControlXML = readFile(referenceXmlFileName);
+        } catch (Exception e) {
+            fail("Could not read " + referenceXmlFileName);
+        }
+        try {
+            myTestXML = readFile(xmlFileName);
+        } catch (Exception e) {
+            fail("Could not read " + xmlFileName);
+        }
+        try {
+            Diff myDiff = new Diff(myControlXML, myTestXML);
+            assertTrue("XML: " + xmlFileName + " similar to " + referenceXmlFileName + " - " + myDiff.toString(),
+                    myDiff.similar());
+        } catch (Exception e) {
+            fail("Could not compare " + xmlFileName + " and " + referenceXmlFileName);
+        }
+    }
 
-	private String readFile(String fileName) throws Exception {
-		InputStream stream = new FileInputStream(new File(fileName));
+    private String readFile(String fileName) throws Exception {
+        InputStream stream = new FileInputStream(new File(fileName));
 
-		Writer writer = new StringWriter();
-		char[] buffer = new char[1024];
-		Reader reader = null;
-		try {
-			reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
-			int n;
-			while ((n = reader.read(buffer)) != -1) {
-				writer.write(buffer, 0, n);
-			}
-		} finally {
-			if (reader != null)
-				reader.close();
-		}
-		return writer.toString();
-	}
+        Writer writer = new StringWriter();
+        char[] buffer = new char[1024];
+        Reader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+            int n;
+            while ((n = reader.read(buffer)) != -1) {
+                writer.write(buffer, 0, n);
+            }
+        } finally {
+            if (reader != null)
+                reader.close();
+        }
+        return writer.toString();
+    }
 }

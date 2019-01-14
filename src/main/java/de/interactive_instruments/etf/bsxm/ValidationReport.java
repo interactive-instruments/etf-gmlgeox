@@ -26,34 +26,34 @@ import nl.vrom.roo.validator.core.ValidatorMessage;
  */
 public final class ValidationReport {
 
-	private String validationResult = "VVV";
-	private List<ValidatorMessage> validatorMessages = new ArrayList<ValidatorMessage>();
+    private String validationResult = "VVV";
+    private List<ValidatorMessage> validatorMessages = new ArrayList<ValidatorMessage>();
 
-	public ValidationReport() {
+    public ValidationReport() {
 
-	}
+    }
 
-	public ValidationReport(String validationResult, List<ValidatorMessage> validatorMessages) {
-		this.validationResult = validationResult;
-		this.validatorMessages = validatorMessages;
-	}
+    public ValidationReport(String validationResult, List<ValidatorMessage> validatorMessages) {
+        this.validationResult = validationResult;
+        this.validatorMessages = validatorMessages;
+    }
 
-	/**
-	 * @return the validationResult
-	 */
-	public String getValidationResult() {
-		return validationResult;
-	}
+    /**
+     * @return the validationResult
+     */
+    public String getValidationResult() {
+        return validationResult;
+    }
 
-	/**
-	 * @return the validatorMessages
-	 */
-	public List<ValidatorMessage> getValidatorMessages() {
-		return validatorMessages;
-	}
+    /**
+     * @return the validatorMessages
+     */
+    public List<ValidatorMessage> getValidatorMessages() {
+        return validatorMessages;
+    }
 
-	public boolean isValid() {
-		return validationResult.toLowerCase().indexOf('f') == -1;
-	}
+    public boolean isValid() {
+        return validationResult.toLowerCase().indexOf('f') == -1;
+    }
 
 }
