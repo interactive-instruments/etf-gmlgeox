@@ -15,6 +15,6 @@ script:
     - './gradlew init'
     - './gradlew -Dorg.gradle.project.ii.etfdev.quality.reports=true test jacocoTestReport'
 before_install:
-    - '[[ -n $CODACY_PROJECT_TOKEN ]] && wget -O ~/codacy-coverage-reporter-assembly.jar https://repo.jenkins-ci.org/public/com/codacy/codacy-coverage-reporter/5.0.310/codacy-coverage-reporter-5.0.310-assembly.jar'
+    - 'if [ -n "$CODACY_PROJECT_TOKEN" ]; then wget -O ~/codacy-coverage-reporter-assembly.jar https://repo.jenkins-ci.org/public/com/codacy/codacy-coverage-reporter/5.0.310/codacy-coverage-reporter-5.0.310-assembly.jar; fi'
 after_success:
-    - '[[ -n $CODACY_PROJECT_TOKEN ]] && java -jar ~/codacy-coverage-reporter-assembly.jar report -l Java -r build/reports/jacoco/test/jacocoTestReport.xml'
+    - 'if [ -n "$CODACY_PROJECT_TOKEN" ]; then java -jar ~/codacy-coverage-reporter-assembly.jar report -l Java -r build/reports/jacoco/test/jacocoTestReport.xml; fi'
