@@ -19,8 +19,7 @@ import org.basex.query.value.node.ANode;
 import org.basex.query.value.node.DBNode;
 
 /**
- * This class contains BaseX information to quickly access a node in the database. The
- * instances are stored in the spatial index.
+ * This class contains BaseX information to quickly access a node in the database. The instances are stored in the spatial index.
  *
  * @author Clemens Portele (portele <at> interactive-instruments <dot> de)
  *
@@ -32,7 +31,8 @@ class IndexEntry {
 	/**
 	 * Create Index Entry from database node
 	 *
-	 * @param node Database node
+	 * @param node
+	 *            Database node
 	 */
 	IndexEntry(final ANode node) {
 		pre = ((DBNode) node).pre();
@@ -42,8 +42,10 @@ class IndexEntry {
 	/**
 	 * Index Entry
 	 *
-	 * @param dbn database name as String
-	 * @param p pre value as int
+	 * @param dbn
+	 *            database name as String
+	 * @param p
+	 *            pre value as int
 	 * @deprecated removed in Version 1.3.0
 	 */
 	@Deprecated

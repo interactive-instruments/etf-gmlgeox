@@ -57,8 +57,7 @@ import org.slf4j.LoggerFactory;
 /**
  * NOTE: Implementation is based on Geonovum's GeometryElementHandler.
  *
- * @author Johannes Echterhoff (echterhoff at interactive-instruments
- *         dot de)
+ * @author Johannes Echterhoff (echterhoff at interactive-instruments dot de)
  *
  */
 public class SecondaryGeometryElementValidationHandler implements ElementHandler {
@@ -87,21 +86,14 @@ public class SecondaryGeometryElementValidationHandler implements ElementHandler
 
 	/**
 	 * @param isTestPolygonPatchConnectivity
-	 *            - <code>true</code> if polygon patch connectivity shall be
-	 *            tested
+	 *            - <code>true</code> if polygon patch connectivity shall be tested
 	 * @param isTestRepetitionInCurveSegments
-	 *            - <code>true</code> if repetition of consecutive points in
-	 *            curve segments shall be checked
+	 *            - <code>true</code> if repetition of consecutive points in curve segments shall be checked
 	 * @param validatorContext
 	 * @param srsName
-	 *            the name of the default SRS to use when validating a geometry
-	 *            (especially important in case of geometries with 3D
-	 *            coordinates, and srsName is not defined on the geometry
-	 *            element itself)
+	 *            the name of the default SRS to use when validating a geometry (especially important in case of geometries with 3D coordinates, and srsName is not defined on the geometry element itself)
 	 * @param gmlGeoX
-	 *            Reference to GmlGeoX QueryModule, in case that retrieval of
-	 *            certain information (example: srsName) requires execution of
-	 *            xqueries (by the QueryModule).
+	 *            Reference to GmlGeoX QueryModule, in case that retrieval of certain information (example: srsName) requires execution of xqueries (by the QueryModule).
 	 */
 	public SecondaryGeometryElementValidationHandler(boolean isTestPolygonPatchConnectivity,
 			boolean isTestRepetitionInCurveSegments, ValidatorContext validatorContext, String srsName,
@@ -135,8 +127,7 @@ public class SecondaryGeometryElementValidationHandler implements ElementHandler
 	/**
 	 * {@inheritDoc}
 	 * <p>
-	 * When this is called on a new feature member, the geometry counters are
-	 * reset.
+	 * When this is called on a new feature member, the geometry counters are reset.
 	 * </p>
 	 */
 	public void onStart(ElementPath elementPath) {
@@ -278,8 +269,7 @@ public class SecondaryGeometryElementValidationHandler implements ElementHandler
 	}
 
 	/**
-	 * Check if this is a main geometry by making sure that the parent element
-	 * is <code>null</code> or in a non-GML namespace.
+	 * Check if this is a main geometry by making sure that the parent element is <code>null</code> or in a non-GML namespace.
 	 *
 	 * @param elementPath
 	 * @return true is this is a main geometry
@@ -293,12 +283,7 @@ public class SecondaryGeometryElementValidationHandler implements ElementHandler
 		// return (!isGML32Namespace(namespaceURI) &&
 		// !isGML31Namespace(namespaceURI));
 
-		/*
-		 * 2015-12-08 Johannes Echterhoff: the previous logic is not suitable
-		 * for us, in case that a single geometry (node) is validated by a
-		 * (x)query. Because then the geometry has no parent, which would cause
-		 * this method to evaluate to false - which is not what we want.
-		 */
+		/* 2015-12-08 Johannes Echterhoff: the previous logic is not suitable for us, in case that a single geometry (node) is validated by a (x)query. Because then the geometry has no parent, which would cause this method to evaluate to false - which is not what we want. */
 
 		if (elementPath.getCurrent().getParent() == null) {
 
@@ -345,28 +330,18 @@ public class SecondaryGeometryElementValidationHandler implements ElementHandler
 	/**
 	 * Checks that multiple polygon patches within a surface are connected.
 	 * <p>
-	 * The test is implemented as follows: Each polygon patch is converted into
-	 * a JTS Polygon. Then the union of all polygons is created. If the union
-	 * geometry is a JTS Polygon then the surface is connected - otherwise it is
-	 * not.
+	 * The test is implemented as follows: Each polygon patch is converted into a JTS Polygon. Then the union of all polygons is created. If the union geometry is a JTS Polygon then the surface is connected - otherwise it is not.
 	 * <p>
 	 * Checks:
 	 * <ul>
-	 * <li>Surface (including PolyhedralSurface, CompositeSurface, and
-	 * OrientableSurface)</li>
-	 * <li>Only PolygonPatch is allowed as surface patch - all surfaces that
-	 * contain a different type of surface patch are ignored.</li>
-	 * <li>The elements of multi and composite geometries (except Multi- and
-	 * CompositeSolids).</li>
+	 * <li>Surface (including PolyhedralSurface, CompositeSurface, and OrientableSurface)</li>
+	 * <li>Only PolygonPatch is allowed as surface patch - all surfaces that contain a different type of surface patch are ignored.</li>
+	 * <li>The elements of multi and composite geometries (except Multi- and CompositeSolids).</li>
 	 * </ul>
 	 * Does NOT check the surfaces within solids!
 	 *
 	 * @param geom
-	 * @return <code>true</code> if the given geometry is a connected surface, a
-	 *         point, a curve, multi- or composite geometry that only consists
-	 *         of these geometry types, else <code>false</code>. Thus,
-	 *         <code>false</code> will be returned whenever a solid is
-	 *         encountered and if a surface is not connected.
+	 * @return <code>true</code> if the given geometry is a connected surface, a point, a curve, multi- or composite geometry that only consists of these geometry types, else <code>false</code>. Thus, <code>false</code> will be returned whenever a solid is encountered and if a surface is not connected.
 	 * @throws Exception
 	 */
 	protected boolean checkConnectivityOfPolygonPatches(Geometry geom) throws Exception {
@@ -384,14 +359,7 @@ public class SecondaryGeometryElementValidationHandler implements ElementHandler
 
 			} else {
 
-				/*
-				 * Compute JTS geometry from the surface with multiple patches.
-				 * An exception will be thrown if the surface does not consist
-				 * of polygon patches. If the surface is connected then the
-				 * resulting geometry is a JTS Polygon (because a union of all
-				 * patches has been created). Otherwise the surface is not
-				 * connected.
-				 */
+				/* Compute JTS geometry from the surface with multiple patches. An exception will be thrown if the surface does not consist of polygon patches. If the surface is connected then the resulting geometry is a JTS Polygon (because a union of all patches has been created). Otherwise the surface is not connected. */
 				com.vividsolutions.jts.geom.Geometry g = geoutils.toJTSGeometry(geom);
 
 				if (g instanceof com.vividsolutions.jts.geom.Polygon) {
@@ -443,36 +411,26 @@ public class SecondaryGeometryElementValidationHandler implements ElementHandler
 	}
 
 	/**
-	 * Checks that two consecutive points in a posList - within a CurveSegment -
-	 * are not equal.
+	 * Checks that two consecutive points in a posList - within a CurveSegment - are not equal.
 	 * <p>
 	 * Checks:
 	 * <ul>
-	 * <li>Curve (including CompositeCurve, LineString, OrientableCurve, Ring)
-	 * </li>
-	 * <li>The following CurveSegment types: Arc, ArcString, CubicSpline,
-	 * GeodesicString, LineStringSegment</li>
-	 * <li>The exterior and interior rings of polygon patches (contained within
-	 * Surface, Polygon, PolyhedralSurface, TriangulatedSurface, Tin,
-	 * CompositeSurface, or OrientableSurface) - NOTE: all other types of
-	 * surface patches are currently ignored!</li>
+	 * <li>Curve (including CompositeCurve, LineString, OrientableCurve, Ring)</li>
+	 * <li>The following CurveSegment types: Arc, ArcString, CubicSpline, GeodesicString, LineStringSegment</li>
+	 * <li>The exterior and interior rings of polygon patches (contained within Surface, Polygon, PolyhedralSurface, TriangulatedSurface, Tin, CompositeSurface, or OrientableSurface) - NOTE: all other types of surface patches are currently ignored!</li>
 	 * <li>The elements of multi and composite geometries</li>
 	 * </ul>
 	 * Does NOT check curve segments within solids!
 	 *
 	 * @param geom
 	 *            the geometry that shall be tested
-	 * @return <code>true</code> if no repetition was detected (or if the
-	 *         geometry is a point, a solid, or consists of solids), else
-	 *         <code>false</code>
+	 * @return <code>true</code> if no repetition was detected (or if the geometry is a point, a solid, or consists of solids), else <code>false</code>
 	 */
 	protected boolean checkNoRepetitionInCurveSegment(Geometry geom) {
 
 		if (geom instanceof Curve) {
 
-			/*
-			 * includes CompositeCurve, LineString, OrientableCurve, Ring
-			 */
+			/* includes CompositeCurve, LineString, OrientableCurve, Ring */
 
 			Curve curve = (Curve) geom;
 

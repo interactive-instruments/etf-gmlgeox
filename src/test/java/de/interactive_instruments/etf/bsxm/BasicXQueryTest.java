@@ -35,13 +35,11 @@ import org.basex.core.Context;
 import org.basex.core.cmd.CreateDB;
 import org.basex.core.cmd.DropDB;
 import org.basex.core.cmd.XQuery;
-import org.basex.query.func.db.DbExists;
 import org.custommonkey.xmlunit.Diff;
 import org.junit.Test;
 
 /**
- * @author Johannes Echterhoff (echterhoff <at> interactive-instruments
- *         <dot> de)
+ * @author Johannes Echterhoff (echterhoff <at> interactive-instruments <dot> de)
  *
  */
 public class BasicXQueryTest {
@@ -94,12 +92,9 @@ public class BasicXQueryTest {
 			XQuery xq = new XQuery(query);
 
 			if (doc != null) {
-				/*
-				 * The XQuery must declare external variable 'docPath' that
-				 * expects the path to the input XML.
+				/* The XQuery must declare external variable 'docPath' that expects the path to the input XML.
 				 *
-				 * Example: declare variable $docPath external := '...';
-				 */
+				 * Example: declare variable $docPath external := '...'; */
 				xq.bind("docPath", xmlDir + doc);
 			}
 

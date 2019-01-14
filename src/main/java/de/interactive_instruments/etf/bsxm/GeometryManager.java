@@ -28,11 +28,9 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 
 /**
- * The GeometryManager is a spatial index and an in-memory cache for JTS geometries that can be used
- * with the GmlGeoX module. The cache is filled during the indexing of the geometries and updated
- * when geometries are accessed using the {@link GmlGeoX#getGeometry(Object, Object)} function.
+ * The GeometryManager is a spatial index and an in-memory cache for JTS geometries that can be used with the GmlGeoX module. The cache is filled during the indexing of the geometries and updated when geometries are accessed using the {@link GmlGeoX#getGeometry(Object, Object)} function.
  *
- *  @author Clemens Portele (portele <at> interactive-instruments <dot> de)
+ * @author Clemens Portele (portele <at> interactive-instruments <dot> de)
  */
 class GeometryManager {
 
@@ -71,8 +69,7 @@ class GeometryManager {
 	 *
 	 * @param id
 	 *            the id for which the geometry should be retrieved, typically a gml:id of a GML feature element
-	 * @return
-	 *            the geometry of the indexed node, or null if no geometry was found
+	 * @return the geometry of the indexed node, or null if no geometry was found
 	 */
 	public com.vividsolutions.jts.geom.Geometry get(String id) {
 		return geometryCache.getIfPresent(id);
@@ -111,8 +108,10 @@ class GeometryManager {
 	/**
 	 * Index a geometry
 	 *
-	 * @param entry the index entry referencing the BaseX node
-	 * @param geometry the geometry to index
+	 * @param entry
+	 *            the index entry referencing the BaseX node
+	 * @param geometry
+	 *            the geometry to index
 	 */
 	public void index(IndexEntry entry, com.github.davidmoten.rtree.geometry.Geometry geometry) {
 		rtree = rtree.add(entry, geometry);
@@ -121,7 +120,7 @@ class GeometryManager {
 	/**
 	 * Report current size of the spatial index
 	 *
-	 * @return  size of the spatial index
+	 * @return size of the spatial index
 	 */
 	public int indexSize() {
 		return rtree.size();
@@ -130,7 +129,7 @@ class GeometryManager {
 	/**
 	 * return all entries in the spatial index
 	 *
-	 * @return  iterator over all entries
+	 * @return iterator over all entries
 	 */
 	public Iterable<IndexEntry> search() {
 		final Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.entries();
@@ -140,8 +139,9 @@ class GeometryManager {
 	/**
 	 * return all entries in the spatial index that are in the bounding box
 	 *
-	 * @param bbox  the bounding box / rectangle
-	 * @return  iterator over all detected entries
+	 * @param bbox
+	 *            the bounding box / rectangle
+	 * @return iterator over all detected entries
 	 */
 	public Iterable<IndexEntry> search(com.github.davidmoten.rtree.geometry.Rectangle bbox) {
 		final Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.search(bbox);

@@ -31,10 +31,15 @@ public final class ExecuteTestQuery {
 
 	/**
 	 * Runs the example code.
-	 * @param args (ignored) command-line arguments
-	 * @throws IOException if an error occurs while serializing the results
-	 * @throws QueryException if an error occurs while evaluating the query
-	 * @throws BaseXException if a database command fails
+	 *
+	 * @param args
+	 *            (ignored) command-line arguments
+	 * @throws IOException
+	 *             if an error occurs while serializing the results
+	 * @throws QueryException
+	 *             if an error occurs while evaluating the query
+	 * @throws BaseXException
+	 *             if a database command fails
 	 */
 	public static void main(final String[] args) throws IOException, QueryException {
 		// Evaluate the specified XQuery

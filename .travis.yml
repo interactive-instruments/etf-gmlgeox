@@ -1,20 +1,20 @@
 language: java
 jdk:
-- oraclejdk8
+    - oraclejdk8
 os:
-- linux
+    - linux
 branches:
-  except:
-  - master
+    except:
+        - master
 cache:
-  directories:
-  - "$HOME/.gradle"
+    directories:
+        - $HOME/.gradle
 before_script:
-- export TZ=Europe/Berlin
+    - 'export TZ=Europe/Berlin'
 script:
-- "./gradlew init"
-- "./gradlew -Dorg.gradle.project.ii.etfdev.quality.reports=true test jacocoTestReport"
+    - './gradlew init'
+    - './gradlew -Dorg.gradle.project.ii.etfdev.quality.reports=true test jacocoTestReport'
 before_install:
-- "[[ -n "$CODACY_PROJECT_TOKEN" ]] && wget -O ~/codacy-coverage-reporter-assembly.jar https://repo.jenkins-ci.org/public/com/codacy/codacy-coverage-reporter/5.0.310/codacy-coverage-reporter-5.0.310-assembly.jar"
+    - '[[ -n $CODACY_PROJECT_TOKEN ]] && wget -O ~/codacy-coverage-reporter-assembly.jar https://repo.jenkins-ci.org/public/com/codacy/codacy-coverage-reporter/5.0.310/codacy-coverage-reporter-5.0.310-assembly.jar'
 after_success:
-- "[[ -n "$CODACY_PROJECT_TOKEN" ]] && java -jar ~/codacy-coverage-reporter-assembly.jar report -l Java -r build/reports/jacoco/test/jacocoTestReport.xml"
+    - '[[ -n $CODACY_PROJECT_TOKEN ]] && java -jar ~/codacy-coverage-reporter-assembly.jar report -l Java -r build/reports/jacoco/test/jacocoTestReport.xml'

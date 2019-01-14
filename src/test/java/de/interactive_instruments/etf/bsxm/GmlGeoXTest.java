@@ -23,8 +23,7 @@ import org.apache.commons.io.input.XmlStreamReader;
 import org.basex.query.QueryTest;
 
 /**
- * @author Johannes Echterhoff (echterhoff <at> interactive-instruments
- *         <dot> de)
+ * @author Johannes Echterhoff (echterhoff <at> interactive-instruments <dot> de)
  *
  */
 public final class GmlGeoXTest extends QueryTest {

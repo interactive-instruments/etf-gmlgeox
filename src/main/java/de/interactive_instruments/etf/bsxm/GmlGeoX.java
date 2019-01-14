@@ -42,12 +42,9 @@ import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 import org.apache.commons.io.FileUtils;
 import org.basex.api.dom.BXElem;
 import org.basex.api.dom.BXNode;
-import org.basex.core.Context;
 import org.basex.data.Data;
 import org.basex.query.QueryException;
 import org.basex.query.QueryModule;
-import org.basex.query.QueryProcessor;
-import org.basex.query.iter.BasicNodeIter;
 import org.basex.query.value.Value;
 import org.basex.query.value.item.Jav;
 import org.basex.query.value.node.ANode;
@@ -69,16 +66,12 @@ import de.interactive_instruments.IoUtils;
 import de.interactive_instruments.properties.PropertyUtils;
 
 /**
- * This module supports the validation of geometries as well as computing the
- * spatial relationship between geometries.
+ * This module supports the validation of geometries as well as computing the spatial relationship between geometries.
  * <p>
- * NOTE 1: the validation and spatial relationship methods only support specific
- * sets of geometry types - please see the documentation of the respective
- * methods for details on which geometry types are supported.
+ * NOTE 1: the validation and spatial relationship methods only support specific sets of geometry types - please see the documentation of the respective methods for details on which geometry types are supported.
  * </p>
  *
- * @author Johannes Echterhoff (echterhoff at interactive-instruments
- *         dot de)
+ * @author Johannes Echterhoff (echterhoff at interactive-instruments dot de)
  *
  */
 public class GmlGeoX extends QueryModule {
@@ -165,12 +158,7 @@ public class GmlGeoX extends QueryModule {
 			}
 		} else {
 			try {
-				/*
-				 * We use the same folder each
-				 * time an instance of GmlGeoX is created. The configuration
-				 * files will not be deleted upon exit. That shouldn't be a
-				 * problem since we always use the same folder.
-				 */
+				/* We use the same folder each time an instance of GmlGeoX is created. The configuration files will not be deleted upon exit. That shouldn't be a problem since we always use the same folder. */
 				final String tempDirPath = System.getProperty("java.io.tmpdir");
 				final File tempDir = new File(tempDirPath, "gmlGeoXSrsConfig");
 
@@ -208,15 +196,12 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Loads SRS configuration files from the given directory, to be used when
-	 * looking up SRS names for creating geometry objects.
+	 * Loads SRS configuration files from the given directory, to be used when looking up SRS names for creating geometry objects.
 	 *
 	 * @param configurationDirectoryPathName
 	 *            Path to a directory that contains SRS configuration files
 	 * @throws QueryException
-	 *             in case that the SRS configuration directory does not exist,
-	 *             is not a directory, cannot be read, or an exception occurred
-	 *             while loading the configuration files
+	 *             in case that the SRS configuration directory does not exist, is not a directory, cannot be read, or an exception occurred while loading the configuration files
 	 */
 	@Requires(Permission.NONE)
 	public void configureSpatialReferenceSystems(final String configurationDirectoryPathName) throws QueryException {
@@ -241,20 +226,13 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Calls the {@link #validate(ANode, String)} method, with <code>null</code>
-	 * as the bitmask, resulting in a validation with all tests enabled.
+	 * Calls the {@link #validate(ANode, String)} method, with <code>null</code> as the bitmask, resulting in a validation with all tests enabled.
 	 * <p>
-	 * See the documentation of the {@link #validate(ANode, String)} method for
-	 * a description of the supported geometry types.
+	 * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry types.
 	 *
-	 * @param node Node
-	 * @return a mask with the test results, encoded as characters - one at each
-	 *         position (1-based index) of the available tests. 'V' indicates
-	 *         that the test passed, i.e. that the geometry is valid according
-	 *         to that test. 'F' indicates that the test failed. 'S' indicates
-	 *         that the test was skipped. Example: the string 'SVF' shows that
-	 *         the first test was skipped, while the second test passed and the
-	 *         third failed.
+	 * @param node
+	 *            Node
+	 * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -265,21 +243,9 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Validates the given (GML geometry) node.
 	 * <p>
-	 * By default validation is only performed for the following GML geometry
-	 * elements: Point, Polygon, Surface, Curve, LinearRing, MultiPolygon,
-	 * MultiGeometry, MultiSurface, MultiCurve, Ring, and LineString. The set of
-	 * GML elements to validate can be modified via the following methods:
-	 * {@link #registerGmlGeometry(String)},
-	 * {@link #unregisterGmlGeometry(String)}, and
-	 * {@link #unregisterAllGmlGeometries()}. These methods are also available
-	 * for XQueries.
+	 * By default validation is only performed for the following GML geometry elements: Point, Polygon, Surface, Curve, LinearRing, MultiPolygon, MultiGeometry, MultiSurface, MultiCurve, Ring, and LineString. The set of GML elements to validate can be modified via the following methods: {@link #registerGmlGeometry(String)}, {@link #unregisterGmlGeometry(String)}, and {@link #unregisterAllGmlGeometries()}. These methods are also available for XQueries.
 	 * <p>
-	 * The validation tasks to perform can be specified via the given mask. The
-	 * mask is a simple string, where the character '1' at the position of a
-	 * specific test (assuming a 1-based index) specifies that the test shall be
-	 * performed. If the mask does not contain a character at the position of a
-	 * specific test (because the mask is empty or the length is smaller than
-	 * the position), then the test will be executed.
+	 * The validation tasks to perform can be specified via the given mask. The mask is a simple string, where the character '1' at the position of a specific test (assuming a 1-based index) specifies that the test shall be performed. If the mask does not contain a character at the position of a specific test (because the mask is empty or the length is smaller than the position), then the test will be executed.
 	 * <p>
 	 * The following tests are available:
 	 * <p>
@@ -292,43 +258,32 @@ public class GmlGeoX extends QueryModule {
 	 * <tr>
 	 * <td>1</td>
 	 * <td>General Validation</td>
-	 * <td>This test validates the given geometry using the validation
-	 * functionality of both deegree and JTS.</td>
+	 * <td>This test validates the given geometry using the validation functionality of both deegree and JTS.</td>
 	 * </tr>
 	 * <tr>
 	 * <td>2</td>
 	 * <td>Polygon Patch Connectivity</td>
-	 * <td>Checks that multiple polygon patches within a single surface are
-	 * connected.</td>
+	 * <td>Checks that multiple polygon patches within a single surface are connected.</td>
 	 * </tr>
 	 * <tr>
 	 * <td>3</td>
 	 * <td>Repetition of Position in CurveSegments</td>
-	 * <td>Checks that consecutive positions within a CurveSegment are not
-	 * equal.</td>
+	 * <td>Checks that consecutive positions within a CurveSegment are not equal.</td>
 	 * </tr>
 	 * </table>
 	 * <p>
 	 * Examples:
 	 * <ul>
-	 * <li>The mask '010' indicates that only the 'Polygon Patch Connectivity'
-	 * test shall be performed.</li>
-	 * <li>The mask '1' indicates that all tests shall be performed (because the
-	 * first one is set to true/'1' and nothing is said for the other tests).
-	 * </li>
-	 * <li>The mask '0' indicates that all except the first test shall be
-	 * performed.
+	 * <li>The mask '010' indicates that only the 'Polygon Patch Connectivity' test shall be performed.</li>
+	 * <li>The mask '1' indicates that all tests shall be performed (because the first one is set to true/'1' and nothing is said for the other tests).</li>
+	 * <li>The mask '0' indicates that all except the first test shall be performed.
 	 * </ul>
 	 *
-	 * @param node the GML geometry to validate
-	 * @param testMask test mask
-	 * @return a mask with the test results, encoded as characters - one at each
-	 *         position (1-based index) of the available tests. 'V' indicates
-	 *         that the test passed, i.e. that the geometry is valid according
-	 *         to that test. 'F' indicates that the test failed. 'S' indicates
-	 *         that the test was skipped. Example: the string 'SVF' shows that
-	 *         the first test was skipped, while the second test passed and the
-	 *         third failed.
+	 * @param node
+	 *            the GML geometry to validate
+	 * @param testMask
+	 *            test mask
+	 * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed.
 	 * @throws QueryException
 	 */
 	public String validate(ANode node, String testMask) throws QueryException {
@@ -342,8 +297,10 @@ public class GmlGeoX extends QueryModule {
 
 	/**
 	 * @see #executeValidate(ANode, String)
-	 * @param node Node
-	 * @param testMask test mask
+	 * @param node
+	 *            Node
+	 * @param testMask
+	 *            test mask
 	 * @return a DOM element like the following:
 	 *
 	 *         <pre>
@@ -358,21 +315,11 @@ public class GmlGeoX extends QueryModule {
 	 *
 	 *         Where:
 	 *         <ul>
-	 *         <li>ggeo:isValid - contains the boolean value indicating if the
-	 *         object passed all tests (defined by the testMask).</li>
-	 *         <li>ggeo:result - contains a string that is a mask with the test
-	 *         results, encoded as characters - one at each position (1-based
-	 *         index) of the available tests. 'V' indicates that the test
-	 *         passed, i.e. that the geometry is valid according to that test.
-	 *         'F' indicates that the test failed. 'S' indicates that the test
-	 *         was skipped. Example: the string 'SVF' shows that the first test
-	 *         was skipped, while the second test passed and the third failed
-	 *         </li>
-	 *         <li>ggeo:message (one for each message produced during
-	 *         validation) contains:
+	 *         <li>ggeo:isValid - contains the boolean value indicating if the object passed all tests (defined by the testMask).</li>
+	 *         <li>ggeo:result - contains a string that is a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed</li>
+	 *         <li>ggeo:message (one for each message produced during validation) contains:
 	 *         <ul>
-	 *         <li>an XML attribute 'type' that indicates the severity level of
-	 *         the message ('FATAL', 'ERROR', 'WARNING', or 'NOTICE')</li>
+	 *         <li>an XML attribute 'type' that indicates the severity level of the message ('FATAL', 'ERROR', 'WARNING', or 'NOTICE')</li>
 	 *         <li>the actual validation message as text content</li>
 	 *         </ul>
 	 *         </ul>
@@ -424,21 +371,9 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Validates the given (GML geometry) node.
 	 * <p>
-	 * By default validation is only performed for the following GML geometry
-	 * elements: Point, Polygon, Surface, Curve, LinearRing, MultiPolygon,
-	 * MultiGeometry, MultiSurface, MultiCurve, Ring, and LineString. The set of
-	 * GML elements to validate can be modified via the following methods:
-	 * {@link #registerGmlGeometry(String)},
-	 * {@link #unregisterGmlGeometry(String)}, and
-	 * {@link #unregisterAllGmlGeometries()}. These methods are also available
-	 * for XQueries.
+	 * By default validation is only performed for the following GML geometry elements: Point, Polygon, Surface, Curve, LinearRing, MultiPolygon, MultiGeometry, MultiSurface, MultiCurve, Ring, and LineString. The set of GML elements to validate can be modified via the following methods: {@link #registerGmlGeometry(String)}, {@link #unregisterGmlGeometry(String)}, and {@link #unregisterAllGmlGeometries()}. These methods are also available for XQueries.
 	 * <p>
-	 * The validation tasks to perform can be specified via the given mask. The
-	 * mask is a simple string, where the character '1' at the position of a
-	 * specific test (assuming a 1-based index) specifies that the test shall be
-	 * performed. If the mask does not contain a character at the position of a
-	 * specific test (because the mask is empty or the length is smaller than
-	 * the position), then the test will be executed.
+	 * The validation tasks to perform can be specified via the given mask. The mask is a simple string, where the character '1' at the position of a specific test (assuming a 1-based index) specifies that the test shall be performed. If the mask does not contain a character at the position of a specific test (because the mask is empty or the length is smaller than the position), then the test will be executed.
 	 * <p>
 	 * The following tests are available:
 	 * <p>
@@ -451,44 +386,30 @@ public class GmlGeoX extends QueryModule {
 	 * <tr>
 	 * <td>1</td>
 	 * <td>General Validation</td>
-	 * <td>This test validates the given geometry using the validation
-	 * functionality of both deegree and JTS.</td>
+	 * <td>This test validates the given geometry using the validation functionality of both deegree and JTS.</td>
 	 * </tr>
 	 * <tr>
 	 * <td>2</td>
 	 * <td>Polygon Patch Connectivity</td>
-	 * <td>Checks that multiple polygon patches within a single surface are
-	 * connected.</td>
+	 * <td>Checks that multiple polygon patches within a single surface are connected.</td>
 	 * </tr>
 	 * <tr>
 	 * <td>3</td>
 	 * <td>Repetition of Position in CurveSegments</td>
-	 * <td>Checks that consecutive positions within a CurveSegment are not
-	 * equal.</td>
+	 * <td>Checks that consecutive positions within a CurveSegment are not equal.</td>
 	 * </tr>
 	 * </table>
 	 * <p>
 	 * Examples:
 	 * <ul>
-	 * <li>The mask '010' indicates that only the 'Polygon Patch Connectivity'
-	 * test shall be performed.</li>
-	 * <li>The mask '1' indicates that all tests shall be performed (because the
-	 * first one is set to true/'1' and nothing is said for the other tests).
-	 * </li>
-	 * <li>The mask '0' indicates that all except the first test shall be
-	 * performed.
+	 * <li>The mask '010' indicates that only the 'Polygon Patch Connectivity' test shall be performed.</li>
+	 * <li>The mask '1' indicates that all tests shall be performed (because the first one is set to true/'1' and nothing is said for the other tests).</li>
+	 * <li>The mask '0' indicates that all except the first test shall be performed.
 	 * </ul>
 	 *
-	 * @param node the GML geometry to validate
-	 * @return a validation report, with the validation result and validation
-	 *         message (providing further details about any errors). The
-	 *         validation result is encoded as a sequence of characters - one at
-	 *         each position (1-based index) of the available tests. 'V'
-	 *         indicates that the test passed, i.e. that the geometry is valid
-	 *         according to that test. 'F' indicates that the test failed. 'S'
-	 *         indicates that the test was skipped. Example: the string 'SVF'
-	 *         shows that the first test was skipped, while the second test
-	 *         passed and the third failed.
+	 * @param node
+	 *            the GML geometry to validate
+	 * @return a validation report, with the validation result and validation message (providing further details about any errors). The validation result is encoded as a sequence of characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -528,10 +449,7 @@ public class GmlGeoX extends QueryModule {
 				ValidatorContext ctx = new ValidatorContext();
 
 				GeometryElementHandler handler = new GeometryElementHandler(ctx, null, srsName);
-				/*
-				 * configure handler with GML geometries specified through this
-				 * class
-				 */
+				/* configure handler with GML geometries specified through this class */
 				handler.unregisterAllGmlGeometries();
 				for (String additionalGmlElementName : gmlGeometries) {
 					handler.registerGmlGeometry(additionalGmlElementName);
@@ -556,10 +474,7 @@ public class GmlGeoX extends QueryModule {
 				SecondaryGeometryElementValidationHandler handler = new SecondaryGeometryElementValidationHandler(
 						isTestPolygonPatchConnectivity, isTestRepetitionInCurveSegments, ctx, srsName, this);
 
-				/*
-				 * configure handler with GML geometries specified through this
-				 * class
-				 */
+				/* configure handler with GML geometries specified through this class */
 				handler.unregisterAllGmlGeometries();
 				for (String additionalGmlElementName : gmlGeometries) {
 					handler.registerGmlGeometry(additionalGmlElementName);
@@ -625,17 +540,13 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Tests if the first geometry contains the second geometry.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents the second geometry, encoded as a GML geometry
-	 *            element
-	 * @return <code>true</code> if the first geometry contains the second one,
-	 *         else <code>false</code>.
+	 *            represents the second geometry, encoded as a GML geometry element
+	 * @return <code>true</code> if the first geometry contains the second one, else <code>false</code>.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -646,25 +557,17 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Tests if one geometry contains a list of geometries. Whether a match is
-	 * required for all or just one of these is controlled via parameter.
+	 * Tests if one geometry contains a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents a list of geometries, encoded as a GML geometry
-	 *            element
+	 *            represents a list of geometries, encoded as a GML geometry element
 	 * @param matchAll
-	 *            <code>true</code> if arg1 must fulfill the spatial
-	 *            relationship for all geometries in arg2, else
-	 *            <code>false</code>
-	 * @return <code>true</code> if the conditions are met, else
-	 *         <code>false</code>. <code>false</code> will also be returned if
-	 *         arg2 is empty.
+	 *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+	 * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false</code> will also be returned if arg2 is empty.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -677,17 +580,13 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Tests if the first geometry crosses the second geometry.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents the second geometry, encoded as a GML geometry
-	 *            element
-	 * @return <code>true</code> if the first geometry crosses the second one,
-	 *         else <code>false</code>.
+	 *            represents the second geometry, encoded as a GML geometry element
+	 * @return <code>true</code> if the first geometry crosses the second one, else <code>false</code>.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -698,25 +597,17 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Tests if one geometry crosses a list of geometries. Whether a match is
-	 * required for all or just one of these is controlled via parameter.
+	 * Tests if one geometry crosses a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents a list of geometries, encoded as a GML geometry
-	 *            element
+	 *            represents a list of geometries, encoded as a GML geometry element
 	 * @param matchAll
-	 *            <code>true</code> if arg1 must fulfill the spatial
-	 *            relationship for all geometries in arg2, else
-	 *            <code>false</code>
-	 * @return <code>true</code> if the conditions are met, else
-	 *         <code>false</code>. <code>false</code> will also be returned if
-	 *         arg2 is empty.
+	 *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+	 * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false</code> will also be returned if arg2 is empty.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -729,17 +620,13 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Tests if the first geometry equals the second geometry.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents the second geometry, encoded as a GML geometry
-	 *            element
-	 * @return <code>true</code> if the first geometry equals the second one,
-	 *         else <code>false</code>.
+	 *            represents the second geometry, encoded as a GML geometry element
+	 * @return <code>true</code> if the first geometry equals the second one, else <code>false</code>.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -750,25 +637,17 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Tests if one geometry equals a list of geometries. Whether a match is
-	 * required for all or just one of these is controlled via parameter.
+	 * Tests if one geometry equals a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents a list of geometries, encoded as a GML geometry
-	 *            element
+	 *            represents a list of geometries, encoded as a GML geometry element
 	 * @param matchAll
-	 *            <code>true</code> if arg1 must fulfill the spatial
-	 *            relationship for all geometries in arg2, else
-	 *            <code>false</code>
-	 * @return <code>true</code> if the conditions are met, else
-	 *         <code>false</code>. <code>false</code> will also be returned if
-	 *         arg2 is empty.
+	 *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+	 * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false</code> will also be returned if arg2 is empty.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -781,17 +660,13 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Tests if the first geometry intersects the second geometry.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents the second geometry, encoded as a GML geometry
-	 *            element
-	 * @return <code>true</code> if the first geometry intersects the second
-	 *         one, else <code>false</code>.
+	 *            represents the second geometry, encoded as a GML geometry element
+	 * @return <code>true</code> if the first geometry intersects the second one, else <code>false</code>.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -802,17 +677,11 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Determine the name of the SRS that applies to the given geometry element.
-	 * The SRS is either defined by the element itself, in the 'srsName', or by
-	 * the nearest ancestor that either has an 'srsName' attribute or a child
-	 * element with local name 'boundedBy' (like gml:boundedBy) that itself
-	 * contains a child element (like gml:Envelope) that has an 'srsName'
-	 * attribute. NOTE: The underlying query is independent of a specific GML
-	 * namespace.
+	 * Determine the name of the SRS that applies to the given geometry element. The SRS is either defined by the element itself, in the 'srsName', or by the nearest ancestor that either has an 'srsName' attribute or a child element with local name 'boundedBy' (like gml:boundedBy) that itself contains a child element (like gml:Envelope) that has an 'srsName' attribute. NOTE: The underlying query is independent of a specific GML namespace.
 	 *
-	 * @param geometryNode a gml geometry node
-	 * @return the value of the applicable 'srsName' attribute, if found,
-	 *         otherwise the empty sequence
+	 * @param geometryNode
+	 *            a gml geometry node
+	 * @return the value of the applicable 'srsName' attribute, if found, otherwise the empty sequence
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
@@ -882,12 +751,7 @@ public class GmlGeoX extends QueryModule {
 
 			com.vividsolutions.jts.geom.Geometry geom1, geom2;
 
-			/*
-			 * We require that no basex value with multiple items is provided,
-			 * because the developer must explicitly state the desired match
-			 * semantics for cases in which one or both arguments is a
-			 * collection of items.
-			 */
+			/* We require that no basex value with multiple items is provided, because the developer must explicitly state the desired match semantics for cases in which one or both arguments is a collection of items. */
 			geom1 = geoutils.singleObjectToJTSGeometry(arg1);
 			geom2 = geoutils.singleObjectToJTSGeometry(arg2);
 
@@ -954,10 +818,7 @@ public class GmlGeoX extends QueryModule {
 						if (matchAll) {
 
 							if (applySpatialRelationshipOperator(g1, g2, op)) {
-								/*
-								 * check the next geometry pair to see if it
-								 * also satisfies the spatial relationship
-								 */
+								/* check the next geometry pair to see if it also satisfies the spatial relationship */
 							} else {
 								allMatch = false;
 								break outer;
@@ -968,10 +829,7 @@ public class GmlGeoX extends QueryModule {
 							if (applySpatialRelationshipOperator(g1, g2, op)) {
 								return true;
 							} else {
-								/*
-								 * check the next geometry pair to see if it
-								 * satisfies the spatial relationship
-								 */
+								/* check the next geometry pair to see if it satisfies the spatial relationship */
 							}
 						}
 					}
@@ -990,25 +848,17 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Tests if one geometry intersects a list of geometries. Whether a match is
-	 * required for all or just one of these is controlled via parameter.
+	 * Tests if one geometry intersects a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents a list of geometries, encoded as a GML geometry
-	 *            element
+	 *            represents a list of geometries, encoded as a GML geometry element
 	 * @param matchAll
-	 *            <code>true</code> if arg1 must fulfill the spatial
-	 *            relationship for all geometries in arg2, else
-	 *            <code>false</code>
-	 * @return <code>true</code> if the conditions are met, else
-	 *         <code>false</code>. <code>false</code> will also be returned if
-	 *         arg2 is empty.
+	 *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+	 * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false</code> will also be returned if arg2 is empty.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1021,17 +871,13 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Tests if the first geometry is disjoint from the second geometry.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents the second geometry, encoded as a GML geometry
-	 *            element
-	 * @return <code>true</code> if the first geometry is disjoint from the
-	 *         second one, else <code>false</code>.
+	 *            represents the second geometry, encoded as a GML geometry element
+	 * @return <code>true</code> if the first geometry is disjoint from the second one, else <code>false</code>.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1042,26 +888,17 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Tests if one geometry is disjoint to a list of geometries. Whether a
-	 * match is required for all or just one of these is controlled via
-	 * parameter.
+	 * Tests if one geometry is disjoint to a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents a list of geometries, encoded as a GML geometry
-	 *            element
+	 *            represents a list of geometries, encoded as a GML geometry element
 	 * @param matchAll
-	 *            <code>true</code> if arg1 must fulfill the spatial
-	 *            relationship for all geometries in arg2, else
-	 *            <code>false</code>
-	 * @return <code>true</code> if the conditions are met, else
-	 *         <code>false</code>. <code>false</code> will also be returned if
-	 *         arg2 is empty.
+	 *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+	 * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false</code> will also be returned if arg2 is empty.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1074,17 +911,13 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Tests if the first geometry is within the second geometry.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents the second geometry, encoded as a GML geometry
-	 *            element
-	 * @return <code>true</code> if the first geometry is within the second one,
-	 *         else <code>false</code>.
+	 *            represents the second geometry, encoded as a GML geometry element
+	 * @return <code>true</code> if the first geometry is within the second one, else <code>false</code>.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1095,25 +928,17 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Tests if one geometry is within a list of geometries. Whether a match is
-	 * required for all or just one of these is controlled via parameter.
+	 * Tests if one geometry is within a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents a list of geometries, encoded as a GML geometry
-	 *            element
+	 *            represents a list of geometries, encoded as a GML geometry element
 	 * @param matchAll
-	 *            <code>true</code> if arg1 must fulfill the spatial
-	 *            relationship for all geometries in arg2, else
-	 *            <code>false</code>
-	 * @return <code>true</code> if the conditions are met, else
-	 *         <code>false</code>. <code>false</code> will also be returned if
-	 *         arg2 is empty.
+	 *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+	 * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false</code> will also be returned if arg2 is empty.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1126,17 +951,13 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Tests if the first geometry overlaps the second geometry.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents the second geometry, encoded as a GML geometry
-	 *            element
-	 * @return <code>true</code> if the first geometry overlaps the second one,
-	 *         else <code>false</code>.
+	 *            represents the second geometry, encoded as a GML geometry element
+	 * @return <code>true</code> if the first geometry overlaps the second one, else <code>false</code>.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1147,25 +968,17 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Tests if one geometry overlaps a list of geometries. Whether a match is
-	 * required for all or just one of these is controlled via parameter.
+	 * Tests if one geometry overlaps a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents a list of geometries, encoded as a GML geometry
-	 *            element
+	 *            represents a list of geometries, encoded as a GML geometry element
 	 * @param matchAll
-	 *            <code>true</code> if arg1 must fulfill the spatial
-	 *            relationship for all geometries in arg2, else
-	 *            <code>false</code>
-	 * @return <code>true</code> if the conditions are met, else
-	 *         <code>false</code>. <code>false</code> will also be returned if
-	 *         arg2 is empty.
+	 *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+	 * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false</code> will also be returned if arg2 is empty.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1178,17 +991,13 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Tests if the first geometry touches the second geometry.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents the second geometry, encoded as a GML geometry
-	 *            element
-	 * @return <code>true</code> if the first geometry touches the second one,
-	 *         else <code>false</code>.
+	 *            represents the second geometry, encoded as a GML geometry element
+	 * @return <code>true</code> if the first geometry touches the second one, else <code>false</code>.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1199,25 +1008,17 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Tests if one geometry touches a list of geometries. Whether a match is
-	 * required for all or just one of these is controlled via parameter.
+	 * Tests if one geometry touches a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents a list of geometries, encoded as a GML geometry
-	 *            element
+	 *            represents a list of geometries, encoded as a GML geometry element
 	 * @param matchAll
-	 *            <code>true</code> if arg1 must fulfill the spatial
-	 *            relationship for all geometries in arg2, else
-	 *            <code>false</code>
-	 * @return <code>true</code> if the conditions are met, else
-	 *         <code>false</code>. <code>false</code> will also be returned if
-	 *         arg2 is empty.
+	 *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+	 * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false</code> will also be returned if arg2 is empty.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1228,12 +1029,10 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Adds the name of a GML geometry element to the set of elements for which
-	 * validation is performed.
+	 * Adds the name of a GML geometry element to the set of elements for which validation is performed.
 	 *
 	 * @param nodeName
-	 *            name (simple, i.e. without namespace (prefix)) of a GML
-	 *            geometry element to validate.
+	 *            name (simple, i.e. without namespace (prefix)) of a GML geometry element to validate.
 	 */
 	@Requires(Permission.NONE)
 	public void registerGmlGeometry(String nodeName) {
@@ -1241,12 +1040,10 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Removes the name of a GML geometry element from the set of elements for
-	 * which validation is performed.
+	 * Removes the name of a GML geometry element from the set of elements for which validation is performed.
 	 *
 	 * @param nodeName
-	 *            name (simple, i.e. without namespace (prefix)) of a GML
-	 *            geometry element to remove from validation.
+	 *            name (simple, i.e. without namespace (prefix)) of a GML geometry element to remove from validation.
 	 */
 	@Requires(Permission.NONE)
 	public void unregisterGmlGeometry(String nodeName) {
@@ -1254,8 +1051,7 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Removes all names of GML geometry elements that are currently registered
-	 * for validation.
+	 * Removes all names of GML geometry elements that are currently registered for validation.
 	 */
 	@Requires(Permission.NONE)
 	public void unregisterAllGmlGeometries() {
@@ -1263,8 +1059,7 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * @return the currently registered GML geometry element names (comma
-	 *         separated)
+	 * @return the currently registered GML geometry element names (comma separated)
 	 */
 	@Requires(Permission.NONE)
 	public String registeredGmlGeometries() {
@@ -1332,12 +1127,9 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Checks if a given object is closed. The object can be a single geometry
-	 * or a collection of geometries. Only LineStrings and MultiLineStrings are
-	 * checked.
+	 * Checks if a given object is closed. The object can be a single geometry or a collection of geometries. Only LineStrings and MultiLineStrings are checked.
 	 *
-	 * NOTE: Invokes the {@link #isClosed(Object, boolean)} method, with
-	 * <code>true</code> for the second parameter.
+	 * NOTE: Invokes the {@link #isClosed(Object, boolean)} method, with <code>true</code> for the second parameter.
 	 *
 	 * @see #isClosed(Object, boolean)
 	 * @param o
@@ -1351,28 +1143,13 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Checks if a given object is closed. The object can be a single geometry
-	 * or a collection of geometries. Points and MultiPoints are closed by
-	 * definition (they do not have a boundary). Polygons and MultiPolygons are
-	 * never closed in 2D, and since operations in 3D are not supported, this
-	 * method will always return <code>false</code> if a polygon is encountered
-	 * - unless the parameter onlyCheckCurveGeometries is set to
-	 * <code>true</code>. LinearRings are closed by definition. The remaining
-	 * geometry types that will be checked are LineString and MultiLineString.
-	 * If a (Multi)LineString is not closed, this method will return
-	 * <code>false</code>.
+	 * Checks if a given object is closed. The object can be a single geometry or a collection of geometries. Points and MultiPoints are closed by definition (they do not have a boundary). Polygons and MultiPolygons are never closed in 2D, and since operations in 3D are not supported, this method will always return <code>false</code> if a polygon is encountered - unless the parameter onlyCheckCurveGeometries is set to <code>true</code>. LinearRings are closed by definition. The remaining geometry types that will be checked are LineString and MultiLineString. If a (Multi)LineString is not closed, this method will return <code>false</code>.
 	 *
 	 * @param o
-	 *            the geometry object(s) to test, can be a JTS geometry object,
-	 *            collection, and BaseX nodes (that will be converted to JTS
-	 *            geometries)
+	 *            the geometry object(s) to test, can be a JTS geometry object, collection, and BaseX nodes (that will be converted to JTS geometries)
 	 * @param onlyCheckCurveGeometries
-	 *            <code>true</code> if only curve geometries (i.e., for JTS:
-	 *            LineString, LinearRing, and MultiLineString) shall be tested,
-	 *            else <code>false</code> (in this case, the occurrence of
-	 *            polygons will result in the return value <code>false</code>).
-	 * @return <code>true</code> if the given object - a geometry or collection
-	 *         of geometries - is closed, else <code>false</code>
+	 *            <code>true</code> if only curve geometries (i.e., for JTS: LineString, LinearRing, and MultiLineString) shall be tested, else <code>false</code> (in this case, the occurrence of polygons will result in the return value <code>false</code>).
+	 * @return <code>true</code> if the given object - a geometry or collection of geometries - is closed, else <code>false</code>
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1396,39 +1173,20 @@ public class GmlGeoX extends QueryModule {
 					if (g instanceof com.vividsolutions.jts.geom.Point
 							|| g instanceof com.vividsolutions.jts.geom.MultiPoint) {
 
-						/*
-						 * points are closed by definition (they do not have a
-						 * boundary)
-						 */
+						/* points are closed by definition (they do not have a boundary) */
 
 					} else if (g instanceof com.vividsolutions.jts.geom.Polygon
 							|| g instanceof com.vividsolutions.jts.geom.MultiPolygon) {
 
-						/*
-						 * The JTS FAQ contains the following question and
-						 * answer:
+						/* The JTS FAQ contains the following question and answer:
 						 *
 						 * Question: Does JTS support 3D operations?
 						 *
-						 * Answer: JTS does not provide support for true 3D
-						 * geometry and operations. However, JTS does allow
-						 * Coordinates to carry an elevation or Z value. This
-						 * does not provide true 3D support, but does allow
-						 * "2.5D" uses which are required in some geospatial
-						 * applications.
+						 * Answer: JTS does not provide support for true 3D geometry and operations. However, JTS does allow Coordinates to carry an elevation or Z value. This does not provide true 3D support, but does allow "2.5D" uses which are required in some geospatial applications.
 						 *
 						 * -------
 						 *
-						 * So, JTS does not support true 3D geometry and
-						 * operations. Therefore, JTS cannot determine if a
-						 * surface is closed. deegree does not seem to support
-						 * this, either. In order for a surface to be closed, it
-						 * must be a sphere or torus, possibly with holes. A
-						 * surface in 2D can never be closed. Since we lack the
-						 * ability to compute in 3D we assume that a
-						 * (Multi)Polygon is not closed. If we do check
-						 * geometries other than curves, then we return false.
-						 */
+						 * So, JTS does not support true 3D geometry and operations. Therefore, JTS cannot determine if a surface is closed. deegree does not seem to support this, either. In order for a surface to be closed, it must be a sphere or torus, possibly with holes. A surface in 2D can never be closed. Since we lack the ability to compute in 3D we assume that a (Multi)Polygon is not closed. If we do check geometries other than curves, then we return false. */
 						if (!onlyCheckCurveGeometries) {
 							return false;
 						}
@@ -1442,10 +1200,7 @@ public class GmlGeoX extends QueryModule {
 
 					} else if (g instanceof com.vividsolutions.jts.geom.LineString) {
 
-						/*
-						 * NOTE: LinearRing is a subclass of LineString, and
-						 * closed by definition
-						 */
+						/* NOTE: LinearRing is a subclass of LineString, and closed by definition */
 
 						com.vividsolutions.jts.geom.LineString ls = (com.vividsolutions.jts.geom.LineString) g;
 						if (!ls.isClosed()) {
@@ -1468,17 +1223,11 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Identifies the holes contained in the given geometry (can be a Polygon,
-	 * MultiPolygon, or any other JTS geometry) and returns them as a JTS
-	 * geometry. If holes were found a union is built, to ensure that the result
-	 * is a valid JTS Polygon or JTS MultiPolygon. If no holes were found an
-	 * empty JTS GeometryCollection is returned.
+	 * Identifies the holes contained in the given geometry (can be a Polygon, MultiPolygon, or any other JTS geometry) and returns them as a JTS geometry. If holes were found a union is built, to ensure that the result is a valid JTS Polygon or JTS MultiPolygon. If no holes were found an empty JTS GeometryCollection is returned.
 	 *
 	 * @param geom
-	 *            potentially existing holes will be extracted from this
-	 *            geometry
-	 * @return A geometry with the holes contained in the given geometry. Can be
-	 *         empty but not <code>null</code>;
+	 *            potentially existing holes will be extracted from this geometry
+	 * @return A geometry with the holes contained in the given geometry. Can be empty but not <code>null</code>;
 	 */
 	@Requires(Permission.NONE)
 	@Deterministic
@@ -1540,24 +1289,17 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Tests if the first geometry relates to the second geometry as defined by
-	 * the given intersection pattern.
+	 * Tests if the first geometry relates to the second geometry as defined by the given intersection pattern.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
-	 *            represents the second geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the second geometry, encoded as a GML geometry element
 	 * @param intersectionPattern
-	 *            the pattern against which to check the intersection matrix for
-	 *            the two geometries (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
-	 * @return <code>true</code> if the DE-9IM intersection matrix for the two
-	 *         geometries matches the <code>intersectionPattern</code>, else
-	 *         <code>false</code>.
+	 *            the pattern against which to check the intersection matrix for the two geometries (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
+	 * @return <code>true</code> if the DE-9IM intersection matrix for the two geometries matches the <code>intersectionPattern</code>, else <code>false</code>.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1570,12 +1312,7 @@ public class GmlGeoX extends QueryModule {
 
 			com.vividsolutions.jts.geom.Geometry geom1, geom2;
 
-			/*
-			 * We require that no basex value with multiple items is provided,
-			 * because the developer must explicitly state the desired match
-			 * semantics for cases in which one or both arguments is a
-			 * collection of items.
-			 */
+			/* We require that no basex value with multiple items is provided, because the developer must explicitly state the desired match semantics for cases in which one or both arguments is a collection of items. */
 			geom1 = geoutils.singleObjectToJTSGeometry(arg1);
 			geom2 = geoutils.singleObjectToJTSGeometry(arg2);
 
@@ -1587,28 +1324,19 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Tests if one geometry relates to a list of geometries as defined by the
-	 * given intersection pattern. Whether a match is required for all or just
-	 * one of these is controlled via parameter.
+	 * Tests if one geometry relates to a list of geometries as defined by the given intersection pattern. Whether a match is required for all or just one of these is controlled via parameter.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param arg1
-	 *            represents the first geometry, encoded as a GML geometry
-	 *            element
+	 *            represents the first geometry, encoded as a GML geometry element
 	 * @param arg2
 	 *            represents a list of geometries, encoded as a GML geometry
 	 * @param intersectionPattern
-	 *            the pattern against which to check the intersection matrix for
-	 *            the geometries (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
+	 *            the pattern against which to check the intersection matrix for the geometries (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
 	 * @param matchAll
-	 *            <code>true</code> if arg1 must fulfill the spatial
-	 *            relationship defined by the <code>intersectionPattern</code>
-	 *            for all geometries in arg2, else <code>false</code>
-	 * @return <code>true</code> if the conditions are met, else
-	 *         <code>false</code>. <code>false</code> will also be returned if
-	 *         arg2 is empty.
+	 *            <code>true</code> if arg1 must fulfill the spatial relationship defined by the <code>intersectionPattern</code> for all geometries in arg2, else <code>false</code>
+	 * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false</code> will also be returned if arg2 is empty.
 	 * @throws QueryException
 	 */
 	@Requires(Permission.NONE)
@@ -1644,10 +1372,7 @@ public class GmlGeoX extends QueryModule {
 						if (matchAll) {
 
 							if (g1.relate(g2, intersectionPattern)) {
-								/*
-								 * check the next geometry pair to see if it
-								 * also satisfies the spatial relationship
-								 */
+								/* check the next geometry pair to see if it also satisfies the spatial relationship */
 							} else {
 								allMatch = false;
 								break outer;
@@ -1658,10 +1383,7 @@ public class GmlGeoX extends QueryModule {
 							if (g1.relate(g2, intersectionPattern)) {
 								return true;
 							} else {
-								/*
-								 * check the next geometry pair to see if it
-								 * satisfies the spatial relationship
-								 */
+								/* check the next geometry pair to see if it satisfies the spatial relationship */
 							}
 						}
 					}
@@ -1695,8 +1417,7 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Computes the intersection between the first and the second geometry.
 	 * <p>
-	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param geometry1
 	 *            represents the first geometry
@@ -1728,8 +1449,7 @@ public class GmlGeoX extends QueryModule {
 	/**
 	 * Computes the envelope of a geometry.
 	 * <p>
-	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param geometry
 	 *            represents the geometry
@@ -1778,17 +1498,13 @@ public class GmlGeoX extends QueryModule {
 	 * Searches the spatial r-tree index for items in the envelope.
 	 *
 	 * @param minx
-	 *            represents the minimum value on the first coordinate axis; a
-	 *            number
+	 *            represents the minimum value on the first coordinate axis; a number
 	 * @param miny
-	 *            represents the minimum value on the second coordinate axis; a
-	 *            number
+	 *            represents the minimum value on the second coordinate axis; a number
 	 * @param maxx
-	 *            represents the maximum value on the first coordinate axis; a
-	 *            number
+	 *            represents the maximum value on the first coordinate axis; a number
 	 * @param maxy
-	 *            represents the maximum value on the second coordinate axis; a
-	 *            number
+	 *            represents the maximum value on the second coordinate axis; a number
 	 * @return the node set of all items in the envelope
 	 * @throws QueryException
 	 */
@@ -1899,31 +1615,22 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Indexes a list of id nodes (gml:id attribute of features) with their GML
-	 * geometries
+	 * Indexes a list of id nodes (gml:id attribute of features) with their GML geometries
 	 * <p>
-	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 * <p>
 	 * Both lists must have equal length.
 	 *
 	 * @param pre
-	 *            represents the pre value of the indexed item node (typically
-	 *            the gml:id of GML feature elements)
+	 *            represents the pre value of the indexed item node (typically the gml:id of GML feature elements)
 	 * @param dbname
-	 *            represents the name of the database that contains the indexed
-	 *            item node (typically the gml:id of GML feature elements)
+	 *            represents the name of the database that contains the indexed item node (typically the gml:id of GML feature elements)
 	 * @param id
-	 *            represents the id string of the item that should be indexed,
-	 *            typically the gml:id of GML feature elements; must be String
-	 *            instances
+	 *            represents the id string of the item that should be indexed, typically the gml:id of GML feature elements; must be String instances
 	 * @param geom
-	 *            represents the GML geometry to index; must be an BXElem
-	 *            instance
+	 *            represents the GML geometry to index; must be an BXElem instance
 	 *
-	 * @deprecated This method does not support 3D indexing, use method
-	 * {@link GmlGeoX#index(ANode, Object, ANode)} instead.
-	 * This method is removed in Version 1.3.0
+	 * @deprecated This method does not support 3D indexing, use method {@link GmlGeoX#index(ANode, Object, ANode)} instead. This method is removed in Version 1.3.0
 	 *
 	 * @throws QueryException
 	 */
@@ -1968,24 +1675,18 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Indexes a list of id nodes (gml:id attribute of features) with their GML
-	 * geometries
+	 * Indexes a list of id nodes (gml:id attribute of features) with their GML geometries
 	 * <p>
-	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 * <p>
 	 * Both lists must have equal length.
 	 *
 	 * @param node
-	 *            represents the indexed item node (typically the gml:id of
-	 *            GML feature elements)
+	 *            represents the indexed item node (typically the gml:id of GML feature elements)
 	 * @param objId
-	 *            represents the id string of the item that should be indexed,
-	 *            typically the gml:id of GML feature elements; must be String
-	 *            instances
+	 *            represents the id string of the item that should be indexed, typically the gml:id of GML feature elements; must be String instances
 	 * @param geometry
-	 *            represents the GML geometry to index; must be an ANode
-	 *            instance
+	 *            represents the GML geometry to index; must be an ANode instance
 	 *
 	 * @throws QueryException
 	 */
@@ -2030,21 +1731,15 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Retrieve the geometry of an item as a JTS geometry. First try the cache
-	 * and if it is not in the cache construct it from the XML.
+	 * Retrieve the geometry of an item as a JTS geometry. First try the cache and if it is not in the cache construct it from the XML.
 	 * <p>
-	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param id
-	 *            the id for which the geometry should be retrieved, typically a
-	 *            gml:id of a GML feature element; must be a String or BXNode
-	 *            instance
+	 *            the id for which the geometry should be retrieved, typically a gml:id of a GML feature element; must be a String or BXNode instance
 	 * @param defgeom
-	 *            represents the default GML geometry, if the geometry is not
-	 *            cached; must be a BXElem instance
-	 * @return the geometry of the indexed node, or null if no geometry was
-	 *         found
+	 *            represents the default GML geometry, if the geometry is not cached; must be a BXElem instance
+	 * @return the geometry of the indexed node, or null if no geometry was found
 	 *
 	 * @deprecated renamed method to {@link GmlGeoX#getOrCacheGeometry(Object, Object)}
 	 *
@@ -2058,21 +1753,15 @@ public class GmlGeoX extends QueryModule {
 	}
 
 	/**
-	 * Retrieve the geometry of an item as a JTS geometry. First try the cache
-	 * and if it is not in the cache construct it from the XML.
+	 * Retrieve the geometry of an item as a JTS geometry. First try the cache and if it is not in the cache construct it from the XML.
 	 * <p>
-	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported
-	 * and unsupported geometry types.
+	 * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param id
-	 *            the id for which the geometry should be retrieved, typically a
-	 *            gml:id of a GML feature element; must be a String or BXNode
-	 *            instance
+	 *            the id for which the geometry should be retrieved, typically a gml:id of a GML feature element; must be a String or BXNode instance
 	 * @param defgeom
-	 *            represents the default GML geometry, if the geometry is not
-	 *            cached; must be a BXElem instance
-	 * @return the geometry of the indexed node, or null if no geometry was
-	 *         found
+	 *            represents the default GML geometry, if the geometry is not cached; must be a BXElem instance
+	 * @return the geometry of the indexed node, or null if no geometry was found
 	 *
 	 * @throws QueryException
 	 */

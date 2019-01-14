@@ -63,8 +63,7 @@ import org.w3c.dom.Node;
 /**
  *
  *
- * @author Johannes Echterhoff (echterhoff at interactive-instruments
- *         dot de)
+ * @author Johannes Echterhoff (echterhoff at interactive-instruments dot de)
  *
  */
 public class GmlGeoXUtils {
@@ -79,9 +78,7 @@ public class GmlGeoXUtils {
 
 	/**
 	 * @param gmlGeoX
-	 *            Reference to GmlGeoX QueryModule, in case that retrieval of
-	 *            certain information (example: srsName) requires execution of
-	 *            xqueries (by the QueryModule).
+	 *            Reference to GmlGeoX QueryModule, in case that retrieval of certain information (example: srsName) requires execution of xqueries (by the QueryModule).
 	 */
 	public GmlGeoXUtils(GmlGeoX gmlGeoX) {
 		this.gmlGeoX = gmlGeoX;
@@ -133,14 +130,11 @@ public class GmlGeoXUtils {
 	}
 
 	/**
-	 * Creates a JTS GeometryCollection from the list of JTS geometry objects.
-	 * If the geometries are homogeneous, ie only points, line strings, or
-	 * polygons, create the specific geometric aggregate
+	 * Creates a JTS GeometryCollection from the list of JTS geometry objects. If the geometries are homogeneous, ie only points, line strings, or polygons, create the specific geometric aggregate
 	 *
 	 * @param gList
 	 * @param forceGeometryCollection
-	 * @return a JTS GeometryCollection (empty if the given list is
-	 *         <code>null</code> or empty)
+	 * @return a JTS GeometryCollection (empty if the given list is <code>null</code> or empty)
 	 */
 	public GeometryCollection toJTSGeometryCollection(
 			List<com.vividsolutions.jts.geom.Geometry> gList,
@@ -152,10 +146,7 @@ public class GmlGeoXUtils {
 
 		}
 
-		/*
-		 * Before processing the list of geometries, first remove all empty
-		 * geometry collections from the list
-		 */
+		/* Before processing the list of geometries, first remove all empty geometry collections from the list */
 		List<com.vividsolutions.jts.geom.Geometry> gListClean = new ArrayList<com.vividsolutions.jts.geom.Geometry>();
 		for (com.vividsolutions.jts.geom.Geometry g : gList) {
 
@@ -232,9 +223,9 @@ public class GmlGeoXUtils {
 	 * <li>GM_Ring</li>
 	 * <li>GM_LinearRing</li>
 	 * <li>GM_LineString</li>
-	 * <li>GM_OrientedCurve (orientation is ignored when computing the JTS
-	 * geometry)</li>
-	 * </ul></li>
+	 * <li>GM_OrientedCurve (orientation is ignored when computing the JTS geometry)</li>
+	 * </ul>
+	 * </li>
 	 * <li>Curve segment types (linearization will often be used):
 	 * <ul>
 	 * <li>GM_Arc (will be linearized)</li>
@@ -242,34 +233,37 @@ public class GmlGeoXUtils {
 	 * <li>GM_LineString</li>
 	 * <li>GM_CubicSpline (will be linearized)</li>
 	 * <li>GM_ArcString (will be linearized)</li>
-	 * <li>GM_GeodesicString (apparently no linearization - with code from
-	 * deegree 3.4-pre22-SNAPSHOT)</li>
-	 * </ul></li>
+	 * <li>GM_GeodesicString (apparently no linearization - with code from deegree 3.4-pre22-SNAPSHOT)</li>
+	 * </ul>
+	 * </li>
 	 * <li>Surface types:
 	 * <ul>
 	 * <li>GM_Surface</li>
 	 * <li>GM_PolyhedralSurface</li>
-	 * <li>GM_OrientableSurface (orientation is ignored when computing the JTS
-	 * geometry)</li>
-	 * </ul></li>
+	 * <li>GM_OrientableSurface (orientation is ignored when computing the JTS geometry)</li>
+	 * </ul>
+	 * </li>
 	 * <li>Surface patch types (also if a surface has more than one patch):
 	 * <ul>
 	 * <li>GM_Polygon</li>
-	 * </ul></li>
+	 * </ul>
+	 * </li>
 	 * <li>Composite types:
 	 * <ul>
 	 * <li>GM_Composite (implemented as deegree CompositeGeometry)</li>
 	 * <li>GM_CompositePoint</li>
 	 * <li>GM_CompositeCurve</li>
 	 * <li>GM_CompositeSurface</li>
-	 * </ul></li>
+	 * </ul>
+	 * </li>
 	 * <li>Multi geometry types:
 	 * <ul>
 	 * <li>GM_Aggregate (implemented as deegree MultiGeometry)</li>
 	 * <li>GM_MultiPoint</li>
 	 * <li>GM_MultiCurve</li>
 	 * <li>GM_MultiSurface</li>
-	 * </ul></li>
+	 * </ul>
+	 * </li>
 	 * </ul>
 	 * <p>
 	 * Geometry types that are NOT supported:
@@ -287,7 +281,8 @@ public class GmlGeoXUtils {
 	 * <li>GM_Geodesic</li>
 	 * <li>GM_OffsetCurve</li>
 	 * <li>GM_Conic</li>
-	 * </ul></li>
+	 * </ul>
+	 * </li>
 	 * <li>Surface types:
 	 * <ul>
 	 * <li>GM_TriangulatedSurface</li>
@@ -300,15 +295,18 @@ public class GmlGeoXUtils {
 	 * <li>GM_Cylinder</li>
 	 * <li>GM_Sphere</li>
 	 * <li>GM_BSplineSurface</li>
-	 * </ul></li>
+	 * </ul>
+	 * </li>
 	 * <li>Composite types:
 	 * <ul>
 	 * <li>GM_CompositeSolid</li>
-	 * </ul></li>
+	 * </ul>
+	 * </li>
 	 * <li>Multi geometry types:
 	 * <ul>
 	 * <li>GM_MultiSolid</li>
-	 * </ul></li>
+	 * </ul>
+	 * </li>
 	 * </ul>
 	 *
 	 * @param geom
@@ -320,25 +318,11 @@ public class GmlGeoXUtils {
 
 		if (geom instanceof Surface) {
 
-			/*
-			 * Deegree does not support spatial operations for surfaces with
-			 * more than one patch - or rather: it ignores all patches except
-			 * the first one. So we need to detect and handle this case
-			 * ourselves.
+			/* Deegree does not support spatial operations for surfaces with more than one patch - or rather: it ignores all patches except the first one. So we need to detect and handle this case ourselves.
 			 *
-			 * In fact, it is DefaultSurface that does not support multiple
-			 * patches. So we could check that the geometry is an instance of
-			 * DefaultSurface. However, it is not planned to create another
-			 * Geometry-Implementation for deegree. Thus we treat each Surface
-			 * as having the issue of not supporting JTS geometry creation if it
-			 * has multiple patches.
+			 * In fact, it is DefaultSurface that does not support multiple patches. So we could check that the geometry is an instance of DefaultSurface. However, it is not planned to create another Geometry-Implementation for deegree. Thus we treat each Surface as having the issue of not supporting JTS geometry creation if it has multiple patches.
 			 *
-			 * Because we compute the JTS geometry of a surface directly from
-			 * its patch(es), we don't need a special treatment for the case of
-			 * an OrientableSurface. Much like for OrientableCurve, the deegree
-			 * framework returns null when OrientableSurface.getJTSGeometry() is
-			 * called (with code from deegree 3.4-pre22-SNAPSHOT).
-			 */
+			 * Because we compute the JTS geometry of a surface directly from its patch(es), we don't need a special treatment for the case of an OrientableSurface. Much like for OrientableCurve, the deegree framework returns null when OrientableSurface.getJTSGeometry() is called (with code from deegree 3.4-pre22-SNAPSHOT). */
 
 			Surface s = (Surface) geom;
 
@@ -346,10 +330,7 @@ public class GmlGeoXUtils {
 
 			if (patches.size() > 1) {
 
-				/*
-				 * compute union - only supportd if all patches are polygon
-				 * patches
-				 */
+				/* compute union - only supportd if all patches are polygon patches */
 				List<com.vividsolutions.jts.geom.Polygon> polygons = new ArrayList<com.vividsolutions.jts.geom.Polygon>();
 
 				for (SurfacePatch sp : patches) {
@@ -386,11 +367,7 @@ public class GmlGeoXUtils {
 
 		} else if (geom instanceof OrientableCurve) {
 
-			/*
-			 * 2015-12-14 JE: special treatment is necessary because
-			 * OrientableCurve.getJTSGeometry() returns null (with code from
-			 * deegree 3.4-pre22-SNAPSHOT).
-			 */
+			/* 2015-12-14 JE: special treatment is necessary because OrientableCurve.getJTSGeometry() returns null (with code from deegree 3.4-pre22-SNAPSHOT). */
 
 			try {
 				OrientableCurve oc = (OrientableCurve) geom;
@@ -480,11 +457,9 @@ public class GmlGeoXUtils {
 	}
 
 	/**
-	 * Computes a JTS geometry from the given node (which must represent a GML
-	 * geometry).
+	 * Computes a JTS geometry from the given node (which must represent a GML geometry).
 	 * <p>
-	 * See {{@link #toJTSGeometry(Geometry)} for a list of supported and
-	 * unsupported geometry types.
+	 * See {{@link #toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
 	 *
 	 * @param node
 	 * @return
@@ -598,7 +573,8 @@ public class GmlGeoXUtils {
 	/**
 	 * Reads a geometry from the given DOM node.
 	 *
-	 * @param aNode represents a GML geometry element
+	 * @param aNode
+	 *            represents a GML geometry element
 	 * @return the geometry represented by the node
 	 * @throws Exception
 	 */
@@ -688,11 +664,7 @@ public class GmlGeoXUtils {
 	}
 
 	/**
-	 * Adds a geometry to a collection. If the geometry is a GeometryCollection
-	 * (but not a MultiPoint, -LineString, or -Polygon) its members are added
-	 * (recursively scanning for GeometryCollections). Spatial relationship
-	 * operators cannot be performed for a JTS GeometryCollection, but for
-	 * (Multi)Point, (Multi)LineString, and (Multi)Polygon.
+	 * Adds a geometry to a collection. If the geometry is a GeometryCollection (but not a MultiPoint, -LineString, or -Polygon) its members are added (recursively scanning for GeometryCollections). Spatial relationship operators cannot be performed for a JTS GeometryCollection, but for (Multi)Point, (Multi)LineString, and (Multi)Polygon.
 	 *
 	 * @param geom
 	 * @return
