@@ -33,7 +33,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'eclipse'
 
-ext.basexVersion = '8.6.7'
+ext.basexVersion = '9.0.2'
 ext.deegreeVersion = '3.3.20'
 
 repositories {
@@ -120,6 +120,8 @@ dependencies {
 
 	compile('org.apache.commons:commons-jcs-core:2.1')
 	compile 'com.github.ben-manes.caffeine:caffeine:2.5.2'
+		
+	compile 'com.google.guava:guava:24.0-jre'
 
 	compile group: 'org.slf4j', name: 'slf4j-api', version: etf_slf4jApiVersion
 
