@@ -3,40 +3,9 @@ import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';
 declare namespace gml = 'http://www.opengis.net/gml/3.2';
 declare namespace ii = 'http://www.interactive-instruments.de/test';
 
-let $doc := <ii:GeometryCollection
- xmlns:gml="http://www.opengis.net/gml/3.2"
- xmlns:ii="http://www.interactive-instruments.de/test"
- xmlns:xlink="http://www.w3.org/1999/xlink"
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
- <gml:boundedBy>
-  <gml:Envelope
-   srsName="http://www.opengis.net/def/crs/epsg/0/5555"/>
- </gml:boundedBy>
- <ii:member>
-  <gml:Curve
-   gml:id="Curve_1">
-   <gml:segments>
-    <gml:LineStringSegment
-     interpolation="linear">
-     <gml:posList>0 0 0 1 1 1 1 4 1 0 4 1 0 0 0</gml:posList>
-    </gml:LineStringSegment>
-   </gml:segments>
-  </gml:Curve>
- </ii:member>
- <ii:member>
-  <gml:Curve
-   gml:id="Curve_2" srsName="http://www.opengis.net/def/crs/EPSG/0/5555">
-   <gml:segments>
-    <gml:LineStringSegment
-     interpolation="linear">
-     <gml:posList>0 0 0 0 1 0 1 1 0 1 0 0 0 0 0</gml:posList>
-    </gml:LineStringSegment>
-   </gml:segments>
-  </gml:Curve>
- </ii:member>
-</ii:GeometryCollection>
+let $members := db:open("GmlGeoXUnitTestDB")//ii:member
 
-let $geometries := $doc//ii:member/*
+let $geometries := $members/*
 return
  <test_SRS>
   <validationtest>
@@ -76,14 +45,12 @@ return
    {
     let $geom1 := $geometries[@gml:id = 'Curve_1']
     let $geom2 := $geometries[@gml:id = 'Curve_2']
-    let $ggeogeom1 := ggeo:parseGeometry($geom1)
-    let $ggeogeom2 := ggeo:parseGeometry($geom2)
     return
      <test
       geom1='{$geom1/@gml:id}'
       geom2='{$geom2/@gml:id}'>
       <intersects>
-       {ggeo:intersects($ggeogeom1, $ggeogeom2)}
+       {ggeo:intersects($geom1, $geom2)}
       </intersects>
      </test>
    }
