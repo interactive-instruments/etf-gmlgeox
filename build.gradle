@@ -134,6 +134,9 @@ dependencies {
 		exclude group: 'xml-apis'
 	}
 
+	// https://mvnrepository.com/artifact/org.jetbrains/annotations
+	compile group: 'org.jetbrains', name: 'annotations', version: '16.0.2'
+
 	compileOnly group: 'javax.xml.bind', name: 'jaxb-api', version:'2.2.12'
 
 	compileOnly "org.basex:basex:$basexVersion"
