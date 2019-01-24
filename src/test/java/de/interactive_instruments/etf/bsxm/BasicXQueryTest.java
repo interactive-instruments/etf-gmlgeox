@@ -103,6 +103,22 @@ public class BasicXQueryTest {
         xmlTest("test_geometry_union.xq");
     }
 
+    @Test
+    public void test_checkSecondControlPointInMiddleThirdOfArc() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_checkSecondControlPointInMiddleThirdOfArc.xml")
+                .execute(context);
+        xmlTest("test_checkSecondControlPointInMiddleThirdOfArc.xq");
+    }
+
+    @Test
+    public void test_checkMinimumSeparationOfCircleControlPoints() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_checkMinimumSeparationOfCircleControlPoints.xml")
+                .execute(context);
+        xmlTest("test_checkMinimumSeparationOfCircleControlPoints.xq");
+    }
+
     private void xmlTest(String xquery) {
         xmlTest(xquery, null);
     }
