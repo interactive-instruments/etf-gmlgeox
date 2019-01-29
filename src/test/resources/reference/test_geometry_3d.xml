@@ -2,22 +2,22 @@
   <validationtest>
     <test id="Point_1">
       <isValid>true</isValid>
-      <result>VVV</result>
+      <result>VVVV</result>
       <messages/>
     </test>
     <test id="Point_2">
       <isValid>true</isValid>
-      <result>VVV</result>
+      <result>VVVV</result>
       <messages/>
     </test>
     <test id="Curve_1">
       <isValid>true</isValid>
-      <result>VVV</result>
+      <result>VVVV</result>
       <messages/>
     </test>
     <test id="Surface">
       <isValid>true</isValid>
-      <result>VVV</result>
+      <result>VVVV</result>
       <messages/>
     </test>
   </validationtest>

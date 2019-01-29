@@ -7,13 +7,13 @@
   <test6>false false false true false true false false false false false false false false true false true true true false false false false true false false false true false true false</test6>
   <test7>false true</test7>
   <test8>false true</test8>
-  <test9>VVV VVV VVV</test9>
-  <test10>FSS FSS</test10>
-  <test11>VVF VVF VVV</test11>
-  <test12>VFV</test12>
-  <test13>VFV</test13>
-  <test14>VVV</test14>
-  <test15>VFV</test15>
+  <test9>VVVV VVVV VVVV</test9>
+  <test10>FSSS FSSS</test10>
+  <test11>VVFV VVFV VVVV</test11>
+  <test12>VFVV</test12>
+  <test13>VFVV</test13>
+  <test14>VVVV</test14>
+  <test15>VFVV</test15>
   <test16>MULTIPOINT ((0 0), (1 1))</test16>
   <test17>true true true true true</test17>
 </validationtest>

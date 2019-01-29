@@ -674,7 +674,7 @@ public class GmlGeoX extends QueryModule {
      * <p>
      * By default validation is only performed for the following GML geometry elements: Point, Polygon, Surface, Curve, LinearRing, MultiPolygon, MultiGeometry, MultiSurface, MultiCurve, Ring, and LineString. The set of GML elements to validate can be modified via the following methods: {@link #registerGmlGeometry(String)}, {@link #unregisterGmlGeometry(String)}, and {@link #unregisterAllGmlGeometries()}. These methods are also available for XQueries.
      * <p>
-     * The validation tasks to perform can be specified via the given mask. The mask is a simple string, where the character '1' at the position of a specific test (assuming a 1-based index) specifies that the test shall be performed. If the mask does not contain a character at the position of a specific test (because the mask is empty or the length is smaller than the position), then the test will be executed.
+     * The validation tasks to perform can be specified via the given mask. The mask is a simple string, where the character '1' at the position of a specific test (assuming a 1-based index) specifies that the test shall be performed. If the mask does not contain a character at the position of a specific test (because the mask is empty or the length is smaller than the position), then the test will NOT be executed. If no mask is provided, ALL tests will be executed.
      * <p>
      * The following tests are available:
      * <p>
@@ -687,7 +687,144 @@ public class GmlGeoX extends QueryModule {
      * <tr>
      * <td>1</td>
      * <td>General Validation</td>
-     * <td>This test validates the given geometry using the validation functionality of both deegree and JTS.</td>
+     * <td>This test validates the given geometry using the validation functionality of both deegree and JTS. More specifically:
+     * <p>
+     * <p>
+     * <span style="text-decoration: underline;"><strong>deegree based validation:</strong></span>
+     * </p>
+     * <ul>
+     * <li>primitive geometry (point, curve, ring, surface):
+     * <ul>
+     * <li>point: no specific validation</li>
+     * <li>curve:
+     * <ul>
+     * <li>duplication of successive control points (only for linear curve segments)</li>
+     * <li>segment discontinuity</li>
+     * <li>self intersection (based on JTS isSimple())</li>
+     * </ul>
+     * </li>
+     * <li>ring:
+     * <ul>
+     * <li>Same as curve.</li>
+     * <li>In addition, test if ring is closed</li>
+     * </ul>
+     * </li>
+     * <li>surface:
+     * <ul>
+     * <li>only checks PolygonPatch, individually:</li>
+     * <li>applies ring validation to interior and exterior rings</li>
+     * <li>checks ring orientation (ignored for GML 3.1):
+     * <ul>
+     * <li>must be counter-clockwise for exterior ring</li>
+     * <li>must be clockwise for interior ring</li>
+     * </ul>
+     * </li>
+     * <li>interior ring intersects exterior</li>
+     * <li>interior ring outside of exterior ring</li>
+     * <li>interior rings intersection</li>
+     * <li>interior rings are nested</li>
+     * </ul>
+     * </li>
+     * </ul>
+     * </li>
+     * <li>composite geometry: member geometries are validated individually</li>
+     * <li>multi geometry: member geometries are validated individually</li>
+     * </ul>
+     * <p>
+     * NOTE: There's some overlap with JTS validation. The following invalid situations are reported by the JTS validation:
+     * </p>
+     * <ul>
+     * <li>curve self intersection</li>
+     * <li>interior ring intersects exterior</li>
+     * <li>interior ring outside of exterior ring</li>
+     * <li>interior rings intersection</li>
+     * <li>interior rings are nested</li>
+     * <li>interior rings touch</li>
+     * <li>interior ring touches exterior</li>
+     * </ul>
+     * <p>
+     * <span style="text-decoration: underline;"><strong>JTS based validation</strong></span>:
+     * </p>
+     * <ul>
+     * <li>Point:
+     * <ul>
+     * <li>invalid coordinates</li>
+     * </ul>
+     * </li>
+     * <li>LineString:
+     * <ul>
+     * <li>invalid coordinates</li>
+     * <li>too few points</li>
+     * </ul>
+     * </li>
+     * <li>LinearRing:
+     * <ul>
+     * <li>invalid coordinates</li>
+     * <li>closed ring</li>
+     * <li>too few points</li>
+     * <li>no self intersecting rings</li>
+     * </ul>
+     * </li>
+     * <li>Polygon
+     * <ul>
+     * <li>invalid coordinates</li>
+     * <li>closed ring</li>
+     * <li>too few points</li>
+     * <li>consistent area</li>
+     * <li>no self intersecting rings</li>
+     * <li>holes in shell</li>
+     * <li>holes not nested</li>
+     * <li>connected interiors</li>
+     * </ul>
+     * </li>
+     * <li>MultiPoint:
+     * <ul>
+     * <li>invalid coordinates</li>
+     * </ul>
+     * </li>
+     * <li>MultiLineString:
+     * <ul>
+     * <li>Each contained LineString is validated on its own.</li>
+     * </ul>
+     * </li>
+     * <li>MultiPolygon:
+     * <ul>
+     * <li>Per polygon:
+     * <ul>
+     * <li>invalid coordinates</li>
+     * <li>closed ring</li>
+     * <li>holes in shell</li>
+     * <li>holes not nested</li>
+     * </ul>
+     * </li>
+     * <li>too few points</li>
+     * <li>consistent area</li>
+     * <li>no self intersecting rings</li>
+     * <li>shells not nested</li>
+     * <li>connected interiors</li>
+     * </ul>
+     * </li>
+     * <li>GeometryCollection:
+     * <ul>
+     * <li>Each member of the collection is validated on its own.</li>
+     * </ul>
+     * </li>
+     * </ul>
+     * <p>
+     * General description of checks performed by JTS:
+     * </p>
+     * <ul>
+     * <li>invalid coordinates: x and y are neither NaN or infinite)</li>
+     * <li>closed ring: tests if ring is closed; empty rings are closed by definition</li>
+     * <li>too few points: tests if length of coordinate array - after repeated points have been removed - is big enough (e.g. &gt;= 4 for a ring, &gt;= 2 for a line string)</li>
+     * <li>no self intersecting rings: Check that there is no ring which self-intersects (except of course at its endpoints); required by OGC topology rules</li>
+     * <li>consistent area: Checks that the arrangement of edges in a polygonal geometry graph forms a consistent area. Includes check for duplicate rings.</li>
+     * <li>holes in shell: Tests that each hole is inside the polygon shell (i.e. hole rings do not cross the shell ring).</li>
+     * <li>holes not nested: Tests that no hole is nested inside another hole.</li>
+     * <li>connected interiors: Check that the holes do not split the interior of the polygon into at least two pieces.</li>
+     * <li>shells not nested: Tests that no element polygon is wholly in the interior of another element polygon (of a MultiPolygon).</li>
+     * </ul>
+     * </td>
      * </tr>
      * <tr>
      * <td>2</td>
@@ -699,18 +836,41 @@ public class GmlGeoX extends QueryModule {
      * <td>Repetition of Position in CurveSegments</td>
      * <td>Checks that consecutive positions within a CurveSegment are not equal.</td>
      * </tr>
+     * <tr>
+     * <td>4</td>
+     * <td>isSimple</td>
+     * <td>
+     * <p>
+     * Tests whether a geometry is simple, based on JTS Geometry.isSimple(). In general, the OGC Simple Features specification of simplicity follows the rule: A Geometry is simple if and only if the only self-intersections are at boundary points.
+     * </p>
+     * <p>
+     * Simplicity is defined for each JTS geometry type as follows:
+     * </p>
+     * <ul>
+     * <li>Polygonal geometries are simple by definition, so isSimple trivially returns true.
+     * <ul>
+     * <li>Note: this means that isSimple cannot be used to test for (invalid) self-intersections in polygons. The JTS validity check tests for self-intersections in polygons.</li>
+     * </ul>
+     * </li>
+     * <li>Linear geometries are simple iff they do not self-intersect at interior points (i.e. points other than boundary points).</li>
+     * <li>Zero-dimensional (point) geometries are simple if and only if they have no repeated points.</li>
+     * <li>Empty geometries are always simple, by definition</li>
+     * </ul>
+     * </td>
+     * </tr>
      * </table>
      * <p>
      * Examples:
      * <ul>
-     * <li>The mask '010' indicates that only the 'Polygon Patch Connectivity' test shall be performed.</li>
-     * <li>The mask '1' indicates that all tests shall be performed (because the first one is set to true/'1' and nothing is said for the other tests).</li>
-     * <li>The mask '0' indicates that all except the first test shall be performed.
+     * <li>The mask '0100' indicates that only the 'Polygon Patch Connectivity' test shall be performed.</li>
+     * <li>The mask '1110' indicates that all tests except the isSimple test shall be performed .</li>
      * </ul>
      *
      * @param node
-     *            the GML geometry to validate
-     * @return a validation report, with the validation result and validation message (providing further details about any errors). The validation result is encoded as a sequence of characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed.
+     *            The GML geometry element to validate.
+     * @param testMask
+     *            Defines which tests shall be executed; if <code>null</code>, all tests will be executed.
+     * @return a validation report, with the validation result and validation message (providing further details about any errors). The validation result is encoded as a sequence of characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF' shows that the first test was skipped, while the second test passed and the third and fourth failed.
      * @throws QueryException
      */
     @Requires(Permission.NONE)
@@ -721,13 +881,14 @@ public class GmlGeoX extends QueryModule {
 
             // determine which tests to execute
             boolean isTestGeonovum, isTestPolygonPatchConnectivity,
-                    isTestRepetitionInCurveSegments;
+                    isTestRepetitionInCurveSegments, isTestIsSimple;
 
             if (testMask == null) {
 
                 isTestGeonovum = true;
                 isTestPolygonPatchConnectivity = true;
                 isTestRepetitionInCurveSegments = true;
+                isTestIsSimple = true;
 
             } else {
                 isTestGeonovum = testMask.length() >= 1
@@ -736,11 +897,14 @@ public class GmlGeoX extends QueryModule {
                         && testMask.charAt(1) == '1';
                 isTestRepetitionInCurveSegments = testMask.length() >= 3
                         && testMask.charAt(2) == '1';
+                isTestIsSimple = testMask.length() >= 4
+                        && testMask.charAt(3) == '1';
             }
 
             boolean isValidGeonovum = false;
             boolean polygonPatchesAreConnected = false;
             boolean noRepetitionInCurveSegment = false;
+            boolean isSimple = false;
 
             String srsName = determineSrsName(node);
 
@@ -776,12 +940,13 @@ public class GmlGeoX extends QueryModule {
             }
 
             if (isTestPolygonPatchConnectivity
-                    || isTestRepetitionInCurveSegments) {
+                    || isTestRepetitionInCurveSegments || isTestIsSimple) {
 
                 ValidatorContext ctx = new ValidatorContext();
                 SecondaryGeometryElementValidationHandler handler = new SecondaryGeometryElementValidationHandler(
                         isTestPolygonPatchConnectivity,
-                        isTestRepetitionInCurveSegments, ctx, srsName, this);
+                        isTestRepetitionInCurveSegments, isTestIsSimple, ctx,
+                        srsName, this);
 
                 /* configure handler with GML geometries specified through this class */
                 handler.unregisterAllGmlGeometries();
@@ -809,8 +974,14 @@ public class GmlGeoX extends QueryModule {
                             .isNoRepetitionInCurveSegments();
                 }
 
-                if (!polygonPatchesAreConnected
-                        || !noRepetitionInCurveSegment) {
+                // ================
+                // Test: isSimple
+                if (isTestIsSimple) {
+                    isSimple = handler.isSimple();
+                }
+
+                if (!polygonPatchesAreConnected || !noRepetitionInCurveSegment
+                        || !isSimple) {
                     validationMessages.addAll(ctx.getMessages());
                 }
             }
@@ -842,84 +1013,20 @@ public class GmlGeoX extends QueryModule {
                 sb.append("F");
             }
 
+            if (!isTestIsSimple) {
+                sb.append("S");
+            } else if (isSimple) {
+                sb.append("V");
+            } else {
+                sb.append("F");
+            }
+
             return new ValidationReport(sb.toString(), validationMessages);
 
         } catch (Exception e) {
             throw new QueryException(e);
         }
     }
-
-    // /**
-    // * Tests if the first geometry contains the second geometry.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents the second geometry, encoded as a GML geometry
-    // * element
-    // * @return <code>true</code> if the first geometry contains the second
-    // one,
-    // * else <code>false</code>.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean contains(Value arg1, Value arg2) throws QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.CONTAINS);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing contains(Value,Value). Message is: " +
-    // e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
-
-    // /**
-    // * Tests if one geometry contains a list of geometries. Whether a match is
-    // * required for all or just one of these is controlled via parameter.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents a list of geometries, encoded as a GML geometry
-    // * element
-    // * @param matchAll
-    // * <code>true</code> if arg1 must fulfill the spatial
-    // * relationship for all geometries in arg2, else
-    // * <code>false</code>
-    // * @return <code>true</code> if the conditions are met, else
-    // * <code>false</code>. <code>false</code> will also be returned if
-    // * arg2 is empty.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean contains(Object arg1, Object arg2, boolean matchAll)
-    // throws QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.CONTAINS, matchAll);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing contains(Object,Object,boolean). Message is: "
-    // + e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
 
     /**
      * Tests if the first geometry contains the second geometry.
@@ -1036,77 +1143,6 @@ public class GmlGeoX extends QueryModule {
         }
     }
 
-    // /**
-    // * Tests if the first geometry crosses the second geometry.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents the second geometry, encoded as a GML geometry
-    // * element
-    // * @return <code>true</code> if the first geometry crosses the second one,
-    // * else <code>false</code>.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean crosses(Value arg1, Value arg2) throws QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.CROSSES);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing crosses(Value,Value). Message is: " +
-    // e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
-    //
-    // /**
-    // * Tests if one geometry crosses a list of geometries. Whether a match is
-    // * required for all or just one of these is controlled via parameter.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents a list of geometries, encoded as a GML geometry
-    // * element
-    // * @param matchAll
-    // * <code>true</code> if arg1 must fulfill the spatial
-    // * relationship for all geometries in arg2, else
-    // * <code>false</code>
-    // * @return <code>true</code> if the conditions are met, else
-    // * <code>false</code>. <code>false</code> will also be returned if
-    // * arg2 is empty.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean crosses(Object arg1, Object arg2, boolean matchAll) throws
-    // QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.CROSSES, matchAll);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing crosses(Object,Object,boolean). Message is: "
-    // + e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
-
     /**
      * Tests if the first geometry crosses the second geometry.
      * <p>
@@ -1221,77 +1257,6 @@ public class GmlGeoX extends QueryModule {
             throw qe;
         }
     }
-
-    // /**
-    // * Tests if the first geometry equals the second geometry.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents the second geometry, encoded as a GML geometry
-    // * element
-    // * @return <code>true</code> if the first geometry equals the second one,
-    // * else <code>false</code>.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean equals(Value arg1, Value arg2) throws QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.EQUALS);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing equals(Value,Value). Message is: " +
-    // e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
-
-    // /**
-    // * Tests if one geometry equals a list of geometries. Whether a match is
-    // * required for all or just one of these is controlled via parameter.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents a list of geometries, encoded as a GML geometry
-    // * element
-    // * @param matchAll
-    // * <code>true</code> if arg1 must fulfill the spatial
-    // * relationship for all geometries in arg2, else
-    // * <code>false</code>
-    // * @return <code>true</code> if the conditions are met, else
-    // * <code>false</code>. <code>false</code> will also be returned if
-    // * arg2 is empty.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean equals(Object arg1, Object arg2, boolean matchAll) throws
-    // QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.EQUALS,
-    // matchAll);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing equals(Object,Object,boolean). Message is: " +
-    // e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
 
     /**
      * Tests if the first geometry equals the second geometry.
@@ -1774,34 +1739,6 @@ public class GmlGeoX extends QueryModule {
         }
     }
 
-    // private boolean
-    // applySpatialRelationshipOperator(com.vividsolutions.jts.geom.Geometry
-    // geom1,
-    // com.vividsolutions.jts.geom.Geometry geom2, SpatialRelOp op) {
-    //
-    // switch (op) {
-    // case CONTAINS:
-    // return geom1.contains(geom2);
-    // case CROSSES:
-    // return geom1.crosses(geom2);
-    // case EQUALS:
-    // return geom1.equals(geom2);
-    // case INTERSECTS:
-    // return geom1.intersects(geom2);
-    // case ISDISJOINT:
-    // return geom1.disjoint(geom2);
-    // case ISWITHIN:
-    // return geom1.within(geom2);
-    // case OVERLAPS:
-    // return geom1.overlaps(geom2);
-    // case TOUCHES:
-    // return geom1.touches(geom2);
-    // default:
-    // throw new IllegalArgumentException("Unknown spatial relationship
-    // operator: " + op.toString());
-    // }
-    // }
-
     private boolean applySpatialRelationshipOperation(Object arg1, Object arg2,
             SpatialRelOp op, boolean matchAll) throws QueryException {
 
@@ -1907,143 +1844,6 @@ public class GmlGeoX extends QueryModule {
 
         return result;
     }
-
-    // private boolean performSpatialRelationshipOperation(Object arg1, Object
-    // arg2, SpatialRelOp op, boolean matchAll)
-    // throws QueryException {
-    //
-    // try {
-    //
-    // if (arg1 instanceof Empty || arg2 instanceof Empty) {
-    //
-    // return false;
-    //
-    // } else {
-    //
-    // com.vividsolutions.jts.geom.Geometry geom1, geom2;
-    //
-    // geom1 = geoutils.toJTSGeometry(arg1);
-    // geom2 = geoutils.toJTSGeometry(arg2);
-    //
-    // List<com.vividsolutions.jts.geom.Geometry> gc1, gc2;
-    //
-    // gc1 = geoutils.toFlattenedJTSGeometryCollection(geom1);
-    // gc2 = geoutils.toFlattenedJTSGeometryCollection(geom2);
-    //
-    // boolean allMatch = true;
-    //
-    // outer: for (com.vividsolutions.jts.geom.Geometry g1 : gc1) {
-    // for (com.vividsolutions.jts.geom.Geometry g2 : gc2) {
-    //
-    // if (matchAll) {
-    //
-    // if (applySpatialRelationshipOperator(g1, g2, op)) {
-    // /*
-    // * check the next geometry pair to see if it
-    // * also satisfies the spatial relationship
-    // */
-    // } else {
-    // allMatch = false;
-    // break outer;
-    // }
-    //
-    // } else {
-    //
-    // if (applySpatialRelationshipOperator(g1, g2, op)) {
-    // return true;
-    // } else {
-    // /*
-    // * check the next geometry pair to see if it
-    // * satisfies the spatial relationship
-    // */
-    // }
-    // }
-    // }
-    // }
-    //
-    // if (matchAll) {
-    // return allMatch;
-    // } else {
-    // return false;
-    // }
-    // }
-    //
-    // } catch (Exception e) {
-    // throw new QueryException(e);
-    // }
-    // }
-
-    // /**
-    // * Tests if the first geometry is disjoint from the second geometry.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents the second geometry, encoded as a GML geometry
-    // * element
-    // * @return <code>true</code> if the first geometry is disjoint from the
-    // * second one, else <code>false</code>.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean isDisjoint(Value arg1, Value arg2) throws QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.ISDISJOINT);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing isDisjoint(Value,Value). Message is: " +
-    // e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
-    //
-    // /**
-    // * Tests if one geometry is disjoint to a list of geometries. Whether a
-    // * match is required for all or just one of these is controlled via
-    // * parameter.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents a list of geometries, encoded as a GML geometry
-    // * element
-    // * @param matchAll
-    // * <code>true</code> if arg1 must fulfill the spatial
-    // * relationship for all geometries in arg2, else
-    // * <code>false</code>
-    // * @return <code>true</code> if the conditions are met, else
-    // * <code>false</code>. <code>false</code> will also be returned if
-    // * arg2 is empty.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean isDisjoint(Object arg1, Object arg2, boolean matchAll)
-    // throws QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.ISDISJOINT, matchAll);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing isDisjoint(Object,Object,boolean). Message is:
-    // " + e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
 
     /**
      * Tests if the first and the second geometry are disjoint.
@@ -2162,79 +1962,6 @@ public class GmlGeoX extends QueryModule {
         }
     }
 
-    // /**
-    // * Tests if the first geometry is within the second geometry.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents the second geometry, encoded as a GML geometry
-    // * element
-    // * @return <code>true</code> if the first geometry is within the second
-    // one,
-    // * else <code>false</code>.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean isWithin(Value arg1, Value arg2) throws QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.ISWITHIN);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing isWithin(Value,Value). Message is: " +
-    // e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
-    //
-    // /**
-    // * Tests if one geometry is within a list of geometries. Whether a match
-    // is
-    // * required for all or just one of these is controlled via parameter.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents a list of geometries, encoded as a GML geometry
-    // * element
-    // * @param matchAll
-    // * <code>true</code> if arg1 must fulfill the spatial
-    // * relationship for all geometries in arg2, else
-    // * <code>false</code>
-    // * @return <code>true</code> if the conditions are met, else
-    // * <code>false</code>. <code>false</code> will also be returned if
-    // * arg2 is empty.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean isWithin(Object arg1, Object arg2, boolean matchAll)
-    // throws QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.ISWITHIN, matchAll);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing isWithin(Object,Object,boolean). Message is: "
-    // + e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
-
     /**
      * Tests if the first geometry is within the second geometry.
      * <p>
@@ -2350,78 +2077,6 @@ public class GmlGeoX extends QueryModule {
         }
     }
 
-    // /**
-    // * Tests if the first geometry overlaps the second geometry.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents the second geometry, encoded as a GML geometry
-    // * element
-    // * @return <code>true</code> if the first geometry overlaps the second
-    // one,
-    // * else <code>false</code>.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean overlaps(Value arg1, Value arg2) throws QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.OVERLAPS);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing overlaps(Value,Value). Message is: " +
-    // e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
-    //
-    // /**
-    // * Tests if one geometry overlaps a list of geometries. Whether a match is
-    // * required for all or just one of these is controlled via parameter.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents a list of geometries, encoded as a GML geometry
-    // * element
-    // * @param matchAll
-    // * <code>true</code> if arg1 must fulfill the spatial
-    // * relationship for all geometries in arg2, else
-    // * <code>false</code>
-    // * @return <code>true</code> if the conditions are met, else
-    // * <code>false</code>. <code>false</code> will also be returned if
-    // * arg2 is empty.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean overlaps(Value arg1, Value arg2, boolean matchAll) throws
-    // QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.OVERLAPS, matchAll);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing overlaps(Value,Value,boolean). Message is: " +
-    // e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
-
     /**
      * Tests if the first geometry overlaps the second geometry.
      * <p>
@@ -2536,77 +2191,6 @@ public class GmlGeoX extends QueryModule {
             throw qe;
         }
     }
-
-    // /**
-    // * Tests if the first geometry touches the second geometry.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents the second geometry, encoded as a GML geometry
-    // * element
-    // * @return <code>true</code> if the first geometry touches the second one,
-    // * else <code>false</code>.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean touches(Value arg1, Value arg2) throws QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.TOUCHES);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing touches(Value,Value). Message is: " +
-    // e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
-    //
-    // /**
-    // * Tests if one geometry touches a list of geometries. Whether a match is
-    // * required for all or just one of these is controlled via parameter.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // * and unsupported geometry types.
-    // *
-    // * @param arg1
-    // * represents the first geometry, encoded as a GML geometry
-    // * element
-    // * @param arg2
-    // * represents a list of geometries, encoded as a GML geometry
-    // * element
-    // * @param matchAll
-    // * <code>true</code> if arg1 must fulfill the spatial
-    // * relationship for all geometries in arg2, else
-    // * <code>false</code>
-    // * @return <code>true</code> if the conditions are met, else
-    // * <code>false</code>. <code>false</code> will also be returned if
-    // * arg2 is empty.
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public boolean touches(Object arg1, Object arg2, boolean matchAll) throws
-    // QueryException {
-    // try {
-    // return applySpatialRelationshipOperation(arg1, arg2,
-    // SpatialRelOp.TOUCHES, matchAll);
-    // } catch (Exception e) {
-    // QueryException qe = new QueryException(
-    // "Exception while executing touches(Object,Object,boolean). Message is: "
-    // + e.getMessage());
-    //
-    // throw qe;
-    // }
-    // }
 
     /**
      * Tests if the first geometry touches the second geometry.
@@ -2785,43 +2369,6 @@ public class GmlGeoX extends QueryModule {
     /**
      * Create the union of the given geometry objects.
      *
-     * @param arg1
-     *            - a single or collection of JTS geometries or geometry nodes.
-     * @param arg2
-     *            - a single or collection of JTS geometries or geometry nodes.
-     * @return the union of the geometries - can be a JTS geometry collection
-     * @throws QueryException
-     */
-    @Requires(Permission.NONE)
-    @Deterministic
-    public com.vividsolutions.jts.geom.Geometry union(Object arg1, Object arg2)
-            throws QueryException {
-
-        try {
-
-            List<com.vividsolutions.jts.geom.Geometry> geoms = new ArrayList<com.vividsolutions.jts.geom.Geometry>();
-
-            com.vividsolutions.jts.geom.Geometry geom1 = geoutils
-                    .toJTSGeometry(arg1);
-            geoms.add(geom1);
-
-            com.vividsolutions.jts.geom.Geometry geom2 = geoutils
-                    .toJTSGeometry(arg2);
-            geoms.add(geom2);
-
-            com.vividsolutions.jts.geom.GeometryCollection gc = geoutils
-                    .toJTSGeometryCollection(geoms, true);
-
-            return gc.union();
-
-        } catch (Exception e) {
-            throw new QueryException(e);
-        }
-    }
-
-    /**
-     * Create the union of the given geometry objects.
-     *
      * @param arg
      *            - a single or collection of JTS geometries or geometry nodes.
      * @return the union of the geometries - can be a JTS geometry collection
@@ -2829,16 +2376,13 @@ public class GmlGeoX extends QueryModule {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry union(Object arg)
-            throws QueryException {
+    public com.vividsolutions.jts.geom.Geometry unionGeom(
+            com.vividsolutions.jts.geom.Geometry[] arg) throws QueryException {
 
         try {
 
-            List<com.vividsolutions.jts.geom.Geometry> geoms = new ArrayList<com.vividsolutions.jts.geom.Geometry>();
-
-            com.vividsolutions.jts.geom.Geometry geom = geoutils
-                    .toJTSGeometry(arg);
-            geoms.add(geom);
+            List<com.vividsolutions.jts.geom.Geometry> geoms = Arrays
+                    .asList(arg);
 
             com.vividsolutions.jts.geom.GeometryCollection gc = geoutils
                     .toJTSGeometryCollection(geoms, true);
@@ -2860,7 +2404,7 @@ public class GmlGeoX extends QueryModule {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry unionNodes(Value val)
+    public com.vividsolutions.jts.geom.Geometry union(Value val)
             throws QueryException {
 
         try {
@@ -2929,7 +2473,7 @@ public class GmlGeoX extends QueryModule {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean isEmpty(com.vividsolutions.jts.geom.Geometry geom) {
+    public boolean isEmptyGeom(com.vividsolutions.jts.geom.Geometry geom) {
 
         if (geom == null || geom.isEmpty()) {
             return true;
@@ -3174,104 +2718,150 @@ public class GmlGeoX extends QueryModule {
     }
 
     /**
-     * Checks if a given object is closed. The object can be a single geometry or a collection of geometries. Only LineStrings and MultiLineStrings are checked.
+     * Checks if a given geometry is closed. Only LineStrings and MultiLineStrings are checked.
      *
-     * NOTE: Invokes the {@link #isClosed(Object, boolean)} method, with <code>true</code> for the second parameter.
+     * NOTE: Invokes the {@link #isClosedGeom(com.vividsolutions.jts.geom.Geometry, boolean)} method, with <code>true</code> for the second parameter.
      *
-     * @see #isClosed(Object, boolean)
+     * @see #isClosedGeom(com.vividsolutions.jts.geom.Geometry, boolean)
      * @param o
      * @return
      * @throws QueryException
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean isClosed(Object o) throws QueryException {
-        return isClosed(o, true);
+    public boolean isClosedGeom(com.vividsolutions.jts.geom.Geometry o)
+            throws QueryException {
+
+        return isClosedGeom(o, true);
     }
 
     /**
-     * Checks if a given object is closed. The object can be a single geometry or a collection of geometries. Points and MultiPoints are closed by definition (they do not have a boundary). Polygons and MultiPolygons are never closed in 2D, and since operations in 3D are not supported, this method will always return <code>false</code> if a polygon is encountered - unless the parameter onlyCheckCurveGeometries is set to <code>true</code>. LinearRings are closed by definition. The remaining geometry types that will be checked are LineString and MultiLineString. If a (Multi)LineString is not closed, this method will return <code>false</code>.
+     * Checks if the geometry represented by the given node is closed. Only LineStrings and MultiLineStrings are checked.
      *
+     * NOTE: Invokes the {@link #isClosed(ANode, boolean)} method, with <code>true</code> for the second parameter.
+     *
+     * @see #isClosed(ANode, boolean)
      * @param o
-     *            the geometry object(s) to test, can be a JTS geometry object, collection, and BaseX nodes (that will be converted to JTS geometries)
-     * @param onlyCheckCurveGeometries
-     *            <code>true</code> if only curve geometries (i.e., for JTS: LineString, LinearRing, and MultiLineString) shall be tested, else <code>false</code> (in this case, the occurrence of polygons will result in the return value <code>false</code>).
-     * @return <code>true</code> if the given object - a geometry or collection of geometries - is closed, else <code>false</code>
+     * @return
      * @throws QueryException
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean isClosed(Object o, boolean onlyCheckCurveGeometries)
-            throws QueryException {
+    public boolean isClosed(ANode o) throws QueryException {
+        return isClosed(o, true);
+    }
+
+    /**
+     * Checks if a given geometry is closed. Points and MultiPoints are closed by definition (they do not have a boundary). Polygons and MultiPolygons are never closed in 2D, and since operations in 3D are not supported, this method will always return <code>false</code> if a polygon is encountered - unless the parameter onlyCheckCurveGeometries is set to <code>true</code>. LinearRings are closed by definition. The remaining geometry types that will be checked are LineString and MultiLineString. If a (Multi)LineString is not closed, this method will return <code>false</code>.
+     *
+     * @param geom
+     *            the geometry to test
+     * @param onlyCheckCurveGeometries
+     *            <code>true</code> if only curve geometries (i.e., for JTS: LineString, LinearRing, and MultiLineString) shall be tested, else <code>false</code> (in this case, the occurrence of polygons will result in the return value <code>false</code>).
+     * @return <code>true</code> if the given geometry is closed, else <code>false</code>
+     * @throws QueryException
+     */
+    @Requires(Permission.NONE)
+    @Deterministic
+    public boolean isClosedGeom(com.vividsolutions.jts.geom.Geometry geom,
+            boolean onlyCheckCurveGeometries) throws QueryException {
 
         try {
 
-            if (o instanceof Empty) {
+            List<com.vividsolutions.jts.geom.Geometry> gc = geoutils
+                    .toFlattenedJTSGeometryCollection(geom);
 
-                return true;
+            for (com.vividsolutions.jts.geom.Geometry g : gc) {
 
-            } else {
+                if (g instanceof com.vividsolutions.jts.geom.Point
+                        || g instanceof com.vividsolutions.jts.geom.MultiPoint) {
 
-                com.vividsolutions.jts.geom.Geometry geom = geoutils
-                        .toJTSGeometry(o);
+                    /* points are closed by definition (they do not have a boundary) */
 
-                List<com.vividsolutions.jts.geom.Geometry> gc = geoutils
-                        .toFlattenedJTSGeometryCollection(geom);
+                } else if (g instanceof com.vividsolutions.jts.geom.Polygon
+                        || g instanceof com.vividsolutions.jts.geom.MultiPolygon) {
 
-                for (com.vividsolutions.jts.geom.Geometry g : gc) {
-
-                    if (g instanceof com.vividsolutions.jts.geom.Point
-                            || g instanceof com.vividsolutions.jts.geom.MultiPoint) {
-
-                        /* points are closed by definition (they do not have a boundary) */
-
-                    } else if (g instanceof com.vividsolutions.jts.geom.Polygon
-                            || g instanceof com.vividsolutions.jts.geom.MultiPolygon) {
-
-                        /* The JTS FAQ contains the following question and answer:
-                         *
-                         * Question: Does JTS support 3D operations?
-                         *
-                         * Answer: JTS does not provide support for true 3D geometry and operations. However, JTS does allow Coordinates to carry an elevation or Z value. This does not provide true 3D support, but does allow "2.5D" uses which are required in some geospatial applications.
-                         *
-                         * -------
-                         *
-                         * So, JTS does not support true 3D geometry and operations. Therefore, JTS cannot determine if a surface is closed. deegree does not seem to support this, either. In order for a surface to be closed, it must be a sphere or torus, possibly with holes. A surface in 2D can never be closed. Since we lack the ability to compute in 3D we assume that a (Multi)Polygon is not closed. If we do check geometries other than curves, then we return false. */
-                        if (!onlyCheckCurveGeometries) {
-                            return false;
-                        }
-
-                    } else if (g instanceof com.vividsolutions.jts.geom.MultiLineString) {
-
-                        com.vividsolutions.jts.geom.MultiLineString mls = (com.vividsolutions.jts.geom.MultiLineString) g;
-                        if (!mls.isClosed()) {
-                            return false;
-                        }
-
-                    } else if (g instanceof com.vividsolutions.jts.geom.LineString) {
-
-                        /* NOTE: LinearRing is a subclass of LineString, and closed by definition */
-
-                        com.vividsolutions.jts.geom.LineString ls = (com.vividsolutions.jts.geom.LineString) g;
-                        if (!ls.isClosed()) {
-                            return false;
-                        }
-
-                    } else {
-                        // should not happen
-                        throw new Exception(
-                                "Unexpected geometry type encountered: "
-                                        + g.getClass().getName());
+                    /* The JTS FAQ contains the following question and answer:
+                     *
+                     * Question: Does JTS support 3D operations?
+                     *
+                     * Answer: JTS does not provide support for true 3D geometry and operations. However, JTS does allow Coordinates to carry an elevation or Z value. This does not provide true 3D support, but does allow "2.5D" uses which are required in some geospatial applications.
+                     *
+                     * -------
+                     *
+                     * So, JTS does not support true 3D geometry and operations. Therefore, JTS cannot determine if a surface is closed. deegree does not seem to support this, either. In order for a surface to be closed, it must be a sphere or torus, possibly with holes. A surface in 2D can never be closed. Since we lack the ability to compute in 3D we assume that a (Multi)Polygon is not closed. If we do check geometries other than curves, then we return false. */
+                    if (!onlyCheckCurveGeometries) {
+                        return false;
                     }
-                }
 
-                // all relevant geometries are closed
-                return true;
+                } else if (g instanceof com.vividsolutions.jts.geom.MultiLineString) {
+
+                    com.vividsolutions.jts.geom.MultiLineString mls = (com.vividsolutions.jts.geom.MultiLineString) g;
+                    if (!mls.isClosed()) {
+                        return false;
+                    }
+
+                } else if (g instanceof com.vividsolutions.jts.geom.LineString) {
+
+                    /* NOTE: LinearRing is a subclass of LineString, and closed by definition */
+
+                    com.vividsolutions.jts.geom.LineString ls = (com.vividsolutions.jts.geom.LineString) g;
+                    if (!ls.isClosed()) {
+                        return false;
+                    }
+
+                } else {
+                    // should not happen
+                    throw new Exception("Unexpected geometry type encountered: "
+                            + g.getClass().getName());
+                }
             }
+
+            // all relevant geometries are closed
+            return true;
 
         } catch (Exception e) {
             throw new QueryException(e);
         }
+    }
+
+    /**
+     * Checks if the geometry represented by the given node is closed. Points and MultiPoints are closed by definition (they do not have a boundary). Polygons and MultiPolygons are never closed in 2D, and since operations in 3D are not supported, this method will always return <code>false</code> if a polygon is encountered - unless the parameter onlyCheckCurveGeometries is set to <code>true</code>. LinearRings are closed by definition. The remaining geometry types that will be checked are LineString and MultiLineString. If a (Multi)LineString is not closed, this method will return <code>false</code>.
+     *
+     * @param geomNode
+     *            the geometry node to test
+     * @param onlyCheckCurveGeometries
+     *            <code>true</code> if only curve geometries (i.e., for JTS: LineString, LinearRing, and MultiLineString) shall be tested, else <code>false</code> (in this case, the occurrence of polygons will result in the return value <code>false</code>).
+     * @return <code>true</code> if the geometry represented by the given node is closed, else <code>false</code>
+     * @throws QueryException
+     */
+    @Requires(Permission.NONE)
+    @Deterministic
+    public boolean isClosed(ANode geomNode, boolean onlyCheckCurveGeometries)
+            throws QueryException {
+
+        com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(
+                geomNode);
+
+        return isClosedGeom(geom, onlyCheckCurveGeometries);
+    }
+
+    /**
+     * Identifies the holes contained in the geometry represented by the given geometry node and returns them as a JTS geometry. If holes were found a union is built, to ensure that the result is a valid JTS Polygon or JTS MultiPolygon. If no holes were found an empty JTS GeometryCollection is returned.
+     *
+     * @param geometryNode
+     *            potentially existing holes will be extracted from the geometry represented by this node (the geometry can be a Polygon, MultiPolygon, or any other JTS geometry)
+     * @return A geometry (JTS Polygon or MultiPolygon) with the holes contained in the given geometry. Can also be an empty JTS GeometryCollection but not <code>null</code>;
+     * @throws QueryException
+     */
+    @Requires(Permission.NONE)
+    @Deterministic
+    public com.vividsolutions.jts.geom.Geometry holes(ANode geometryNode)
+            throws QueryException {
+
+        com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(
+                geometryNode);
+        return holesGeom(geom);
     }
 
     /**
@@ -3283,10 +2873,10 @@ public class GmlGeoX extends QueryModule {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry holes(
+    public com.vividsolutions.jts.geom.Geometry holesGeom(
             com.vividsolutions.jts.geom.Geometry geom) {
 
-        if (isEmpty(geom)) {
+        if (isEmptyGeom(geom)) {
 
             return geoutils.emptyJTSGeometry();
 
@@ -3316,7 +2906,7 @@ public class GmlGeoX extends QueryModule {
     public com.vividsolutions.jts.geom.Geometry holesAsGeometryCollection(
             com.vividsolutions.jts.geom.Geometry geom) {
 
-        if (isEmpty(geom)) {
+        if (isEmptyGeom(geom)) {
 
             return geoutils.emptyJTSGeometry();
 
@@ -3639,7 +3229,7 @@ public class GmlGeoX extends QueryModule {
     }
 
     /**
-     * Computes the intersection between the first and the second geometry.
+     * Computes the intersection between the first and the second geometry node.
      * <p>
      * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
@@ -3653,18 +3243,45 @@ public class GmlGeoX extends QueryModule {
     @Requires(Permission.NONE)
     @Deterministic
     public com.vividsolutions.jts.geom.Geometry intersection(
-            final Object geometry1, final Object geometry2)
+            final ANode geometry1, final ANode geometry2)
             throws QueryException {
         try {
-            if (geometry1 instanceof Empty || geometry2 instanceof Empty) {
-                return geoutils.emptyJTSGeometry();
-            } else {
 
-                final com.vividsolutions.jts.geom.Geometry geom1, geom2;
-                geom1 = geoutils.toJTSGeometry(geometry1);
-                geom2 = geoutils.toJTSGeometry(geometry2);
-                return geom1.intersection(geom2);
-            }
+            final com.vividsolutions.jts.geom.Geometry geom1 = getOrCacheGeometry(
+                    geometry1);
+            final com.vividsolutions.jts.geom.Geometry geom2 = getOrCacheGeometry(
+                    geometry2);
+            return geom1.intersection(geom2);
+
+        } catch (Exception e) {
+            throw new QueryException(e);
+        }
+
+    }
+
+    /**
+     * Computes the intersection between the first and the second geometry.
+     * <p>
+     * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     *
+     * @param geometry1
+     *            the first geometry
+     * @param geometry2
+     *            the second geometry
+     * @return the point-set common to the two geometries
+     * @throws QueryException
+     */
+    @Requires(Permission.NONE)
+    @Deterministic
+    public com.vividsolutions.jts.geom.Geometry intersectionGeomGeom(
+            final com.vividsolutions.jts.geom.Geometry geometry1,
+            final com.vividsolutions.jts.geom.Geometry geometry2)
+            throws QueryException {
+
+        try {
+
+            return geometry1.intersection(geometry2);
+
         } catch (Exception e) {
             throw new QueryException(e);
         }
@@ -3768,90 +3385,45 @@ public class GmlGeoX extends QueryModule {
 
     }
 
-    // /**
-    // * Computes the intersection between the first and the second geometry.
-    // * <p>
-    // * See {{@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of
-    // supported
-    // and
-    // * unsupported geometry types.
-    // *
-    // * @param geometry1 represents the first geometry
-    // * @param geometry2 represents the second geometry
-    // * @return the point-set common to the two geometries
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public com.vividsolutions.jts.geom.Geometry intersection(final ANode
-    // geometry1, final ANode geometry2)
-    // throws QueryException {
-    //
-    // try {
-    //
-    // final com.vividsolutions.jts.geom.Geometry geom1, geom2;
-    // geom1 = getOrCacheGeometry(geometry1);
-    // geom2 = getOrCacheGeometry(geometry2);
-    // return geom1.intersection(geom2);
-    //
-    // } catch (Exception e) {
-    // throw new QueryException(e);
-    // }
-    //
-    // }
-    //
-    // /**
-    // * Computes the intersection between the first and the second geometry.
-    // *
-    // * @param geometry1 the first geometry
-    // * @param geometry2 the second geometry
-    // * @return the point-set common to the two geometries
-    // * @throws QueryException
-    // */
-    // @Requires(Permission.NONE)
-    // @Deterministic
-    // public com.vividsolutions.jts.geom.Geometry intersectionGeomGeom(
-    // final com.vividsolutions.jts.geom.Geometry geometry1, final
-    // com.vividsolutions.jts.geom.Geometry geometry2)
-    // throws QueryException {
-    //
-    // try {
-    // return geometry1.intersection(geometry2);
-    // } catch (Exception e) {
-    // throw new QueryException(e);
-    // }
-    // }
-
     /**
      * Computes the envelope of a geometry.
      * <p>
      * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
-     * @param geometry
+     * @param geometryNode
      *            represents the geometry
      * @return The bounding box, an array { x1, y1, x2, y2 }
      * @throws QueryException
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public Object[] envelope(Object geometry) throws QueryException {
+    public Object[] envelope(ANode geometryNode) throws QueryException {
+
+        com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(
+                geometryNode);
+        return envelopeGeom(geom);
+    }
+
+    /**
+     * Computes the envelope of a geometry.
+     *
+     * @param geometry
+     *            the geometry
+     * @return The bounding box, as an array { x1, y1, x2, y2 }
+     * @throws QueryException
+     */
+    @Requires(Permission.NONE)
+    @Deterministic
+    public Object[] envelopeGeom(com.vividsolutions.jts.geom.Geometry geometry)
+            throws QueryException {
         try {
-            final Envelope env;
-            if (geometry instanceof Empty) {
-                env = geoutils.emptyJTSGeometry().getEnvelopeInternal();
-            } else if (geometry instanceof com.vividsolutions.jts.geom.Geometry) {
-                env = ((com.vividsolutions.jts.geom.Geometry) geometry)
-                        .getEnvelopeInternal();
-            } else {
-                env = geoutils.toJTSGeometry(geometry).getEnvelopeInternal();
-            }
+            final Envelope env = geometry.getEnvelopeInternal();
             final Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(),
                     env.getMaxY()};
             return res;
         } catch (Exception e) {
             throw new QueryException(e);
         }
-
     }
 
     /**

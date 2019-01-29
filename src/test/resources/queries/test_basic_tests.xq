@@ -289,50 +289,50 @@ ggeo:intersects($point1, $multiplePoints2, false()) (: true :)
 )
 
 (: Validation - all tests :)
-(: ("VVV", "VVV", "VVV") :)
+(: ("VVVV", "VVVV", "VVVV") :)
 let $test9 := (
-ggeo:validate($surface4), (: VVV :)
-ggeo:validate($curve1), (: VVV :)
-ggeo:validate($point1) (: VVV :)
+ggeo:validate($surface4), (: VVVV :)
+ggeo:validate($curve1), (: VVVV :)
+ggeo:validate($point1) (: VVVV :)
 )
 
 (: Validation - ring orientation :)
-(: ("FSS", "FSS") :)
+(: ("FSSS", "FSSS") :)
 let $test10 := (
-ggeo:validate($surface8, '100'), (: FSS - exterior ring is oriented clockwise :)
-ggeo:validate($surface9, '100') (: FSS - interior ring is oriented counter-clockwise :)
+ggeo:validate($surface8, '1000'), (: FSSS - exterior ring is oriented clockwise :)
+ggeo:validate($surface9, '1000') (: FSSS - interior ring is oriented counter-clockwise :)
 )
 
 (: Validation - repetition :)
-(: ("VVF", "VVF", "VVV") :)
+(: ("VVFV", "VVFV", "VVVV") :)
 let $test11 := (
-ggeo:validate($surface10), (: VVF - doppelte position :)
-ggeo:validate($curve14), (: VVF - doppelte position :)
-ggeo:validate($curve15) (: VVV :)
+ggeo:validate($surface10), (: VVFV - doppelte position :)
+ggeo:validate($curve14), (: VVFV - doppelte position :)
+ggeo:validate($curve15) (: VVVV :)
 )
 
 (: Validation - connectedness :)
-(: ("VFV") :)
+(: ("VFVV") :)
 let $test12 := (
-ggeo:validate($surface11) (: VFV - fourth patch is not connected :)
+ggeo:validate($surface11) (: VFVV - fourth patch is not connected :)
 )
 
 (: Validation - connectedness :)
-(: ("VFV") :)
+(: ("VFVV") :)
 let $test13 := (
-ggeo:validate($surface12) (: VFV - the two patches only touch in a single point and are therefore not connected :)
+ggeo:validate($surface12) (: VFVV - the two patches only touch in a single point and are therefore not connected :)
 )
 
 (: Validation - connectedness :)
-(: ("VVV") :)
+(: ("VVVV") :)
 let $test14 := (
-ggeo:validate($surface13) (: VVV - same surface as s11 but only using the first three patches, which are connected :)
+ggeo:validate($surface13) (: VVVV - same surface as s11 but only using the first three patches, which are connected :)
 )
 
 (: Validation - connectedness :)
-(: ("VFV") :)
+(: ("VFVV") :)
 let $test15 := (
-ggeo:validate($surface14) (: VFV - patch 1 is connected to patch 2, patch 3 is connected to patch 4, but patches 1/2 are not connected to patches 3/4 :)
+ggeo:validate($surface14) (: VFVV - patch 1 is connected to patch 2, patch 3 is connected to patch 4, but patches 1/2 are not connected to patches 3/4 :)
 )
 
 (: Map use :)
@@ -354,8 +354,8 @@ let $dummy := for $g in $geom
 return
  ggeo:index($g, $g)
 let $test17 := (
-count(ggeo:search(4, 2.4, 8, 8.5)) = 12,
-count(ggeo:search(0, 0, 1, 1)) = 11,
+count(ggeo:search(4, 2.4, 8, 8.5)) = 13,
+count(ggeo:search(0, 0, 1, 1)) = 12,
 contains(ggeo:search(0, 0, 1, 1)[@gml:id = 'p1']/gml:pos[1], '1 1'),
 ggeo:isWithin($geom[@gml:id = 'c1'], $geom, false()),
 number(ggeo:envelope($geom[1])[1]) = 1

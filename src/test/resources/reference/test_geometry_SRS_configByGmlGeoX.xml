@@ -2,12 +2,12 @@
   <validationtest>
     <test id="Curve_1">
       <isValid>true</isValid>
-      <result>VVV</result>
+      <result>VVVV</result>
       <messages/>
     </test>
     <test id="Curve_2">
       <isValid>true</isValid>
-      <result>VVV</result>
+      <result>VVVV</result>
       <messages/>
     </test>
   </validationtest>
