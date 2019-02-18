@@ -2,33 +2,43 @@
   <validationtest>
     <test id="Point_1">
       <isValid>true</isValid>
-      <result>VVV</result>
+      <result>VVVV</result>
       <messages/>
     </test>
     <test id="Point_2">
       <isValid>true</isValid>
-      <result>VVV</result>
+      <result>VVVV</result>
       <messages/>
     </test>
     <test id="Curve_1">
       <isValid>true</isValid>
-      <result>VVV</result>
+      <result>VVVV</result>
       <messages/>
     </test>
     <test id="Surface">
       <isValid>true</isValid>
-      <result>VVV</result>
+      <result>VVVV</result>
       <messages/>
     </test>
   </validationtest>
   <relationshiptest>
-    <test geom1="Point_1" geom2="Curve_1">
-      <intersects>true</intersects>
-    </test>
+    <tests>
+      <test_nodenode geom1="Point_1" geom2="Curve_1">
+        <intersects>true</intersects>
+      </test_nodenode>
+      <test_geomgeom geom1="Point_1" geom2="Curve_1">
+        <intersects>true</intersects>
+      </test_geomgeom>
+    </tests>
   </relationshiptest>
   <relationshiptest>
-    <test geom1="Point_2" geom2="Curve_S1">
-      <intersects>true</intersects>
-    </test>
+    <tests>
+      <test_nodenode geom1="Point_2" geom2="Curve_S1">
+        <intersects>true</intersects>
+      </test_nodenode>
+      <test_geomgeom geom1="Point_2" geom2="Curve_S1">
+        <intersects>true</intersects>
+      </test_geomgeom>
+    </tests>
   </relationshiptest>
 </test_3d>

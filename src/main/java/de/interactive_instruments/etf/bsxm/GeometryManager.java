@@ -15,6 +15,10 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.davidmoten.rtree.Entry;
@@ -28,9 +32,10 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 
 /**
- * The GeometryManager is a spatial index and an in-memory cache for JTS geometries that can be used with the GmlGeoX module. The cache is filled during the indexing of the geometries and updated when geometries are accessed using the {@link GmlGeoX#getGeometry(Object, Object)} function.
+ * The GeometryManager maintains spatial indexes and an in-memory cache for JTS geometries that can be used with the GmlGeoX module. The cache is filled during the indexing of the geometries and updated when geometries are accessed using the {@link GmlGeoX#getOrCacheGeometry(ANode)} function.
  *
  * @author Clemens Portele (portele <at> interactive-instruments <dot> de)
+ * @author Johannes Echterhoff (echterhoff at interactive-instruments dot de)
  */
 class GeometryManager {
 
@@ -43,7 +48,7 @@ class GeometryManager {
     public static final String ETF_GEOCACHE_REC_STATS = "etf.gmlgeox.geocache.statistics";
 
     private final Cache<String, Geometry> geometryCache;
-    private RTree<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree;
+    private Map<String, RTree<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>> rtreeByIndexName = new HashMap<>();
 
     GeometryManager() throws QueryException {
         this(Integer.valueOf(System.getProperty(ETF_GEOCACHE_SIZE, "100000")));
@@ -51,28 +56,27 @@ class GeometryManager {
 
     GeometryManager(final int maxSize) throws QueryException {
         try {
-            if (logger.isDebugEnabled() ||
-                    Boolean.valueOf(System.getProperty(ETF_GEOCACHE_REC_STATS, "false"))) {
+            if (logger.isDebugEnabled() || Boolean.valueOf(System.getProperty(ETF_GEOCACHE_REC_STATS, "false"))) {
                 geometryCache = Caffeine.newBuilder().recordStats().maximumSize(maxSize).build();
             } else {
                 geometryCache = Caffeine.newBuilder().maximumSize(maxSize).build();
             }
-            rtree = RTree.star().create();
         } catch (Exception e) {
-            throw new QueryException(
-                    "Cache for geometries could not be initialized: " + e.getMessage());
+            throw new QueryException("Cache for geometries could not be initialized: " + e.getMessage());
         }
     }
 
     /**
-     * Get feature geometry from the cache
+     * Get a geometry from the cache
      *
-     * @param id
-     *            the id for which the geometry should be retrieved, typically a gml:id of a GML feature element
-     * @return the geometry of the indexed node, or null if no geometry was found
+     * @param e
+     *            the entry identifying the database node of the geometry to retrieve
+     * @return the parsed geometry of the geometry node, or <code>null</code> if no geometry was found
+     * @throws Exception
      */
-    public com.vividsolutions.jts.geom.Geometry get(String id) {
-        return geometryCache.getIfPresent(id);
+    public com.vividsolutions.jts.geom.Geometry get(String id) throws Exception {
+        Geometry geom = geometryCache.getIfPresent(id);
+        return geom;
     }
 
     /**
@@ -96,8 +100,8 @@ class GeometryManager {
     /**
      * Put a feature geometry in the cache
      *
-     * @param id
-     *            an id of the geometry, typically a gml:id of a GML feature element
+     * @param e
+     *            a database entry referencing the geometry node
      * @param geom
      *            the geometry to cache
      */
@@ -108,43 +112,122 @@ class GeometryManager {
     /**
      * Index a geometry
      *
+     * @param indexName
+     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
      * @param entry
-     *            the index entry referencing the BaseX node
+     *            the entry referencing the BaseX node (typically of a feature)
      * @param geometry
      *            the geometry to index
      */
-    public void index(IndexEntry entry, com.github.davidmoten.rtree.geometry.Geometry geometry) {
+    public void index(String indexName, DBNodeEntry entry, com.github.davidmoten.rtree.geometry.Geometry geometry) {
+
+        String key = indexName != null ? indexName : "";
+
+        RTree<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree;
+
+        if (rtreeByIndexName.containsKey(key)) {
+            rtree = rtreeByIndexName.get(key);
+        } else {
+            rtree = RTree.star().create();
+        }
+
         rtree = rtree.add(entry, geometry);
+
+        rtreeByIndexName.put(key, rtree);
     }
 
     /**
-     * Report current size of the spatial index
+     * Report current size of the named spatial index
      *
-     * @return size of the spatial index
+     * @param indexName
+     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     * @return size of the spatial index; can be 0 if no index with given name was found
      */
-    public int indexSize() {
-        return rtree.size();
+    public int indexSize(String indexName) {
+
+        String key = indexName != null ? indexName : "";
+
+        if (rtreeByIndexName.containsKey(key)) {
+            return rtreeByIndexName.get(key).size();
+        } else {
+            return 0;
+        }
     }
 
     /**
-     * return all entries in the spatial index
+     * return all entries in the named spatial index
      *
-     * @return iterator over all entries
+     * @param indexName
+     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     * @return iterator over all entries; can be <code>null</code> if no index with given name was found
      */
-    public Iterable<IndexEntry> search() {
-        final Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.entries();
-        return results.map(entry -> entry.value()).toBlocking().toIterable();
+    public Iterable<DBNodeEntry> search(String indexName) {
+
+        String key = indexName != null ? indexName : "";
+
+        if (rtreeByIndexName.containsKey(key)) {
+
+            final Observable<Entry<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtreeByIndexName
+                    .get(key).entries();
+            return results.map(entry -> entry.value()).toBlocking().toIterable();
+
+        } else {
+            return null;
+        }
     }
 
     /**
-     * return all entries in the spatial index that are in the bounding box
+     * Return all entries in the named spatial index whose bounding box intersects with the given bounding box
      *
+     * @param indexName
+     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
      * @param bbox
      *            the bounding box / rectangle
-     * @return iterator over all detected entries
+     * @return iterator over all detected entries; can be <code>null</code> if no index with given name was found
      */
-    public Iterable<IndexEntry> search(com.github.davidmoten.rtree.geometry.Rectangle bbox) {
-        final Observable<Entry<IndexEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtree.search(bbox);
-        return results.map(entry -> entry.value()).toBlocking().toIterable();
+    public Iterable<DBNodeEntry> search(String indexName, com.github.davidmoten.rtree.geometry.Rectangle bbox) {
+
+        String key = indexName != null ? indexName : "";
+
+        if (rtreeByIndexName.containsKey(key)) {
+
+            final Observable<Entry<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtreeByIndexName
+                    .get(key).search(bbox);
+            return results.map(entry -> entry.value()).toBlocking().toIterable();
+
+        } else {
+            return null;
+        }
+
+    }
+
+    /**
+     * Create the named spatial index by bulk loading, using the STR method.
+     *
+     * @param indexName
+     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     * @param entries
+     */
+    public void index(String indexName,
+            List<Entry<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>> entries) {
+
+        String key = indexName != null ? indexName : "";
+
+        RTree<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree = RTree.star().create(entries);
+
+        rtreeByIndexName.put(key, rtree);
+    }
+
+    /**
+     * Removes the named spatial index and all its entries.
+     *
+     * @param indexName
+     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     */
+    public void removeIndex(String indexName) {
+
+        String key = indexName != null ? indexName : "";
+
+        rtreeByIndexName.remove(key);
     }
 }
