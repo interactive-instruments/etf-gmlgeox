@@ -15,7 +15,8 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -48,7 +49,11 @@ public class BasicXQueryTest {
 
     public static final String queryDir = "src/test/resources/queries/";
     public static final String xmlDir = "src/test/resources/xml/";
-    public static final String resultDir = "build/test-results/test/res/";
+
+    // public static final String resultDir = "build/test-results/test/res/";
+    // for local tests during development
+    public static final String resultDir = "testResults/";
+
     public static final String referenceDir = "src/test/resources/reference/";
 
     @Test
@@ -57,12 +62,22 @@ public class BasicXQueryTest {
     }
 
     @Test
+    public void test_basic_tests() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/geometryRelationship/GeometryRelationshipTest.xml")
+                .execute(context);
+        xmlTest("test_basic_tests.xq");
+    }
+
+    @Test
     public void test_isClosed() {
         xmlTest("test_geometry_isClosed.xq", "GeometryIsClosedTest.xml");
     }
 
     @Test
-    public void test_3d() {
+    public void test_3d() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_geometry_3d.xml").execute(context);
         xmlTest("test_geometry_3d.xq");
     }
 
@@ -74,8 +89,34 @@ public class BasicXQueryTest {
     }
 
     @Test
-    public void test_SRS_configByGmlGeoX() {
+    public void test_SRS_configByGmlGeoX() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_geometry_SRS_configByGmlGeoX.xml")
+                .execute(context);
         xmlTest("test_geometry_SRS_configByGmlGeoX.xq");
+    }
+
+    @Test
+    public void test_union() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_geometry_union.xml").execute(context);
+        xmlTest("test_geometry_union.xq");
+    }
+
+    @Test
+    public void test_checkSecondControlPointInMiddleThirdOfArc() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_checkSecondControlPointInMiddleThirdOfArc.xml")
+                .execute(context);
+        xmlTest("test_checkSecondControlPointInMiddleThirdOfArc.xq");
+    }
+
+    @Test
+    public void test_checkMinimumSeparationOfCircleControlPoints() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_checkMinimumSeparationOfCircleControlPoints.xml")
+                .execute(context);
+        xmlTest("test_checkMinimumSeparationOfCircleControlPoints.xq");
     }
 
     private void xmlTest(String xquery) {

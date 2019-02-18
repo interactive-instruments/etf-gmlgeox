@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Result;
 import javax.xml.transform.Transformer;
@@ -30,6 +30,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import com.ctc.wstx.api.ReaderConfig;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
@@ -45,13 +46,18 @@ import org.basex.query.value.node.ANode;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
+import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.composite.CompositeCurve;
 import org.deegree.geometry.composite.CompositeGeometry;
 import org.deegree.geometry.composite.CompositeSolid;
 import org.deegree.geometry.composite.CompositeSurface;
 import org.deegree.geometry.multi.MultiGeometry;
 import org.deegree.geometry.multi.MultiSolid;
-import org.deegree.geometry.primitive.*;
+import org.deegree.geometry.primitive.Curve;
+import org.deegree.geometry.primitive.OrientableCurve;
+import org.deegree.geometry.primitive.Point;
+import org.deegree.geometry.primitive.Ring;
+import org.deegree.geometry.primitive.Surface;
 import org.deegree.geometry.primitive.patches.PolygonPatch;
 import org.deegree.geometry.primitive.patches.SurfacePatch;
 import org.deegree.geometry.standard.AbstractDefaultGeometry;
@@ -68,8 +74,8 @@ import org.w3c.dom.Node;
  */
 public class GmlGeoXUtils {
 
-    protected XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-    protected GmlGeoX gmlGeoX;
+    private final GmlGeoX gmlGeoX;
+    private final GeometryFactory geometryFactory = new IIGeometryFactory();
 
     /**
      * Used to built JTS geometries.
@@ -529,7 +535,16 @@ public class GmlGeoXUtils {
     public com.vividsolutions.jts.geom.Geometry singleObjectToJTSGeometry(
             Object o) throws Exception {
 
-        if (o instanceof BXElem) {
+        if (o == null) {
+
+            throw new IllegalArgumentException(
+                    "Argument is <null> and thus cannot be converted to a single JTS geometry.");
+
+        } else if (o instanceof ANode) {
+
+            return toJTSGeometry((ANode) o);
+
+        } else if (o instanceof BXElem) {
 
             BXElem elem = (BXElem) o;
             ANode node = elem.getNode();
@@ -571,7 +586,7 @@ public class GmlGeoXUtils {
     }
 
     /**
-     * Reads a geometry from the given DOM node.
+     * Reads a geometry from the given node.
      *
      * @param aNode
      *            represents a GML geometry element
@@ -593,11 +608,6 @@ public class GmlGeoXUtils {
                     + (namespaceURI == null ? "<null>" : namespaceURI) + "'.");
         }
 
-        final InputStream byteArrayInputStream = nodeToInputStream(node);
-
-        final XMLStreamReader xmlStream = xmlInputFactory
-                .createXMLStreamReader(byteArrayInputStream);
-
         final GMLVersion gmlVersion;
         if (isGML32Namespace(namespaceURI)) {
             gmlVersion = GMLVersion.GML_32;
@@ -608,8 +618,11 @@ public class GmlGeoXUtils {
             throw new IllegalStateException();
         }
 
+        final XMLStreamReader xmlStream = nodeToStreamReader(node);
+
         GMLStreamReader gmlStream = GMLInputFactory
                 .createGMLStreamReader(gmlVersion, xmlStream);
+        gmlStream.setGeometryFactory(geometryFactory);
 
         final ICRS defaultCRS;
         if (srsName != null) {
@@ -623,14 +636,20 @@ public class GmlGeoXUtils {
         return gmlStream.readGeometry();
     }
 
+    XMLStreamReader nodeToStreamReader(final BXNode node)
+            throws XMLStreamException {
+        final ReaderConfig config = ReaderConfig.createFullDefaults();
+        return BsxDomWrappingReader.createFrom(new DOMSource(node), config);
+    }
+
     /**
-     * Return text representation of a node as InputStream
+     * TODO optimize
      *
      * @param node
      * @return
      * @throws TransformerException
      */
-    public InputStream nodeToInputStream(final Node node)
+    InputStream nodeToInputStream(final Node node)
             throws TransformerException {
 
         if (node instanceof BXNode) {
