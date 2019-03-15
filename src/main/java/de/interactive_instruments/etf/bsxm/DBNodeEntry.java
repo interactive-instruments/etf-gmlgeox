@@ -40,4 +40,35 @@ class DBNodeEntry {
         dbname = node.data().meta.name;
         nodeKind = node.kind();
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((dbname == null) ? 0 : dbname.hashCode());
+        result = prime * result + nodeKind;
+        result = prime * result + pre;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        DBNodeEntry other = (DBNodeEntry) obj;
+        if (dbname == null) {
+            if (other.dbname != null)
+                return false;
+        } else if (!dbname.equals(other.dbname))
+            return false;
+        if (nodeKind != other.nodeKind)
+            return false;
+        if (pre != other.pre)
+            return false;
+        return true;
+    }
 }

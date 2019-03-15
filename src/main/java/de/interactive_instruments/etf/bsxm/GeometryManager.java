@@ -39,7 +39,8 @@ import rx.Observable;
  */
 class GeometryManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(GeometryManager.class);
+    private static final Logger logger = LoggerFactory
+            .getLogger(GeometryManager.class);
 
     // Max cache entries as number
     public static final String ETF_GEOCACHE_SIZE = "etf.gmlgeox.geocache.size";
@@ -56,13 +57,18 @@ class GeometryManager {
 
     GeometryManager(final int maxSize) throws QueryException {
         try {
-            if (logger.isDebugEnabled() || Boolean.valueOf(System.getProperty(ETF_GEOCACHE_REC_STATS, "false"))) {
-                geometryCache = Caffeine.newBuilder().recordStats().maximumSize(maxSize).build();
+            if (logger.isDebugEnabled() || Boolean.valueOf(
+                    System.getProperty(ETF_GEOCACHE_REC_STATS, "false"))) {
+                geometryCache = Caffeine.newBuilder().recordStats()
+                        .maximumSize(maxSize).build();
             } else {
-                geometryCache = Caffeine.newBuilder().maximumSize(maxSize).build();
+                geometryCache = Caffeine.newBuilder().maximumSize(maxSize)
+                        .build();
             }
         } catch (Exception e) {
-            throw new QueryException("Cache for geometries could not be initialized: " + e.getMessage());
+            throw new QueryException(
+                    "Cache for geometries could not be initialized: "
+                            + e.getMessage());
         }
     }
 
@@ -74,7 +80,8 @@ class GeometryManager {
      * @return the parsed geometry of the geometry node, or <code>null</code> if no geometry was found
      * @throws Exception
      */
-    public com.vividsolutions.jts.geom.Geometry get(String id) throws Exception {
+    public com.vividsolutions.jts.geom.Geometry get(String id)
+            throws Exception {
         Geometry geom = geometryCache.getIfPresent(id);
         return geom;
     }
@@ -119,7 +126,8 @@ class GeometryManager {
      * @param geometry
      *            the geometry to index
      */
-    public void index(String indexName, DBNodeEntry entry, com.github.davidmoten.rtree.geometry.Geometry geometry) {
+    public void index(String indexName, DBNodeEntry entry,
+            com.github.davidmoten.rtree.geometry.Geometry geometry) {
 
         String key = indexName != null ? indexName : "";
 
@@ -134,6 +142,19 @@ class GeometryManager {
         rtree = rtree.add(entry, geometry);
 
         rtreeByIndexName.put(key, rtree);
+    }
+
+    /**
+     * Determine if an index with given name already exists.
+     *
+     * @param indexName
+     * @return <code>true</code> if the index exists, else <code>false</code>
+     */
+    public boolean hasIndex(String indexName) {
+
+        String key = indexName != null ? indexName : "";
+
+        return rtreeByIndexName.containsKey(key);
     }
 
     /**
@@ -169,7 +190,8 @@ class GeometryManager {
 
             final Observable<Entry<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtreeByIndexName
                     .get(key).entries();
-            return results.map(entry -> entry.value()).toBlocking().toIterable();
+            return results.map(entry -> entry.value()).toBlocking()
+                    .toIterable();
 
         } else {
             return null;
@@ -185,7 +207,8 @@ class GeometryManager {
      *            the bounding box / rectangle
      * @return iterator over all detected entries; can be <code>null</code> if no index with given name was found
      */
-    public Iterable<DBNodeEntry> search(String indexName, com.github.davidmoten.rtree.geometry.Rectangle bbox) {
+    public Iterable<DBNodeEntry> search(String indexName,
+            com.github.davidmoten.rtree.geometry.Rectangle bbox) {
 
         String key = indexName != null ? indexName : "";
 
@@ -193,7 +216,8 @@ class GeometryManager {
 
             final Observable<Entry<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>> results = rtreeByIndexName
                     .get(key).search(bbox);
-            return results.map(entry -> entry.value()).toBlocking().toIterable();
+            return results.map(entry -> entry.value()).toBlocking()
+                    .toIterable();
 
         } else {
             return null;
@@ -213,7 +237,8 @@ class GeometryManager {
 
         String key = indexName != null ? indexName : "";
 
-        RTree<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree = RTree.star().create(entries);
+        RTree<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry> rtree = RTree
+                .star().create(entries);
 
         rtreeByIndexName.put(key, rtree);
     }
