@@ -94,7 +94,7 @@ public class GmlGeoXUtils {
      * Creates a JTS Polygon from the given deegree PolygonPatch.
      *
      * @param patch
-     * @return
+     * @return the resulting JTS Polygon
      */
     public Polygon toJTSPolygon(PolygonPatch patch) {
 
@@ -124,7 +124,7 @@ public class GmlGeoXUtils {
      * Creates a JTS Polygon from the given JTS LineString.
      *
      * @param exterior
-     * @return
+     * @return the resulting JTS Polygon
      */
     public Polygon toJTSPolygon(
             com.vividsolutions.jts.geom.LineString exterior) {
@@ -316,7 +316,7 @@ public class GmlGeoXUtils {
      * </ul>
      *
      * @param geom
-     * @return
+     * @return the resulting JTS geometry
      * @throws Exception
      */
     public com.vividsolutions.jts.geom.Geometry toJTSGeometry(Geometry geom)
@@ -468,7 +468,7 @@ public class GmlGeoXUtils {
      * See {{@link #toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param node
-     * @return
+     * @return the resulting JTS geometry
      * @throws Exception
      */
     public com.vividsolutions.jts.geom.Geometry toJTSGeometry(ANode node)
@@ -686,7 +686,7 @@ public class GmlGeoXUtils {
      * Adds a geometry to a collection. If the geometry is a GeometryCollection (but not a MultiPoint, -LineString, or -Polygon) its members are added (recursively scanning for GeometryCollections). Spatial relationship operators cannot be performed for a JTS GeometryCollection, but for (Multi)Point, (Multi)LineString, and (Multi)Polygon.
      *
      * @param geom
-     * @return
+     * @return the list of JTS geometries (without GeometryCollection objects)
      */
     public List<com.vividsolutions.jts.geom.Geometry> toFlattenedJTSGeometryCollection(
             com.vividsolutions.jts.geom.Geometry geom) {
