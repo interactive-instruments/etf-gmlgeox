@@ -32,6 +32,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import com.ctc.wstx.api.ReaderConfig;
 import com.vividsolutions.jts.geom.GeometryCollection;
+import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 
@@ -46,7 +47,6 @@ import org.basex.query.value.node.ANode;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
-import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.composite.CompositeCurve;
 import org.deegree.geometry.composite.CompositeGeometry;
 import org.deegree.geometry.composite.CompositeSolid;
@@ -75,7 +75,7 @@ import org.w3c.dom.Node;
 public class GmlGeoXUtils {
 
     private final GmlGeoX gmlGeoX;
-    private final GeometryFactory geometryFactory = new IIGeometryFactory();
+    private final IIGeometryFactory geometryFactory = new IIGeometryFactory();
 
     /**
      * Used to built JTS geometries.
@@ -97,23 +97,14 @@ public class GmlGeoXUtils {
      * @return the resulting JTS Polygon
      */
     public Polygon toJTSPolygon(PolygonPatch patch) {
+        final LinearRing shell = toJtsLinearizedRing(patch.getExteriorRing());
 
-        Ring exteriorRing = patch.getExteriorRing();
-        List<Ring> interiorRings = patch.getInteriorRings();
-
-        com.vividsolutions.jts.geom.LinearRing shell = (com.vividsolutions.jts.geom.LinearRing) ((AbstractDefaultGeometry) exteriorRing)
-                .getJTSGeometry();
-        com.vividsolutions.jts.geom.LinearRing[] holes = null;
-
+        LinearRing[] holes = null;
+        final List<Ring> interiorRings = patch.getInteriorRings();
         if (interiorRings != null) {
-
-            holes = new com.vividsolutions.jts.geom.LinearRing[interiorRings
-                    .size()];
-
-            int i = 0;
-            for (Ring ring : interiorRings) {
-                holes[i++] = (com.vividsolutions.jts.geom.LinearRing) ((AbstractDefaultGeometry) ring)
-                        .getJTSGeometry();
+            holes = new LinearRing[interiorRings.size()];
+            for (int i = 0; i < interiorRings.size(); i++) {
+                holes[i] = toJtsLinearizedRing(interiorRings.get(i));
             }
         }
 
@@ -133,6 +124,12 @@ public class GmlGeoXUtils {
                 .createLinearRing(exterior.getCoordinates());
 
         return jtsFactory.createPolygon(exteriorRing, null);
+    }
+
+    private LinearRing toJtsLinearizedRing(final Ring deegreeRing) {
+        final Curve linearizedCurve = geometryFactory.createCurve(deegreeRing.getId(), deegreeRing.getCoordinateSystem(),
+                deegreeRing.getCurveSegments());
+        return jtsFactory.createLinearRing(((IICurve) linearizedCurve).buildJTSGeometry().getCoordinateSequence());
     }
 
     /**

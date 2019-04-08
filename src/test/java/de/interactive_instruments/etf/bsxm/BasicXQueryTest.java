@@ -102,7 +102,7 @@ public class BasicXQueryTest {
         new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_geometry_union.xml").execute(context);
         xmlTest("test_geometry_union.xq");
     }
-    
+
     @Test
     public void test_arc_interpolation() throws BaseXException {
         new DropDB("GmlGeoXUnitTestDB").execute(context);
