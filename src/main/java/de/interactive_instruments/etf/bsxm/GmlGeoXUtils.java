@@ -47,10 +47,8 @@ import org.basex.query.value.node.ANode;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
-import org.deegree.geometry.composite.CompositeCurve;
 import org.deegree.geometry.composite.CompositeGeometry;
 import org.deegree.geometry.composite.CompositeSolid;
-import org.deegree.geometry.composite.CompositeSurface;
 import org.deegree.geometry.multi.MultiGeometry;
 import org.deegree.geometry.multi.MultiSolid;
 import org.deegree.geometry.primitive.Curve;
@@ -321,6 +319,8 @@ public class GmlGeoXUtils {
 
         if (geom instanceof Surface) {
 
+            // covers CompositeSurface, OrientableSurface, Polygon, ...
+
             /* Deegree does not support spatial operations for surfaces with more than one patch - or rather: it ignores all patches except the first one. So we need to detect and handle this case ourselves.
              *
              * In fact, it is DefaultSurface that does not support multiple patches. So we could check that the geometry is an instance of DefaultSurface. However, it is not planned to create another Geometry-Implementation for deegree. Thus we treat each Surface as having the issue of not supporting JTS geometry creation if it has multiple patches.
@@ -376,6 +376,7 @@ public class GmlGeoXUtils {
                 OrientableCurve oc = (OrientableCurve) geom;
                 Curve baseCurve = oc.getBaseCurve();
 
+                /* NOTE: JTS geometry is built using IICurve.buildJTSGeometry() */
                 return ((AbstractDefaultGeometry) baseCurve).getJTSGeometry();
 
             } catch (IllegalArgumentException e) {
@@ -441,14 +442,6 @@ public class GmlGeoXUtils {
 
             GeometryCollection gc = toJTSGeometryCollection(gList, true);
             return gc;
-
-        } else if (geom instanceof CompositeCurve) {
-
-            return ((AbstractDefaultGeometry) geom).getJTSGeometry();
-
-        } else if (geom instanceof CompositeSurface) {
-
-            return ((AbstractDefaultGeometry) geom).getJTSGeometry();
 
         } else {
 

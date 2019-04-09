@@ -111,6 +111,28 @@ public class BasicXQueryTest {
     }
 
     @Test
+    public void test_arc_interpolation_orientableCurve() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_arc_interpolation_orientableCurve.xml").execute(context);
+        xmlTest("test_arc_interpolation_orientableCurve.xq");
+    }
+
+    @Test
+    public void test_arc_interpolation_compositeSurface() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_arc_interpolation_compositeSurface.xml")
+                .execute(context);
+        xmlTest("test_arc_interpolation_compositeSurface.xq");
+    }
+
+    @Test
+    public void test_arc_interpolation_compositeCurve() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_arc_interpolation_compositeCurve.xml").execute(context);
+        xmlTest("test_arc_interpolation_compositeCurve.xq");
+    }
+
+    @Test
     public void test_checkSecondControlPointInMiddleThirdOfArc() throws BaseXException {
         new DropDB("GmlGeoXUnitTestDB").execute(context);
         new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_checkSecondControlPointInMiddleThirdOfArc.xml")

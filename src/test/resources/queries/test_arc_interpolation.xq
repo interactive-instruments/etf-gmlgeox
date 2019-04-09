@@ -11,13 +11,13 @@ let $gelaendekanten_geoms := $members[@gml:id = ('GK_DEBWLT010000r2HW','GK_DEBWL
 let $c_boundary := ggeo:boundary($candidate_geom)
 let $gkUnion := ggeo:union($gelaendekanten_geoms)
 
-let $boundaryInUnion := ggeo:relateGeomGeom($c_boundary,$gkUnion,'**F**F***',false())
+let $test1_boundaryInUnion := ggeo:relateGeomGeom($c_boundary,$gkUnion,'**F**F***',false())
 
 return
  <test_arc_interpolation>  
   <relationshiptest>
     <tests>
-     <test1>{$boundaryInUnion}</test1>         
+     <test1>{$test1_boundaryInUnion}</test1>  
      </tests>
   </relationshiptest>
  </test_arc_interpolation>
