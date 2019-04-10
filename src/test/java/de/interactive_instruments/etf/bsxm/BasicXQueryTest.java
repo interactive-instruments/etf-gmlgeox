@@ -133,6 +133,13 @@ public class BasicXQueryTest {
     }
 
     @Test
+    public void test_envelope() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_envelope.xml").execute(context);
+        xmlTest("test_envelope.xq");
+    }
+
+    @Test
     public void test_checkSecondControlPointInMiddleThirdOfArc() throws BaseXException {
         new DropDB("GmlGeoXUnitTestDB").execute(context);
         new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_checkSecondControlPointInMiddleThirdOfArc.xml")
