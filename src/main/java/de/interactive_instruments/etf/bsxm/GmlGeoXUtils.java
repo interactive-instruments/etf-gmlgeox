@@ -32,6 +32,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import com.ctc.wstx.api.ReaderConfig;
 import com.vividsolutions.jts.geom.GeometryCollection;
+import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 
@@ -46,11 +47,8 @@ import org.basex.query.value.node.ANode;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
-import org.deegree.geometry.GeometryFactory;
-import org.deegree.geometry.composite.CompositeCurve;
 import org.deegree.geometry.composite.CompositeGeometry;
 import org.deegree.geometry.composite.CompositeSolid;
-import org.deegree.geometry.composite.CompositeSurface;
 import org.deegree.geometry.multi.MultiGeometry;
 import org.deegree.geometry.multi.MultiSolid;
 import org.deegree.geometry.primitive.Curve;
@@ -75,7 +73,7 @@ import org.w3c.dom.Node;
 public class GmlGeoXUtils {
 
     private final GmlGeoX gmlGeoX;
-    private final GeometryFactory geometryFactory = new IIGeometryFactory();
+    private final IIGeometryFactory geometryFactory = new IIGeometryFactory();
 
     /**
      * Used to built JTS geometries.
@@ -97,23 +95,14 @@ public class GmlGeoXUtils {
      * @return the resulting JTS Polygon
      */
     public Polygon toJTSPolygon(PolygonPatch patch) {
+        final LinearRing shell = toJtsLinearizedRing(patch.getExteriorRing());
 
-        Ring exteriorRing = patch.getExteriorRing();
-        List<Ring> interiorRings = patch.getInteriorRings();
-
-        com.vividsolutions.jts.geom.LinearRing shell = (com.vividsolutions.jts.geom.LinearRing) ((AbstractDefaultGeometry) exteriorRing)
-                .getJTSGeometry();
-        com.vividsolutions.jts.geom.LinearRing[] holes = null;
-
+        LinearRing[] holes = null;
+        final List<Ring> interiorRings = patch.getInteriorRings();
         if (interiorRings != null) {
-
-            holes = new com.vividsolutions.jts.geom.LinearRing[interiorRings
-                    .size()];
-
-            int i = 0;
-            for (Ring ring : interiorRings) {
-                holes[i++] = (com.vividsolutions.jts.geom.LinearRing) ((AbstractDefaultGeometry) ring)
-                        .getJTSGeometry();
+            holes = new LinearRing[interiorRings.size()];
+            for (int i = 0; i < interiorRings.size(); i++) {
+                holes[i] = toJtsLinearizedRing(interiorRings.get(i));
             }
         }
 
@@ -133,6 +122,12 @@ public class GmlGeoXUtils {
                 .createLinearRing(exterior.getCoordinates());
 
         return jtsFactory.createPolygon(exteriorRing, null);
+    }
+
+    private LinearRing toJtsLinearizedRing(final Ring deegreeRing) {
+        final Curve linearizedCurve = geometryFactory.createCurve(deegreeRing.getId(), deegreeRing.getCoordinateSystem(),
+                deegreeRing.getCurveSegments());
+        return jtsFactory.createLinearRing(((IICurve) linearizedCurve).buildJTSGeometry().getCoordinateSequence());
     }
 
     /**
@@ -324,6 +319,8 @@ public class GmlGeoXUtils {
 
         if (geom instanceof Surface) {
 
+            // covers CompositeSurface, OrientableSurface, Polygon, ...
+
             /* Deegree does not support spatial operations for surfaces with more than one patch - or rather: it ignores all patches except the first one. So we need to detect and handle this case ourselves.
              *
              * In fact, it is DefaultSurface that does not support multiple patches. So we could check that the geometry is an instance of DefaultSurface. However, it is not planned to create another Geometry-Implementation for deegree. Thus we treat each Surface as having the issue of not supporting JTS geometry creation if it has multiple patches.
@@ -379,6 +376,7 @@ public class GmlGeoXUtils {
                 OrientableCurve oc = (OrientableCurve) geom;
                 Curve baseCurve = oc.getBaseCurve();
 
+                /* NOTE: JTS geometry is built using IICurve.buildJTSGeometry() */
                 return ((AbstractDefaultGeometry) baseCurve).getJTSGeometry();
 
             } catch (IllegalArgumentException e) {
@@ -444,14 +442,6 @@ public class GmlGeoXUtils {
 
             GeometryCollection gc = toJTSGeometryCollection(gList, true);
             return gc;
-
-        } else if (geom instanceof CompositeCurve) {
-
-            return ((AbstractDefaultGeometry) geom).getJTSGeometry();
-
-        } else if (geom instanceof CompositeSurface) {
-
-            return ((AbstractDefaultGeometry) geom).getJTSGeometry();
 
         } else {
 

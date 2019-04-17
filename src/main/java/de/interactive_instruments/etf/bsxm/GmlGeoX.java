@@ -24,11 +24,9 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -42,9 +40,7 @@ import nl.vrom.roo.validator.core.ValidatorContext;
 import nl.vrom.roo.validator.core.ValidatorMessage;
 import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
 
-import com.github.davidmoten.rtree.Entry;
 import com.github.davidmoten.rtree.geometry.Geometries;
-import com.github.davidmoten.rtree.internal.EntryDefault;
 import com.google.common.base.Joiner;
 import com.vividsolutions.jts.algorithm.Angle;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -139,8 +135,6 @@ public class GmlGeoX extends QueryModule {
     private static final Set<String> LOGGED_UNKNOWN_CRS = new HashSet<>();
 
     private GeometryManager mgr = new GeometryManager();
-
-    private Map<String, List<Entry<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>>> geomIndexEntriesByIndexName = new HashMap<>();
 
     private int count = 0;
     private int count2 = 0;
@@ -3401,9 +3395,25 @@ public class GmlGeoX extends QueryModule {
     @Deterministic
     public Object[] envelope(ANode geometryNode) throws QueryException {
 
-        com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(
-                geometryNode);
-        return envelopeGeom(geom);
+        /* Try lookup in envelope map first. */
+        final DBNodeEntry geometryNodeEntry = new DBNodeEntry(
+                (DBNode) geometryNode);
+
+        if (mgr.hasEnvelope(geometryNodeEntry)) {
+
+            Envelope env = mgr.getEnvelope(geometryNodeEntry);
+            final Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(),
+                    env.getMaxY()};
+            return res;
+
+        } else {
+
+            /* Get JTS geometry and cache the envelope. */
+            com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(
+                    geometryNode);
+            mgr.addEnvelope(geometryNodeEntry, geom.getEnvelopeInternal());
+            return envelopeGeom(geom);
+        }
     }
 
     /**
@@ -3586,17 +3596,30 @@ public class GmlGeoX extends QueryModule {
     public DBNode[] search(final String indexName, ANode geometryNode)
             throws QueryException {
 
-        com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(
-                geometryNode);
+        /* Try lookup in envelope map first. */
+        final DBNodeEntry entry = new DBNodeEntry((DBNode) geometryNode);
 
-        if (geom.isEmpty()) {
-            throw new QueryException(
-                    "Geometry determined for the given node is empty "
-                            + "(ensure that the given node is a geometry node that represents a non-empty geometry). "
-                            + "Cannot perform a search based upon an empty geometry.");
+        if (mgr.hasEnvelope(entry)) {
+
+            return search(indexName, mgr.getEnvelope(entry));
+
+        } else {
+
+            /* Get JTS geometry and cache the envelope. */
+            com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(
+                    geometryNode);
+
+            if (geom.isEmpty()) {
+                throw new QueryException(
+                        "Geometry determined for the given node is empty "
+                                + "(ensure that the given node is a geometry node that represents a non-empty geometry). "
+                                + "Cannot perform a search based upon an empty geometry.");
+            }
+
+            mgr.addEnvelope(entry, geom.getEnvelopeInternal());
+
+            return searchGeom(indexName, geom);
         }
-
-        return searchGeom(indexName, geom);
     }
 
     /**
@@ -3634,9 +3657,14 @@ public class GmlGeoX extends QueryModule {
                     "Geometry is empty. Cannot perform a search based upon an empty geometry.");
         }
 
+        return search(indexName, geom.getEnvelopeInternal());
+    }
+
+    private DBNode[] search(String indexName, Envelope env)
+            throws QueryException {
+
         try {
 
-            Envelope env = geom.getEnvelopeInternal();
             double x1 = env.getMinX();
             double x2 = env.getMaxX();
             double y1 = env.getMinY();
@@ -3782,20 +3810,29 @@ public class GmlGeoX extends QueryModule {
         if (node instanceof DBNode && geometry instanceof DBNode) {
 
             try {
+
                 final com.vividsolutions.jts.geom.Geometry _geom = getOrCacheGeometry(
                         geometry);
                 final Envelope env = _geom.getEnvelopeInternal();
+
                 if (!env.isNull()) {
-                    final DBNodeEntry entry = new DBNodeEntry((DBNode) node);
+
+                    final DBNodeEntry nodeEntry = new DBNodeEntry(
+                            (DBNode) node);
                     if (env.getHeight() == 0.0 && env.getWidth() == 0.0) {
-                        mgr.index(indexName, entry,
+                        mgr.index(indexName, nodeEntry,
                                 Geometries.point(env.getMinX(), env.getMinY()));
                     } else {
-                        mgr.index(indexName, entry,
+                        mgr.index(indexName, nodeEntry,
                                 Geometries.rectangle(env.getMinX(),
                                         env.getMinY(), env.getMaxX(),
                                         env.getMaxY()));
                     }
+
+                    // also cache the envelope
+                    final DBNodeEntry geomNodeEntry = new DBNodeEntry(
+                            (DBNode) geometry);
+                    mgr.addEnvelope(geomNodeEntry, env);
                 }
 
                 if (debug && mgr.indexSize(indexName) % 5000 == 0) {
@@ -4001,33 +4038,24 @@ public class GmlGeoX extends QueryModule {
 
                 if (!env.isNull()) {
 
-                    final DBNodeEntry entry = new DBNodeEntry((DBNode) node);
+                    // cache the index entry
+                    final DBNodeEntry nodeEntry = new DBNodeEntry(
+                            (DBNode) node);
 
-                    String key = indexName != null ? indexName : "";
-                    List<Entry<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>> geomIndexEntries;
-                    if (geomIndexEntriesByIndexName.containsKey(key)) {
-                        geomIndexEntries = geomIndexEntriesByIndexName.get(key);
-                    } else {
-                        geomIndexEntries = new ArrayList<>();
-                        geomIndexEntriesByIndexName.put(key, geomIndexEntries);
-                    }
+                    com.github.davidmoten.rtree.geometry.Geometry treeGeom;
 
                     if (env.getHeight() == 0.0 && env.getWidth() == 0.0) {
-
-                        geomIndexEntries.add(
-                                new EntryDefault<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>(
-                                        entry, Geometries.point(env.getMinX(),
-                                                env.getMinY())));
-
+                        treeGeom = Geometries.point(env.getMinX(), env.getMinY());
                     } else {
-
-                        geomIndexEntries.add(
-                                new EntryDefault<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>(
-                                        entry,
-                                        Geometries.rectangle(env.getMinX(),
-                                                env.getMinY(), env.getMaxX(),
-                                                env.getMaxY())));
+                        treeGeom = Geometries.rectangle(env.getMinX(), env.getMinY(),
+                                env.getMaxX(), env.getMaxY());
                     }
+                    mgr.prepareSpatialIndex(indexName, nodeEntry, treeGeom);
+
+                    // also cache the envelope
+                    final DBNodeEntry geomNodeEntry = new DBNodeEntry(
+                            (DBNode) geometry);
+                    mgr.addEnvelope(geomNodeEntry, env);
                 }
 
                 if (debug && mgr.indexSize(indexName) % 5000 == 0) {
@@ -4075,17 +4103,7 @@ public class GmlGeoX extends QueryModule {
     public void buildSpatialIndex(final String indexName)
             throws QueryException {
 
-        String key = indexName != null ? indexName : "";
-
-        if (mgr.hasIndex(indexName)) {
-            throw new QueryException(
-                    "Spatial index '" + key + "' has already been built.");
-        } else if (geomIndexEntriesByIndexName.containsKey(key)) {
-            mgr.index(indexName, geomIndexEntriesByIndexName.get(key));
-            geomIndexEntriesByIndexName.remove(key);
-        } else {
-            /* No entries for that index have been added using prepareSpatialIndex(...) -> ignore */
-        }
+        mgr.buildIndexUsingBulkLoading(indexName);
     }
 
     /**

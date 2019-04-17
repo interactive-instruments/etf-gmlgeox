@@ -16,6 +16,7 @@
 package de.interactive_instruments.etf.bsxm;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.geometry.GeometryFactory;
@@ -30,5 +31,9 @@ public class IIGeometryFactory extends GeometryFactory {
     @Override
     public Curve createCurve(final String id, final ICRS crs, final CurveSegment... segments) {
         return (Curve) inspect(new IICurve(id, crs, pm, Arrays.asList(segments)));
+    }
+
+    Curve createCurve(final String id, final ICRS crs, final List<CurveSegment> segments) {
+        return (Curve) inspect(new IICurve(id, crs, pm, segments));
     }
 }
