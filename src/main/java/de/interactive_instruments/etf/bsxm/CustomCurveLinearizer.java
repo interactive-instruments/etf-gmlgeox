@@ -694,7 +694,7 @@ public class CustomCurveLinearizer {
     }
 
     /**
-     * Find the midpoint between the highest and the lowest ordonate 1 axis among the 3 points
+     * Find the midpoint between the highest and the lowest ordinate 1 axis among the 3 points
      *
      * @param p0
      * @param p1
@@ -722,7 +722,7 @@ public class CustomCurveLinearizer {
     }
 
     /**
-     * Find the midpoint between the highest and the lowest ordonate 0 axis among the 3 points
+     * Find the midpoint between the highest and the lowest ordinate 0 axis among the 3 points
      *
      * @param p0
      * @param p1
@@ -739,10 +739,10 @@ public class CustomCurveLinearizer {
         }
 
         double maxOrd0 = p0.get0();
-        if (p1.get0() > minOrd0) {
+        if (p1.get0() > maxOrd0) {
             maxOrd0 = p1.get0();
         }
-        if (p2.get0() > minOrd0) {
+        if (p2.get0() > maxOrd0) {
             maxOrd0 = p2.get0();
         }
 

@@ -16,10 +16,11 @@
 package de.interactive_instruments.etf.bsxm;
 
 import java.util.Arrays;
-import java.util.List;
 
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.geometry.GeometryFactory;
+import org.deegree.geometry.linearization.LinearizationCriterion;
+import org.deegree.geometry.linearization.MaxErrorCriterion;
 import org.deegree.geometry.primitive.Curve;
 import org.deegree.geometry.primitive.segments.CurveSegment;
 
@@ -28,12 +29,32 @@ import org.deegree.geometry.primitive.segments.CurveSegment;
  */
 public class IIGeometryFactory extends GeometryFactory {
 
+    protected double maxError = 0.00001;
+    protected int maxNumPoints = 1000;
+
     @Override
     public Curve createCurve(final String id, final ICRS crs, final CurveSegment... segments) {
-        return (Curve) inspect(new IICurve(id, crs, pm, Arrays.asList(segments)));
+        return (Curve) inspect(new IICurve(id, crs, pm, Arrays.asList(segments), this));
     }
 
-    Curve createCurve(final String id, final ICRS crs, final List<CurveSegment> segments) {
-        return (Curve) inspect(new IICurve(id, crs, pm, segments));
+    /**
+     * @param maxError
+     *            the maxError to set
+     */
+    public void setMaxError(double maxError) {
+        this.maxError = maxError;
+    }
+
+    /**
+     * @param maxNumPoints
+     *            the maxNumPoints to set
+     */
+    public void setMaxNumPoints(int maxNumPoints) {
+        this.maxNumPoints = maxNumPoints;
+    }
+
+    public LinearizationCriterion getMaxErrorCriterion() {
+
+        return new MaxErrorCriterion(maxError, maxNumPoints);
     }
 }

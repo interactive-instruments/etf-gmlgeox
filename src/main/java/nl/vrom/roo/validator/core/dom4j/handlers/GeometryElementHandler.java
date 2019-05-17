@@ -12,6 +12,7 @@ import org.deegree.commons.xml.XMLParsingException;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.exceptions.UnknownCRSException;
 import org.deegree.cs.persistence.CRSManager;
+import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.standard.AbstractDefaultGeometry;
 import org.deegree.geometry.validation.GeometryValidator;
 import org.deegree.gml.GMLInputFactory;
@@ -62,6 +63,8 @@ public class GeometryElementHandler implements ElementHandler {
 	private boolean isGMLVersionReported;
 
 	private String defaultSrsName;
+	
+	protected GeometryFactory geometryFactory;
 
 	/**
 	 * Instantiates a new geometry element handler.
@@ -75,12 +78,15 @@ public class GeometryElementHandler implements ElementHandler {
 	 *            (especially important in case of geometries with 3D
 	 *            coordinates, and srsName is not defined on the geometry
 	 *            element itself)
+	 *            @param geomFac the factory to be used when constructing geometry objects
 	 */
-	public GeometryElementHandler(ValidatorContext validatorContext, Map<String, Object> parameters, String srsName) {
+	public GeometryElementHandler(ValidatorContext validatorContext, Map<String, Object> parameters, String srsName, GeometryFactory geomFac) {
 
 		this.validatorContext = validatorContext;
 
 		this.defaultSrsName = srsName;
+		
+		this.geometryFactory = geomFac;
 
 		registerGmlGeometry("Point");
 		registerGmlGeometry("Polygon");
@@ -181,7 +187,8 @@ public class GeometryElementHandler implements ElementHandler {
 				throw new Exception("Cannot determine GML version");
 			}
 
-			GMLStreamReader gmlStream = GMLInputFactory.createGMLStreamReader(gmlVersion, xmlStream);
+			GMLStreamReader gmlStream = GMLInputFactory.createGMLStreamReader(gmlVersion, xmlStream);			
+			gmlStream.setGeometryFactory(geometryFactory);
 			
 			ICRS defaultCRS = null;
 			if (defaultSrsName != null) {

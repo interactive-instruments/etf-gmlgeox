@@ -23,11 +23,13 @@ import com.vividsolutions.jts.geom.Coordinate;
 
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.geometry.Geometry;
-import org.deegree.geometry.linearization.MaxErrorCriterion;
 import org.deegree.geometry.points.Points;
 import org.deegree.geometry.precision.PrecisionModel;
 import org.deegree.geometry.primitive.Point;
-import org.deegree.geometry.primitive.segments.*;
+import org.deegree.geometry.primitive.segments.Arc;
+import org.deegree.geometry.primitive.segments.ArcString;
+import org.deegree.geometry.primitive.segments.CurveSegment;
+import org.deegree.geometry.primitive.segments.LineStringSegment;
 import org.deegree.geometry.standard.primitive.DefaultCurve;
 
 /**
@@ -35,10 +37,8 @@ import org.deegree.geometry.standard.primitive.DefaultCurve;
  */
 public class IICurve extends DefaultCurve {
 
-    final CustomCurveLinearizer linearizer = new CustomCurveLinearizer(new IIGeometryFactory(), 0.0);
-
-    // Todo Make configurable in GmlGeox
-    final MaxErrorCriterion crit = new MaxErrorCriterion(0.00001, 1000);
+    protected IIGeometryFactory geomFactory = null;
+    protected CustomCurveLinearizer linearizer = null;
 
     /**
      * Creates a new {@link DefaultCurve} instance from the given parameters.
@@ -50,9 +50,15 @@ public class IICurve extends DefaultCurve {
      * @param pm
      *            precision model, may be null
      * @param segments
+     *            segments that belong to the curve
+     * @param fac
+     *            geometry factory, primarily used to determine the max error criterion when linearizing curve segments
      */
-    public IICurve(final String id, final ICRS crs, final PrecisionModel pm, final List<CurveSegment> segments) {
+    public IICurve(final String id, final ICRS crs, final PrecisionModel pm,
+            final List<CurveSegment> segments, final IIGeometryFactory fac) {
         super(id, crs, pm, segments);
+        this.geomFactory = fac;
+        this.linearizer = new CustomCurveLinearizer(geomFactory, 0.0);
     }
 
     @Override
@@ -73,19 +79,23 @@ public class IICurve extends DefaultCurve {
                 coords.addAll(coordinates);
                 first = false;
             } else {
-                // starting with the second segment, skip the first point (as it *must* be identical to
+                // starting with the second segment, skip the first point (as it
+                // *must* be identical to
                 // last point of the last segment)
                 coords.addAll(coordinates.subList(1, coordinates.size()));
             }
         }
         if (clockwise) {
-            return jtsFactory.createLineString(coords.toArray(new Coordinate[coords.size()]));
+            return jtsFactory.createLineString(
+                    coords.toArray(new Coordinate[coords.size()]));
         } else {
-            return jtsFactory.createLineString(new ListRevWrapper<>(coords).toArray(new Coordinate[coords.size()]));
+            return jtsFactory.createLineString(new ListRevWrapper<>(coords)
+                    .toArray(new Coordinate[coords.size()]));
         }
     }
 
-    private List<Coordinate> linearize(final CurveSegment segment, boolean clockwise) {
+    private List<Coordinate> linearize(final CurveSegment segment,
+            boolean clockwise) {
 
         final LineStringSegment lineSegment;
         switch (segment.getSegmentType()) {
@@ -97,7 +107,8 @@ public class IICurve extends DefaultCurve {
             } else {
                 normalized = new ArcRevWrapper((Arc) segment);
             }
-            lineSegment = linearizer.linearizeArc(normalized, crit);
+            lineSegment = linearizer.linearizeArc(normalized,
+                    geomFactory.getMaxErrorCriterion());
         }
             break;
         case ARC_STRING: {
@@ -107,7 +118,8 @@ public class IICurve extends DefaultCurve {
             } else {
                 normalized = new ArcStringRevWrapper((ArcString) segment);
             }
-            lineSegment = linearizer.linearizeArcString(normalized, crit);
+            lineSegment = linearizer.linearizeArcString(normalized,
+                    geomFactory.getMaxErrorCriterion());
         }
             break;
         case LINE_STRING_SEGMENT: {
@@ -115,7 +127,8 @@ public class IICurve extends DefaultCurve {
             if (clockwise) {
                 normalized = (LineStringSegment) segment;
             } else {
-                normalized = new LineStringRevWrapper((LineStringSegment) segment);
+                normalized = new LineStringRevWrapper(
+                        (LineStringSegment) segment);
             }
             lineSegment = normalized;
             break;
@@ -130,17 +143,18 @@ public class IICurve extends DefaultCurve {
         final Points points = lsSegment.getControlPoints();
         final List<Coordinate> coordinates = new ArrayList<>(points.size());
         for (Point point : points) {
-            coordinates.add(new Coordinate(point.get0(), point.get1(), point.get2()));
+            coordinates.add(
+                    new Coordinate(point.get0(), point.get1(), point.get2()));
         }
         return coordinates;
     }
 
     private boolean isClockwise(final ArcString curve) {
         final Point center = curve.getControlPoints().get(1);
-        return (curve.getStartPoint().get(0) - center.get0()) *
-                (curve.getEndPoint().get1() - center.get1()) -
-                (curve.getStartPoint().get(1) - center.get1()) *
-                        (curve.getEndPoint().get0() - center.get0()) > 0;
+        return (curve.getStartPoint().get(0) - center.get0())
+                * (curve.getEndPoint().get1() - center.get1())
+                - (curve.getStartPoint().get(1) - center.get1())
+                        * (curve.getEndPoint().get0() - center.get0()) > 0;
     }
 
     public boolean isClockwise() {
@@ -153,7 +167,8 @@ public class IICurve extends DefaultCurve {
         double cs = 0;
         final Points cps = getControlPoints();
         for (int i = 1; i < cps.size(); i++) {
-            cs += (cps.get(i).get0() - cps.get(i - 1).get0()) * (cps.get(i).get1() - cps.get(i - 1).get1());
+            cs += (cps.get(i).get0() - cps.get(i - 1).get0())
+                    * (cps.get(i).get1() - cps.get(i - 1).get1());
         }
         return cs > 0;
     }
@@ -162,19 +177,27 @@ public class IICurve extends DefaultCurve {
     public boolean equals(final Geometry geometry) {
         if (geometry instanceof IICurve) {
             final List<CurveSegment> segments = this.getCurveSegments();
-            final List<CurveSegment> otherSegments = ((IICurve) geometry).getCurveSegments();
+            final List<CurveSegment> otherSegments = ((IICurve) geometry)
+                    .getCurveSegments();
             if (segments.size() == 1 && otherSegments.size() == 1) {
                 final CurveSegment curve = segments.get(0);
                 final CurveSegment otherCurve = otherSegments.get(0);
-                if (curve instanceof ArcString && otherCurve instanceof ArcString) {
-                    final Points controlPoints = ((ArcString) curve).getControlPoints();
-                    final Points otherControlPoints = ((ArcString) otherCurve).getControlPoints();
-                    return (controlPoints.get(1).equals(otherControlPoints.get(1)) &&
-                            ((controlPoints.get(0).equals(otherControlPoints.get(0))
-                                    && controlPoints.get(2).equals(otherControlPoints.get(2))))
-                            ||
-                            (controlPoints.get(2).equals(otherControlPoints.get(0))
-                                    && controlPoints.get(2).equals(otherControlPoints.get(0))));
+                if (curve instanceof ArcString
+                        && otherCurve instanceof ArcString) {
+                    final Points controlPoints = ((ArcString) curve)
+                            .getControlPoints();
+                    final Points otherControlPoints = ((ArcString) otherCurve)
+                            .getControlPoints();
+                    return (controlPoints.get(1)
+                            .equals(otherControlPoints.get(1))
+                            && ((controlPoints.get(0)
+                                    .equals(otherControlPoints.get(0))
+                                    && controlPoints.get(2)
+                                            .equals(otherControlPoints.get(2))))
+                            || (controlPoints.get(2)
+                                    .equals(otherControlPoints.get(0))
+                                    && controlPoints.get(2).equals(
+                                            otherControlPoints.get(0))));
                 }
             }
 

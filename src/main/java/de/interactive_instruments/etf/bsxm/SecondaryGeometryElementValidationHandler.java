@@ -29,11 +29,15 @@ import nl.vrom.roo.validator.core.dom4j.Dom4JHelper;
 import nl.vrom.roo.validator.core.dom4j.handlers.ValidationUtil;
 import nl.vrom.roo.validator.core.errorlocation.IdErrorLocation;
 
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.operation.IsSimpleOp;
+
 import org.deegree.commons.xml.XMLParsingException;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.exceptions.UnknownCRSException;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
+import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.composite.CompositeGeometry;
 import org.deegree.geometry.composite.CompositeSolid;
 import org.deegree.geometry.multi.MultiGeometry;
@@ -88,6 +92,8 @@ public class SecondaryGeometryElementValidationHandler
 
     private String defaultSrsName;
 
+    protected GeometryFactory geometryFactory;
+
     /**
      * @param isTestPolygonPatchConnectivity
      *            - <code>true</code> if polygon patch connectivity shall be tested
@@ -96,14 +102,16 @@ public class SecondaryGeometryElementValidationHandler
      * @param validatorContext
      * @param srsName
      *            the name of the default SRS to use when validating a geometry (especially important in case of geometries with 3D coordinates, and srsName is not defined on the geometry element itself)
-     * @param gmlGeoX
-     *            Reference to GmlGeoX QueryModule, in case that retrieval of certain information (example: srsName) requires execution of xqueries (by the QueryModule).
+     * @param geoutils
+     *            GmlGeoX utilities
+     * @param geomFac
+     *            the factory to be used when constructing geometry objects
      */
     public SecondaryGeometryElementValidationHandler(
             boolean isTestPolygonPatchConnectivity,
             boolean isTestRepetitionInCurveSegments, boolean isTestIsSimple,
             ValidatorContext validatorContext, String srsName,
-            GmlGeoX gmlGeoX) {
+            GmlGeoXUtils geoutils, GeometryFactory geomFac) {
 
         this.isTestPolygonPatchConnectivity = isTestPolygonPatchConnectivity;
         this.isTestRepetitionInCurveSegments = isTestRepetitionInCurveSegments;
@@ -113,7 +121,9 @@ public class SecondaryGeometryElementValidationHandler
 
         this.defaultSrsName = srsName;
 
-        this.geoutils = new GmlGeoXUtils(gmlGeoX);
+        this.geoutils = geoutils;
+
+        this.geometryFactory = geomFac;
 
         registerGmlGeometry("Point");
         registerGmlGeometry("Polygon");
@@ -224,6 +234,7 @@ public class SecondaryGeometryElementValidationHandler
 
             GMLStreamReader gmlStream = GMLInputFactory
                     .createGMLStreamReader(gmlVersion, xmlStream);
+            gmlStream.setGeometryFactory(geometryFactory);
 
             ICRS defaultCRS = null;
             if (defaultSrsName != null) {
@@ -255,8 +266,17 @@ public class SecondaryGeometryElementValidationHandler
             // ================
             // Test: isSimple
             if (isTestIsSimple) {
-                boolean isValid = checkIsSimple(geom);
+
+                com.vividsolutions.jts.geom.Geometry g = geoutils.toJTSGeometry(geom);
+                IsSimpleOp op = new IsSimpleOp(g);
+                boolean isValid = op.isSimple();
                 if (!isValid) {
+                    Coordinate nonSimpleLocation = op.getNonSimpleLocation();
+                    if (nonSimpleLocation != null) {
+                        validatorContext.addError(
+                                "Geometry is not simple. Self-intersection detected at " + nonSimpleLocation.toString() + ".");
+                    }
+
                     isSimple = false;
                 }
             }
@@ -290,13 +310,6 @@ public class SecondaryGeometryElementValidationHandler
 
             LOGGER.error(e.getMessage(), e);
         }
-    }
-
-    protected boolean checkIsSimple(Geometry geom) throws Exception {
-
-        com.vividsolutions.jts.geom.Geometry g = geoutils.toJTSGeometry(geom);
-
-        return g.isSimple();
     }
 
     private String getLocationDescription(Element element, String gmlId) {
