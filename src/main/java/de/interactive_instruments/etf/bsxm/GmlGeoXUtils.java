@@ -47,6 +47,7 @@ import org.basex.query.value.node.ANode;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
+import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.composite.CompositeGeometry;
 import org.deegree.geometry.composite.CompositeSolid;
 import org.deegree.geometry.multi.MultiGeometry;
@@ -58,6 +59,7 @@ import org.deegree.geometry.primitive.Ring;
 import org.deegree.geometry.primitive.Surface;
 import org.deegree.geometry.primitive.patches.PolygonPatch;
 import org.deegree.geometry.primitive.patches.SurfacePatch;
+import org.deegree.geometry.primitive.segments.CurveSegment;
 import org.deegree.geometry.standard.AbstractDefaultGeometry;
 import org.deegree.gml.GMLInputFactory;
 import org.deegree.gml.GMLStreamReader;
@@ -73,19 +75,21 @@ import org.w3c.dom.Node;
 public class GmlGeoXUtils {
 
     private final GmlGeoX gmlGeoX;
-    private final IIGeometryFactory geometryFactory = new IIGeometryFactory();
-
-    /**
-     * Used to built JTS geometries.
-     */
-    protected com.vividsolutions.jts.geom.GeometryFactory jtsFactory = new com.vividsolutions.jts.geom.GeometryFactory();
+    protected GeometryFactory geometryFactory;
+    protected com.vividsolutions.jts.geom.GeometryFactory jtsFactory;
 
     /**
      * @param gmlGeoX
      *            Reference to GmlGeoX QueryModule, in case that retrieval of certain information (example: srsName) requires execution of xqueries (by the QueryModule).
+     * @param geomFac
+     *            the factory to be used when constructing geometry objects
+     * @param jtsFactory
+     *            used to build JTS geometries
      */
-    public GmlGeoXUtils(GmlGeoX gmlGeoX) {
+    public GmlGeoXUtils(GmlGeoX gmlGeoX, GeometryFactory geomFac, com.vividsolutions.jts.geom.GeometryFactory jtsFactory) {
         this.gmlGeoX = gmlGeoX;
+        this.geometryFactory = geomFac;
+        this.jtsFactory = jtsFactory;
     }
 
     /**
@@ -125,8 +129,9 @@ public class GmlGeoXUtils {
     }
 
     private LinearRing toJtsLinearizedRing(final Ring deegreeRing) {
+        List<CurveSegment> curveSegments = deegreeRing.getCurveSegments();
         final Curve linearizedCurve = geometryFactory.createCurve(deegreeRing.getId(), deegreeRing.getCoordinateSystem(),
-                deegreeRing.getCurveSegments());
+                curveSegments.toArray(new CurveSegment[curveSegments.size()]));
         return jtsFactory.createLinearRing(((IICurve) linearizedCurve).buildJTSGeometry().getCoordinateSequence());
     }
 

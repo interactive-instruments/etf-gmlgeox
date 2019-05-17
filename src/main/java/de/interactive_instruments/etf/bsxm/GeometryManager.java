@@ -52,16 +52,26 @@ class GeometryManager {
     // Record hitcounts and misscounts as boolean
     public static final String ETF_GEOCACHE_REC_STATS = "etf.gmlgeox.geocache.statistics";
 
-    private final Cache<String, Geometry> geometryCache;
+    private Cache<String, Geometry> geometryCache = null;
     private Map<String, RTree<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>> rtreeByIndexName = new HashMap<>();
     private Map<String, List<Entry<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>>> geomIndexEntriesByIndexName = new HashMap<>();
     private Map<DBNodeEntry, Envelope> envelopeByDBNodeEntry = new HashMap<>();
 
+    private int maxSizeOfGeometryCache = 100000;
+
     GeometryManager() throws QueryException {
-        this(Integer.valueOf(System.getProperty(ETF_GEOCACHE_SIZE, "100000")));
+        resetCache(Integer
+                .valueOf(System.getProperty(ETF_GEOCACHE_SIZE, "100000")));
     }
 
-    GeometryManager(final int maxSize) throws QueryException {
+    /**
+     * Resets the geometry cache, by replacing the existing cache with a new cache of the given size. That means that all cached geometries will be lost.
+     *
+     * @param maxSize
+     *            new cache size
+     * @throws QueryException
+     */
+    public void resetCache(final int maxSize) throws QueryException {
         try {
             if (logger.isDebugEnabled() || Boolean.valueOf(
                     System.getProperty(ETF_GEOCACHE_REC_STATS, "false"))) {
@@ -71,6 +81,7 @@ class GeometryManager {
                 geometryCache = Caffeine.newBuilder().maximumSize(maxSize)
                         .build();
             }
+            this.maxSizeOfGeometryCache = maxSize;
         } catch (Exception e) {
             throw new QueryException(
                     "Cache for geometries could not be initialized: "
@@ -322,5 +333,12 @@ class GeometryManager {
         geomIndexEntries.add(
                 new EntryDefault<DBNodeEntry, com.github.davidmoten.rtree.geometry.Geometry>(
                         nodeEntry, geometry));
+    }
+
+    /**
+     * @return the maximum size of the geometry cache
+     */
+    public int getCacheSize() {
+        return this.maxSizeOfGeometryCache;
     }
 }

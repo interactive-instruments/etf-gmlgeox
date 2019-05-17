@@ -9,6 +9,8 @@ import nl.vrom.roo.validator.core.validation.AbstractDom4JValidation;
 
 import java.io.Reader;
 
+import org.deegree.geometry.GeometryFactory;
+
 
 
 public class GeometricValidationImpl extends AbstractDom4JValidation {
@@ -18,6 +20,15 @@ public class GeometricValidationImpl extends AbstractDom4JValidation {
 //	private static final Object GML_NAMESPACE_PARAM = "gmlNamespace";
 //
 //	private static final Object GML_NAMESPACE_VALUE = "http://www.opengis.net/gml";
+	
+	protected GeometryFactory geometryFactory;
+	
+	/**
+	 * @param geomFac the factory to be used when constructing geometry objects
+	 */
+	public GeometricValidationImpl(GeometryFactory geomFac) {
+		this.geometryFactory = geomFac;
+	}
 
 	@Override
 	protected void initialize() {
@@ -28,7 +39,7 @@ public class GeometricValidationImpl extends AbstractDom4JValidation {
 	@Override
 	public void validateTemplate(final ValidatorContext validatorContext, Reader reader) throws ValidationException {
 
-		this.read(reader, new GeometryElementHandler(validatorContext, parameters, null));
+		this.read(reader, new GeometryElementHandler(validatorContext, parameters, null, geometryFactory));
 
 		if (validatorContext.isSuccessful(this)) {
 			validatorContext.addNotice(ValidatorMessageBundle.getMessage(

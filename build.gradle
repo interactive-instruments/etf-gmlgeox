@@ -185,6 +185,8 @@ jar {
 
 javadoc {
 	destinationDir = file("$projectDir/docs/javadoc")
+    // without the -quiet option, the build fails
+    options.addStringOption('Xdoclint:none', '-quiet')
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {

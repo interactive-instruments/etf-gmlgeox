@@ -125,7 +125,9 @@ public class GmlGeoX extends QueryModule {
     // Byte comparison
     private static final byte[] srsNameB = new String("srsName").getBytes();
 
-    protected final GmlGeoXUtils geoutils = new GmlGeoXUtils(this);
+    protected final IIGeometryFactory geometryFactory;
+    protected com.vividsolutions.jts.geom.GeometryFactory jtsFactory;
+    protected final GmlGeoXUtils geoutils;
 
     private final Set<String> gmlGeometries = new TreeSet<String>();
 
@@ -171,6 +173,11 @@ public class GmlGeoX extends QueryModule {
         } finally {
             Thread.currentThread().setContextClassLoader(cl);
         }
+
+        this.geometryFactory = new IIGeometryFactory();
+        this.jtsFactory = new com.vividsolutions.jts.geom.GeometryFactory();
+        this.geoutils = new GmlGeoXUtils(this, this.geometryFactory,
+                this.jtsFactory);
     }
 
     private void loadGmlGeoXSrsConfiguration() throws QueryException {
@@ -841,14 +848,14 @@ public class GmlGeoX extends QueryModule {
      * Simplicity is defined for each JTS geometry type as follows:
      * </p>
      * <ul>
-     * <li>Polygonal geometries are simple by definition, so isSimple trivially returns true.
+     * <li>Polygonal geometries are simple if their rings are simple (i.e., their rings do not self-intersect).
      * <ul>
-     * <li>Note: this means that isSimple cannot be used to test for (invalid) self-intersections in polygons. The JTS validity check tests for self-intersections in polygons.</li>
+     * <li>Note: This does not check if different rings of the geometry intersect, meaning that isSimple cannot be used to fully test for (invalid) self-intersections in polygons. The JTS validity check fully tests for self-intersections in polygons, and is part of the general validation in GmlGeoX.</li>
      * </ul>
      * </li>
-     * <li>Linear geometries are simple iff they do not self-intersect at interior points (i.e. points other than boundary points).</li>
+     * <li>Linear geometries are simple iff they do not self-intersect at points other than boundary points.</li>
      * <li>Zero-dimensional (point) geometries are simple if and only if they have no repeated points.</li>
-     * <li>Empty geometries are always simple, by definition</li>
+     * <li>Empty geometries are always simple, by definition.</li>
      * </ul>
      * </td>
      * </tr>
@@ -913,7 +920,7 @@ public class GmlGeoX extends QueryModule {
                 ValidatorContext ctx = new ValidatorContext();
 
                 GeometryElementHandler handler = new GeometryElementHandler(ctx,
-                        null, srsName);
+                        null, srsName, this.geometryFactory);
                 /* configure handler with GML geometries specified through this class */
                 handler.unregisterAllGmlGeometries();
                 for (String additionalGmlElementName : gmlGeometries) {
@@ -940,7 +947,7 @@ public class GmlGeoX extends QueryModule {
                 SecondaryGeometryElementValidationHandler handler = new SecondaryGeometryElementValidationHandler(
                         isTestPolygonPatchConnectivity,
                         isTestRepetitionInCurveSegments, isTestIsSimple, ctx,
-                        srsName, this);
+                        srsName, this.geoutils, this.geometryFactory);
 
                 /* configure handler with GML geometries specified through this class */
                 handler.unregisterAllGmlGeometries();
@@ -2324,6 +2331,44 @@ public class GmlGeoX extends QueryModule {
             throw new QueryException("Given parameter value is blank.");
         } else {
             this.standardSRS = srsName;
+        }
+    }
+
+    /**
+     * Set the maximum number of points to be created when interpolating an arc. Default is 1000. The lower the maximum error (set via {@link #setMaxErrorForInterpolation(double)}), the higher the number of points needs to be. Arc interpolation will never create more than the configured maximum number of points. However, the interpolation will also never create more points than needed to achieve the maximum error. In order to achieve interpolations with a very low maximum error, the maximum number of points needs to be increased accordingly.
+     *
+     * @param maxNumPoints
+     *            maximum number of points to be created when interpolating an arc
+     * @throws QueryException
+     */
+    @Requires(Permission.NONE)
+    public void setMaxNumPointsForInterpolation(int maxNumPoints)
+            throws QueryException {
+        if (maxNumPoints <= 0) {
+            throw new QueryException(
+                    "Given parameter value must be greater than zero. Was: "
+                            + maxNumPoints + ".");
+        } else {
+            this.geometryFactory.setMaxNumPoints(maxNumPoints);
+        }
+    }
+
+    /**
+     * Set the maximum error (e.g. 0.00000001 - default setting is 0.00001), i.e. the maximum difference between an arc and the interpolated line string - that shall be achieved when creating new arc interpolations. The lower the error (maximum difference), the more interpolation points will be needed. However, note that a maximum for the number of such points exists. It can be set via {@link #setMaxNumPointsForInterpolation(int)} (default value is stated in the documentation of that method).
+     *
+     * @param maxError
+     *            the maximum difference between an arc and the interpolated line
+     * @throws QueryException
+     */
+    @Requires(Permission.NONE)
+    public void setMaxErrorForInterpolation(double maxError)
+            throws QueryException {
+        if (maxError <= 0) {
+            throw new QueryException(
+                    "Given parameter value must be greater than zero. Was: "
+                            + maxError + ".");
+        } else {
+            this.geometryFactory.setMaxError(maxError);
         }
     }
 
@@ -3745,7 +3790,7 @@ public class GmlGeoX extends QueryModule {
     }
 
     /**
-     * Set cache size for geometries
+     * Set cache size for geometries. The cache will be reset.
      *
      * @param size
      *            the size of the geometry cache; default is 100000
@@ -3753,9 +3798,30 @@ public class GmlGeoX extends QueryModule {
      */
     @Requires(Permission.NONE)
     public void cacheSize(Object size) throws QueryException {
+
+        int newSize = 0;
+
         if (size instanceof BigInteger) {
-            mgr = new GeometryManager(((BigInteger) size).intValue());
+            newSize = ((BigInteger) size).intValue();
+        } else if (size instanceof Integer) {
+            newSize = ((Integer) size).intValue();
+        } else {
+            throw new QueryException(
+                    "Unsupported parameter type: " + size.getClass().getName());
         }
+
+        mgr.resetCache(newSize);
+    }
+
+    /**
+     * Get the current size of the geometry cache.
+     *
+     * @return the size of the geometry cache
+     * @throws QueryException
+     */
+    @Requires(Permission.NONE)
+    public int getCacheSize() throws QueryException {
+        return mgr.getCacheSize();
     }
 
     /**
@@ -4045,10 +4111,11 @@ public class GmlGeoX extends QueryModule {
                     com.github.davidmoten.rtree.geometry.Geometry treeGeom;
 
                     if (env.getHeight() == 0.0 && env.getWidth() == 0.0) {
-                        treeGeom = Geometries.point(env.getMinX(), env.getMinY());
+                        treeGeom = Geometries.point(env.getMinX(),
+                                env.getMinY());
                     } else {
-                        treeGeom = Geometries.rectangle(env.getMinX(), env.getMinY(),
-                                env.getMaxX(), env.getMaxY());
+                        treeGeom = Geometries.rectangle(env.getMinX(),
+                                env.getMinY(), env.getMaxX(), env.getMaxY());
                     }
                     mgr.prepareSpatialIndex(indexName, nodeEntry, treeGeom);
 

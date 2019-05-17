@@ -1,0 +1,17 @@
+<test_arc_interpolation_self_intersection>
+  <validationtest>
+    <test id="DETHL56P0000F1TJ">VVVF (ERROR) Geometry is not simple. Self-intersection detected at (666424.2393405803, 5614560.422015165, NaN).</test>
+    <test id="DETHL56P0000F1Z6">VVVF (ERROR) Geometry is not simple. Self-intersection detected at (665100.0252028226, 5613937.372768216, NaN).</test>
+    <test id="DETHL56P0000UPnK">VVVF (ERROR) Geometry is not simple. Self-intersection detected at (671243.5204760723, 5615394.885291619, NaN).</test>
+    <test id="DETHL56P0000XslS">VVVF (ERROR) Geometry is not simple. Self-intersection detected at (636240.1754095127, 5638374.111867321, NaN).</test>
+    <test id="DETHL56P0000Xsm5">VVVF (ERROR) Geometry is not simple. Self-intersection detected at (635606.0499090827, 5638739.100346113, NaN).</test>
+    <test id="DETHL56P0000Xsm9">FVVF (ERROR) Element Surface at position 1 within element null (gml:id: DETHL56P0000Xsm9): Self-intersection. Start: (636113.593 5638815.012), end: (636113.593 5638815.012), problem: (636186.0096320335 5638787.94265726) (ERROR) Geometry is not simple. Self-intersection detected at (636180.4644445151, 5638830.995948255, NaN).</test>
+    <test id="DETHL56P0000Xsmx">VVVF (ERROR) Geometry is not simple. Self-intersection detected at (636129.0929777848, 5639136.23926713, NaN).</test>
+    <test id="DETHL56P0000ZAxt">VVVF (ERROR) Geometry is not simple. Self-intersection detected at (633635.12425405, 5620456.293841503, NaN).</test>
+    <test id="DETHL56P00012i42">VVVF (ERROR) Geometry is not simple. Self-intersection detected at (633872.3946783022, 5636577.648230574, NaN).</test>
+    <test id="DETHL56P00017VOF">VVVF (ERROR) Geometry is not simple. Self-intersection detected at (638047.7452912746, 5632949.0388423335, NaN).</test>
+    <test id="DETHL56P00019ALS">VVVF (ERROR) Geometry is not simple. Self-intersection detected at (634724.1314346202, 5617017.13438074, NaN).</test>
+    <test id="DETHL56P0001arHE">FVVF (ERROR) Element Surface at position 1 within element null (gml:id: DETHL56P0001arHE): Self-intersection. Start: (660170.489 5602661.145), end: (660170.489 5602661.145), problem: (660150.6739853243 5602666.82255081) (ERROR) Geometry is not simple. Self-intersection detected at (660150.6744471956, 5602666.823159557, NaN).</test>
+  </validationtest>
+  <cacheSizeBeforeValidation>1000000</cacheSizeBeforeValidation>
+</test_arc_interpolation_self_intersection>

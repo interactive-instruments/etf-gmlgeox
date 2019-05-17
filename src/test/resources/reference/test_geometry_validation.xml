@@ -248,6 +248,10 @@
         <type>NOTICE</type>
         <text>Detected GML standard version: GML3.2.</text>
       </message>
+      <message>
+        <type>ERROR</type>
+        <text>Geometry is not simple. Self-intersection detected at (5.0, 2.5, NaN).</text>
+      </message>
     </messages>
   </test>
 </validationtest>

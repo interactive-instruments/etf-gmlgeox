@@ -133,6 +133,14 @@ public class BasicXQueryTest {
     }
 
     @Test
+    public void test_arc_interpolation_self_intersection() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_arc_interpolation_self_intersection.xml")
+                .execute(context);
+        xmlTest("test_arc_interpolation_self_intersection.xq");
+    }
+
+    @Test
     public void test_envelope() throws BaseXException {
         new DropDB("GmlGeoXUnitTestDB").execute(context);
         new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_envelope.xml").execute(context);
