@@ -32,7 +32,6 @@ import javax.xml.transform.stream.StreamResult;
 
 import com.ctc.wstx.api.ReaderConfig;
 import com.vividsolutions.jts.geom.GeometryCollection;
-import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 
@@ -48,19 +47,26 @@ import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
 import org.deegree.geometry.GeometryFactory;
+import org.deegree.geometry.composite.CompositeCurve;
 import org.deegree.geometry.composite.CompositeGeometry;
 import org.deegree.geometry.composite.CompositeSolid;
 import org.deegree.geometry.multi.MultiGeometry;
+import org.deegree.geometry.multi.MultiPoint;
 import org.deegree.geometry.multi.MultiSolid;
 import org.deegree.geometry.primitive.Curve;
+import org.deegree.geometry.primitive.LineString;
 import org.deegree.geometry.primitive.OrientableCurve;
 import org.deegree.geometry.primitive.Point;
 import org.deegree.geometry.primitive.Ring;
+import org.deegree.geometry.primitive.Solid;
 import org.deegree.geometry.primitive.Surface;
 import org.deegree.geometry.primitive.patches.PolygonPatch;
+import org.deegree.geometry.primitive.patches.Rectangle;
 import org.deegree.geometry.primitive.patches.SurfacePatch;
+import org.deegree.geometry.primitive.patches.Triangle;
 import org.deegree.geometry.primitive.segments.CurveSegment;
 import org.deegree.geometry.standard.AbstractDefaultGeometry;
+import org.deegree.geometry.standard.primitive.DefaultCurve;
 import org.deegree.gml.GMLInputFactory;
 import org.deegree.gml.GMLStreamReader;
 import org.deegree.gml.GMLVersion;
@@ -86,7 +92,8 @@ public class GmlGeoXUtils {
      * @param jtsFactory
      *            used to build JTS geometries
      */
-    public GmlGeoXUtils(GmlGeoX gmlGeoX, GeometryFactory geomFac, com.vividsolutions.jts.geom.GeometryFactory jtsFactory) {
+    public GmlGeoXUtils(GmlGeoX gmlGeoX, GeometryFactory geomFac,
+            com.vividsolutions.jts.geom.GeometryFactory jtsFactory) {
         this.gmlGeoX = gmlGeoX;
         this.geometryFactory = geomFac;
         this.jtsFactory = jtsFactory;
@@ -99,12 +106,14 @@ public class GmlGeoXUtils {
      * @return the resulting JTS Polygon
      */
     public Polygon toJTSPolygon(PolygonPatch patch) {
-        final LinearRing shell = toJtsLinearizedRing(patch.getExteriorRing());
+        final com.vividsolutions.jts.geom.LinearRing shell = toJtsLinearizedRing(
+                patch.getExteriorRing());
 
-        LinearRing[] holes = null;
+        com.vividsolutions.jts.geom.LinearRing[] holes = null;
         final List<Ring> interiorRings = patch.getInteriorRings();
         if (interiorRings != null) {
-            holes = new LinearRing[interiorRings.size()];
+            holes = new com.vividsolutions.jts.geom.LinearRing[interiorRings
+                    .size()];
             for (int i = 0; i < interiorRings.size(); i++) {
                 holes[i] = toJtsLinearizedRing(interiorRings.get(i));
             }
@@ -128,11 +137,14 @@ public class GmlGeoXUtils {
         return jtsFactory.createPolygon(exteriorRing, null);
     }
 
-    private LinearRing toJtsLinearizedRing(final Ring deegreeRing) {
+    private com.vividsolutions.jts.geom.LinearRing toJtsLinearizedRing(
+            final Ring deegreeRing) {
         List<CurveSegment> curveSegments = deegreeRing.getCurveSegments();
-        final Curve linearizedCurve = geometryFactory.createCurve(deegreeRing.getId(), deegreeRing.getCoordinateSystem(),
+        final Curve linearizedCurve = geometryFactory.createCurve(
+                deegreeRing.getId(), deegreeRing.getCoordinateSystem(),
                 curveSegments.toArray(new CurveSegment[curveSegments.size()]));
-        return jtsFactory.createLinearRing(((IICurve) linearizedCurve).buildJTSGeometry().getCoordinateSequence());
+        return jtsFactory.createLinearRing(((IICurve) linearizedCurve)
+                .buildJTSGeometry().getCoordinateSequence());
     }
 
     /**
@@ -458,6 +470,109 @@ public class GmlGeoXUtils {
     }
 
     /**
+     * Retrieves all basic curve components from the given geometry. Composite geometries - including curves - will be broken up into their parts. Point based geometries will be ignored.
+     *
+     * @param geom
+     * @return A list with the curve components of the given geometry. Can be empty but not <code>null</code>.
+     * @throws Exception
+     */
+    public List<Curve> getCurveComponents(Geometry geom) throws Exception {
+
+        List<Curve> result = new ArrayList<>();
+
+        if (geom instanceof DefaultCurve) {
+            result.add((DefaultCurve) geom);
+        } else if (geom instanceof CompositeCurve) {
+            CompositeCurve cc = (CompositeCurve) geom;
+            for (int i = 0; i < cc.size(); i++) {
+                result.addAll(getCurveComponents(cc.get(i)));
+            }
+        } else if (geom instanceof LineString) {
+            result.add((LineString) geom);
+        } else if (geom instanceof OrientableCurve) {
+            /* 2015-12-14 JE: special treatment is necessary because OrientableCurve.getJTSGeometry() returns null (with code from deegree 3.4-pre22-SNAPSHOT). */
+            OrientableCurve oc = (OrientableCurve) geom;
+            Curve baseCurve = oc.getBaseCurve();
+            result.addAll(getCurveComponents(baseCurve));
+        } else if (geom instanceof Ring) {
+            Ring r = (Ring) geom;
+            for (Curve c : r.getMembers()) {
+                result.addAll(getCurveComponents(c));
+            }
+        } else if (geom instanceof Surface) {
+
+            // covers CompositeSurface, OrientableSurface, Polygon, ...
+
+            Surface s = (Surface) geom;
+
+            List<? extends SurfacePatch> patches = s.getPatches();
+
+            for (SurfacePatch sp : patches) {
+
+                List<? extends Ring> boundaryRings;
+
+                if (sp instanceof PolygonPatch) {
+                    boundaryRings = ((PolygonPatch) sp).getBoundaryRings();
+                } else if (sp instanceof Rectangle) {
+                    boundaryRings = ((Rectangle) sp).getBoundaryRings();
+                } else if (sp instanceof Triangle) {
+                    boundaryRings = ((Triangle) sp).getBoundaryRings();
+                } else {
+                    throw new UnsupportedGeometryTypeException(
+                            "Surface contains a surface patch that is not a polygon patch, a rectangle, or a triangle.");
+                }
+
+                for (Ring r : boundaryRings) {
+                    result.addAll(getCurveComponents(r));
+                }
+            }
+
+        } else if (geom instanceof Point || geom instanceof MultiPoint) {
+
+            // ignore
+
+        } else if (geom instanceof Solid) {
+
+            Solid s = (Solid) geom;
+
+            if (s.getExteriorSurface() != null) {
+                result.addAll(getCurveComponents(s.getExteriorSurface()));
+            }
+
+            for (Surface surface : s.getInteriorSurfaces()) {
+                result.addAll(getCurveComponents(surface));
+            }
+
+        } else if (geom instanceof MultiGeometry) {
+
+            @SuppressWarnings("rawtypes")
+            MultiGeometry mg = (MultiGeometry) geom;
+
+            for (int i = 0; i < mg.size(); i++) {
+                result.addAll(getCurveComponents((Geometry) mg.get(i)));
+            }
+
+        } else if (geom instanceof CompositeGeometry) {
+
+            @SuppressWarnings("rawtypes")
+            CompositeGeometry cg = (CompositeGeometry) geom;
+
+            for (int i = 0; i < cg.size(); i++) {
+                result.addAll(getCurveComponents((Geometry) cg.get(i)));
+            }
+
+        } else {
+
+            throw new QueryException(
+                    "Determination of curve components for deegree geometry type '"
+                            + geom.getClass().getName()
+                            + "' is not supported.");
+        }
+
+        return result;
+    }
+
+    /**
      * Computes a JTS geometry from the given node (which must represent a GML geometry).
      * <p>
      * See {{@link #toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -644,8 +759,7 @@ public class GmlGeoXUtils {
      * @return
      * @throws TransformerException
      */
-    InputStream nodeToInputStream(final Node node)
-            throws TransformerException {
+    InputStream nodeToInputStream(final Node node) throws TransformerException {
 
         if (node instanceof BXNode) {
             // BXNode does not support the getPrefix(), which is required by

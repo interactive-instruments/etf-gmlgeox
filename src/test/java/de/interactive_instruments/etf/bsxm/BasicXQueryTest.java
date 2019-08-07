@@ -163,6 +163,14 @@ public class BasicXQueryTest {
         xmlTest("test_checkMinimumSeparationOfCircleControlPoints.xq");
     }
 
+    @Test
+    public void test_determineInteriorIntersectionOfCurveComponents() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_determineInteriorIntersectionOfCurveComponents.xml")
+                .execute(context);
+        xmlTest("test_determineInteriorIntersectionOfCurveComponents.xq");
+    }
+
     private void xmlTest(String xquery) {
         xmlTest(xquery, null);
     }

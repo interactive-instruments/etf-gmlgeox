@@ -47,9 +47,11 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.IntersectionMatrix;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.MultiLineString;
 import com.vividsolutions.jts.geom.util.GeometryExtracter;
+import com.vividsolutions.jts.index.strtree.STRtree;
 import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 
 import org.apache.commons.io.FileUtils;
@@ -73,6 +75,7 @@ import org.deegree.cs.CRSCodeType;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
+import org.deegree.geometry.primitive.Curve;
 import org.dom4j.io.SAXReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -309,7 +312,7 @@ public class GmlGeoX extends QueryModule {
      *
      * @param geom
      *            a JTS geometry, can be a JTS GeometryCollection
-     * @return a sequence of JTS geometry objects that are not collection types
+     * @return a sequence of JTS geometry objects that are not collection types; can be empty but not null
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -3962,6 +3965,164 @@ public class GmlGeoX extends QueryModule {
         }
 
         return false;
+    }
+
+    /**
+     * Checks two geometries for interior intersection of curve components. If both geometries are point based, the result will be <code>null</code> (since then there are no curves to check). Components of the first geometry are compared with the components of the second geometry (using a spatial index to prevent unnecessary checks): If two components are not equal (a situation that is allowed) then they are checked for an interior intersection, meaning that the interiors of the two components intersect (T********) or - only when curves are compared - that the boundary of one component intersects the interior of the other component (*T******* or ***T*****). If such a situation is detected, the intersection of the two components will be returned and testing will stop (meaning that the result will only provide information for one invalid intersection, not all intersections).
+     *
+     * @param geomNode1
+     *            the node that represents the first geometry
+     * @param geomNode2
+     *            the node that represents the second geometry
+     * @return The intersection of two components from the two geometries, where an invalid intersection was detected, or <code>null</code> if no such case exists.
+     * @throws QueryException
+     */
+    @Requires(Permission.NONE)
+    @Deterministic
+    public com.vividsolutions.jts.geom.Geometry determineInteriorIntersectionOfCurveComponents(
+            ANode geomNode1, ANode geomNode2) throws QueryException {
+
+        try {
+
+            /* Determine if the two geometries intersect at all. Only if they do, a more detailed computation is necessary. */
+
+            Geometry g1 = null;
+            Geometry g2 = null;
+
+            com.vividsolutions.jts.geom.Geometry jtsg1 = null;
+            com.vividsolutions.jts.geom.Geometry jtsg2 = null;
+
+            // try to get JTS geometry for first geometry node from cache
+            if (geomNode1 instanceof DBNode) {
+                String geomId = getDBNodeID((DBNode) geomNode1);
+                try {
+                    jtsg1 = mgr.get(geomId);
+                } catch (Exception e1) {
+                    throw new QueryException(
+                            "Exception occurred while getting JTS geometry from GeometryManager. Exception message is: "
+                                    + e1.getMessage());
+                }
+            }
+            if (jtsg1 == null) {
+                g1 = geoutils.parseGeometry(geomNode1);
+                jtsg1 = geoutils.toJTSGeometry(g1);
+            }
+
+            // now the same for the second geometry node
+            if (geomNode2 instanceof DBNode) {
+                String geomId = getDBNodeID((DBNode) geomNode2);
+                try {
+                    jtsg2 = mgr.get(geomId);
+                } catch (Exception e1) {
+                    throw new QueryException(
+                            "Exception occurred while getting JTS geometry from GeometryManager. Exception message is: "
+                                    + e1.getMessage());
+                }
+            }
+            if (jtsg2 == null) {
+                g2 = geoutils.parseGeometry(geomNode2);
+                jtsg2 = geoutils.toJTSGeometry(g2);
+            }
+
+            /* If both geometries are points or multi-points, there cannot be a relevant intersection. */
+            boolean g1IsPointGeom = jtsg1 instanceof com.vividsolutions.jts.geom.Point
+                    || jtsg1 instanceof com.vividsolutions.jts.geom.MultiPoint;
+            boolean g2IsPointGeom = jtsg2 instanceof com.vividsolutions.jts.geom.Point
+                    || jtsg2 instanceof com.vividsolutions.jts.geom.MultiPoint;
+            if (g1IsPointGeom && g2IsPointGeom) {
+                return null;
+            }
+
+            /* Check if the two geometries intersect at all. If not, we are done. Otherwise, we need to check in more detail. */
+            if (!jtsg1.intersects(jtsg2)) {
+                return null;
+            }
+
+            /* deegree geometries may not exist yet, if JTS geometries have been retrieved from the geometry cache. Ensure that deegree geometries are available. */
+            if (g1 == null) {
+                g1 = geoutils.parseGeometry(geomNode1);
+            }
+            if (g2 == null) {
+                g2 = geoutils.parseGeometry(geomNode2);
+            }
+
+            /* Determine JTS geometries for relevant geometry components */
+
+            List<com.vividsolutions.jts.geom.Geometry> g1Components = new ArrayList<>();
+            if (jtsg1 instanceof com.vividsolutions.jts.geom.Point) {
+                g1Components.add(jtsg1);
+            } else if (jtsg1 instanceof com.vividsolutions.jts.geom.MultiPoint) {
+                com.vividsolutions.jts.geom.MultiPoint mp = (com.vividsolutions.jts.geom.MultiPoint) jtsg1;
+                g1Components.addAll(
+                        Arrays.asList(flattenAllGeometryCollections(mp)));
+            } else {
+                for (Curve c : geoutils.getCurveComponents(g1)) {
+                    g1Components.add(geoutils.toJTSGeometry(c));
+                }
+            }
+
+            List<com.vividsolutions.jts.geom.Geometry> g2Components = new ArrayList<>();
+            if (jtsg2 instanceof com.vividsolutions.jts.geom.Point) {
+                g2Components.add(jtsg2);
+            } else if (jtsg2 instanceof com.vividsolutions.jts.geom.MultiPoint) {
+                com.vividsolutions.jts.geom.MultiPoint mp = (com.vividsolutions.jts.geom.MultiPoint) jtsg2;
+                g2Components.addAll(
+                        Arrays.asList(flattenAllGeometryCollections(mp)));
+            } else {
+                for (Curve c : geoutils.getCurveComponents(g2)) {
+                    g2Components.add(geoutils.toJTSGeometry(c));
+                }
+            }
+
+            /* Switch order of geometry arrays, if the second geometry is point based. We want to create a spatial index only for curve components. */
+            if (g2IsPointGeom) {
+                List<com.vividsolutions.jts.geom.Geometry> tmp = g1Components;
+                g1Components = g2Components;
+                g2Components = tmp;
+                tmp = null;
+            }
+
+            /* Create spatial index for curve components. */
+            STRtree g2ComponentIndex = new STRtree();
+            for (com.vividsolutions.jts.geom.Geometry g2CompGeom : g2Components) {
+                g2ComponentIndex.insert(g2CompGeom.getEnvelopeInternal(),
+                        g2CompGeom);
+            }
+
+            /* Now check for invalid interior intersections of components from the two geometries. */
+            for (com.vividsolutions.jts.geom.Geometry g1CompGeom : g1Components) {
+
+                // get g2 components from spatial index to compare
+                @SuppressWarnings("rawtypes")
+                List g2Results = g2ComponentIndex
+                        .query(g1CompGeom.getEnvelopeInternal());
+
+                for (Object o : g2Results) {
+                    com.vividsolutions.jts.geom.Geometry g2CompGeom = (com.vividsolutions.jts.geom.Geometry) o;
+                    if (g1CompGeom.intersects(g2CompGeom)) {
+                        /* It is allowed that two curves are spatially equal. So only check for an interior intersection in case that the two geometry components are not spatially equal.
+                         *
+                         * The intersection matrix must be computed in any case (to determine that the two components are not equal). So we compute it once, and re-use it for tests on interior intersection. */
+                        IntersectionMatrix im = g1CompGeom.relate(g2CompGeom);
+                        if (!im.isEquals(g1CompGeom.getDimension(),
+                                g2CompGeom.getDimension())
+                                && (im.matches("T********") || (!(g1IsPointGeom
+                                        || g2IsPointGeom)
+                                        && (im.matches("*T*******")
+                                                || im.matches("***T*****"))))) {
+                            // invalid intersection detected
+                            return g1CompGeom.intersection(g2CompGeom);
+                        }
+                    }
+                }
+            }
+
+            /* No invalid intersection found. */
+            return null;
+
+        } catch (Exception e) {
+            throw new QueryException(e);
+        }
     }
 
     /**
