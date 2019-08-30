@@ -28,6 +28,9 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -171,11 +174,33 @@ public class BasicXQueryTest {
         xmlTest("test_determineInteriorIntersectionOfCurveComponents.xq");
     }
 
+    @Test
+    public void test_moduleStorage() throws BaseXException {
+
+        new DropDB("GmlGeoXUnitTestDB").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_moduleStorage.xml")
+                .execute(context);
+
+        xmlTest("test_moduleStorage_store.xq");
+
+        Map<String, String> externalVariables = new HashMap<>();
+        externalVariables.put("restoreModules", "true");
+        xmlTest("test_moduleStorage_restore.xq", externalVariables);
+    }
+
     private void xmlTest(String xquery) {
-        xmlTest(xquery, null);
+        xmlTest(xquery, null, null);
     }
 
     private void xmlTest(String xquery, String doc) {
+        xmlTest(xquery, doc, null);
+    }
+
+    private void xmlTest(String xquery, Map<String, String> externalVariables) {
+        xmlTest(xquery, null, externalVariables);
+    }
+
+    private void xmlTest(String xquery, String doc, Map<String, String> externalVariables) {
 
         try {
             String filename = FilenameUtils.getBaseName(xquery) + ".xml";
@@ -189,6 +214,12 @@ public class BasicXQueryTest {
                  *
                  * Example: declare variable $docPath external := '...'; */
                 xq.bind("docPath", xmlDir + doc);
+            }
+
+            if (externalVariables != null) {
+                for (Entry<String, String> entry : externalVariables.entrySet()) {
+                    xq.bind(entry.getKey(), entry.getValue());
+                }
             }
 
             String queryresult = xq.execute(context);

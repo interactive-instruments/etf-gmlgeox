@@ -15,6 +15,11 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
 import org.basex.query.value.node.DBNode;
 
 /**
@@ -23,11 +28,14 @@ import org.basex.query.value.node.DBNode;
  * @author Clemens Portele (portele <at> interactive-instruments <dot> de)
  * @author Johannes Echterhoff (echterhoff <at> interactive-instruments <dot> de)
  */
-class DBNodeEntry {
+class DBNodeEntry implements Externalizable {
 
-    final int pre;
-    final String dbname;
-    final int nodeKind;
+    int pre;
+    String dbname;
+    int nodeKind;
+
+    /** Constructor used for deserialization */
+    public DBNodeEntry() {}
 
     /**
      * Create entry from database node
@@ -35,7 +43,7 @@ class DBNodeEntry {
      * @param node
      *            Database node
      */
-    DBNodeEntry(final DBNode node) {
+    public DBNodeEntry(final DBNode node) {
         pre = node.pre();
         dbname = node.data().meta.name;
         nodeKind = node.kind();
@@ -70,5 +78,21 @@ class DBNodeEntry {
         if (pre != other.pre)
             return false;
         return true;
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+
+        out.writeUTF(dbname);
+        out.writeInt(nodeKind);
+        out.writeInt(pre);
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+
+        this.dbname = in.readUTF();
+        this.nodeKind = in.readInt();
+        this.pre = in.readInt();
     }
 }

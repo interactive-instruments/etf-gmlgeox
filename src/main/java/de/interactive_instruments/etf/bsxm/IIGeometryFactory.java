@@ -15,6 +15,10 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Arrays;
 
 import org.deegree.cs.coordinatesystems.ICRS;
@@ -24,10 +28,8 @@ import org.deegree.geometry.linearization.MaxErrorCriterion;
 import org.deegree.geometry.primitive.Curve;
 import org.deegree.geometry.primitive.segments.CurveSegment;
 
-/**
- * Based on the implementation of {@link GeometryFactory}.
- */
-public class IIGeometryFactory extends GeometryFactory {
+/** Based on the implementation of {@link GeometryFactory}. */
+public class IIGeometryFactory extends GeometryFactory implements Externalizable {
 
     protected double maxError = 0.00001;
     protected int maxNumPoints = 1000;
@@ -56,5 +58,22 @@ public class IIGeometryFactory extends GeometryFactory {
     public LinearizationCriterion getMaxErrorCriterion() {
 
         return new MaxErrorCriterion(maxError, maxNumPoints);
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+
+        /* Thus far we are not concerned with fields from supertypes - the default values of these fields suffice. */
+
+        out.writeDouble(maxError);
+        out.writeInt(maxNumPoints);
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        /* Thus far we are not concerned with fields from supertypes - the default values of these fields suffice. */
+
+        this.maxError = in.readDouble();
+        this.maxNumPoints = in.readInt();
     }
 }
