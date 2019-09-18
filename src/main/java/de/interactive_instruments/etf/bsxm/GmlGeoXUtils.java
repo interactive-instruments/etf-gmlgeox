@@ -350,7 +350,7 @@ public class GmlGeoXUtils {
 
             if (patches.size() > 1) {
 
-                /* compute union - only supportd if all patches are polygon patches */
+                /* compute union - only supported if all patches are polygon patches */
                 List<com.vividsolutions.jts.geom.Polygon> polygons = new ArrayList<com.vividsolutions.jts.geom.Polygon>();
 
                 for (SurfacePatch sp : patches) {

@@ -1385,4 +1385,84 @@
    </gml:patches>
   </gml:Surface>
  </ii:member>
+ <ii:member>    
+  <gml:Surface gml:id="s16" srsName="urn:adv:crs:ETRS89_UTM32">
+   <!-- exterior and interior ring "intersect" -->
+   <gml:patches>
+    <gml:PolygonPatch interpolation="planar">
+     <gml:exterior>
+      <gml:Ring>
+       <gml:curveMember>
+        <gml:Curve gml:id="s16_1c1">
+         <gml:segments>
+          <gml:LineStringSegment interpolation="linear">
+           <gml:posList count="2">0 0 2 0</gml:posList>
+          </gml:LineStringSegment>
+         </gml:segments>
+        </gml:Curve>
+       </gml:curveMember>
+       <gml:curveMember>
+        <gml:Curve gml:id="s16_1c2">
+         <gml:segments>
+          <gml:LineStringSegment interpolation="linear">
+           <gml:posList count="2">2 0 2 2</gml:posList>
+          </gml:LineStringSegment>
+         </gml:segments>
+        </gml:Curve>
+       </gml:curveMember>
+       <gml:curveMember>
+        <gml:Curve gml:id="s16_1c3">
+         <gml:segments>
+          <gml:LineStringSegment interpolation="linear">
+           <gml:posList count="2">2 2 0 2</gml:posList>
+          </gml:LineStringSegment>
+         </gml:segments>
+        </gml:Curve>
+       </gml:curveMember>
+       <gml:curveMember>
+        <gml:Curve gml:id="s16_1c4">
+         <gml:segments>
+          <gml:LineStringSegment interpolation="linear">
+           <gml:posList count="2">0 2 0 0</gml:posList>
+          </gml:LineStringSegment>
+         </gml:segments>
+        </gml:Curve>
+       </gml:curveMember>       
+      </gml:Ring>
+     </gml:exterior>
+     <gml:interior>
+      <gml:Ring>
+       <gml:curveMember>
+        <gml:Curve gml:id="s16_2c1">
+         <gml:segments>
+          <gml:LineStringSegment interpolation="linear">
+           <gml:posList count="2">0 0 0.5 1</gml:posList>
+          </gml:LineStringSegment>
+         </gml:segments>
+        </gml:Curve>
+       </gml:curveMember>
+       <gml:curveMember>
+        <gml:Curve gml:id="s16_2c2">
+         <gml:segments>
+          <gml:LineStringSegment interpolation="linear">
+           <gml:posList count="2">0.5 1 2 2</gml:posList>
+          </gml:LineStringSegment>
+         </gml:segments>
+        </gml:Curve>
+       </gml:curveMember>
+       <gml:curveMember>
+        <gml:Curve gml:id="s16_2c3">
+         <gml:segments>
+          <gml:LineStringSegment interpolation="linear">
+           <gml:posList count="2">2 2 0 0</gml:posList>
+          </gml:LineStringSegment>
+         </gml:segments>
+        </gml:Curve>
+       </gml:curveMember>
+      </gml:Ring>
+     </gml:interior>
+    </gml:PolygonPatch>    
+   </gml:patches>
+  </gml:Surface>
+ </ii:member>
 </ii:GeometryCollection>

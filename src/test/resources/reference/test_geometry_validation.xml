@@ -242,15 +242,25 @@
       </message>
       <message>
         <type>ERROR</type>
-        <text>Invalid polygon. Outer ring of polygon is clockwise within element Surface, (gml:id: s15 with coordinates: LINESTRING (0.000000 0.000000,5.000000 0.000000,5.000000 0.0...)</text>
+        <text>Element Surface at position 1 within element null (gml:id: s15): Self-intersection. Start: (0.000 0.000), end: (1.000 1.000), problem: (2.000 3.000)</text>
       </message>
+      <message>
+        <type>ERROR</type>
+        <text>Geometry is not simple. Self-intersection detected at (5.0, 2.5, NaN).</text>
+      </message>
+    </messages>
+  </test>
+  <test>
+    <isValid>false</isValid>
+    <result>FVVV</result>
+    <messages>
       <message>
         <type>NOTICE</type>
         <text>Detected GML standard version: GML3.2.</text>
       </message>
       <message>
         <type>ERROR</type>
-        <text>Geometry is not simple. Self-intersection detected at (5.0, 2.5, NaN).</text>
+        <text>Element Surface at position 1 within element null (gml:id: s16): Interior is disconnected. Start: (0.000 0.000), end: (0.000 0.000), problem: (0.000 0.000)</text>
       </message>
     </messages>
   </test>

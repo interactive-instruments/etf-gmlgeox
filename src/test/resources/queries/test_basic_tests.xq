@@ -43,6 +43,8 @@ let $surface12 := $surfaces[@gml:id = 's12']
 let $surface13 := $surfaces[@gml:id = 's13']
 let $surface14 := $surfaces[@gml:id = 's14']
 
+let $surface16 := $surfaces[@gml:id = 's16']
+
 (: Point/Point :)
 (: (true false false false true false true false false true true false false false false false) :)
 let $test1 :=
@@ -355,10 +357,14 @@ return
  ggeo:index($g, $g)
 let $test17 := (
 count(ggeo:search(4, 2.4, 8, 8.5)) = 13,
-count(ggeo:search(0, 0, 1, 1)) = 12,
+count(ggeo:search(0, 0, 1, 1)) = 13,
 contains(ggeo:search(0, 0, 1, 1)[@gml:id = 'p1']/gml:pos[1], '1 1'),
 ggeo:isWithin($geom[@gml:id = 'c1'], $geom, false()),
 number(ggeo:envelope($geom[1])[1]) = 1
+)
+
+let $test18 := (
+ggeo:validate($surface16) (: VVVV - exterior and interior rings intersect in 0 0 :)
 )
 return
  <validationtest>
@@ -379,4 +385,5 @@ return
   <test15>{$test15}</test15>
   <test16>{$test16}</test16>
   <test17>{$test17}</test17>
+  <test18>{$test18}</test18>
  </validationtest>

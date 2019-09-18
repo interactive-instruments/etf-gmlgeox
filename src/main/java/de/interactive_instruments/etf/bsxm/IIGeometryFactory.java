@@ -20,12 +20,14 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
+import java.util.List;
 
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.linearization.LinearizationCriterion;
 import org.deegree.geometry.linearization.MaxErrorCriterion;
 import org.deegree.geometry.primitive.Curve;
+import org.deegree.geometry.primitive.Ring;
 import org.deegree.geometry.primitive.segments.CurveSegment;
 
 /** Based on the implementation of {@link GeometryFactory}. */
@@ -37,6 +39,11 @@ public class IIGeometryFactory extends GeometryFactory implements Externalizable
     @Override
     public Curve createCurve(final String id, final ICRS crs, final CurveSegment... segments) {
         return (Curve) inspect(new IICurve(id, crs, pm, Arrays.asList(segments), this));
+    }
+
+    @Override
+    public Ring createRing(String id, ICRS crs, List<Curve> members) {
+        return (Ring) inspect(new IIRing(id, crs, pm, members, this));
     }
 
     /**

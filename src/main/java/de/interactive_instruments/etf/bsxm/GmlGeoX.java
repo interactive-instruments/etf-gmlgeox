@@ -168,9 +168,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         final ClassLoader cl = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-            if (CRSManager.get("default") == null
-                    || CRSManager.get("default")
-                            .getCRSByCode(CRSCodeType.valueOf("http://www.opengis.net/def/crs/EPSG/0/5555")) == null) {
+            if (CRSManager.get("default") == null || CRSManager.get("default")
+                    .getCRSByCode(CRSCodeType.valueOf("http://www.opengis.net/def/crs/EPSG/0/5555")) == null) {
                 loadGmlGeoXSrsConfiguration();
             }
         } finally {
@@ -195,11 +194,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             } catch (Exception e) {
                 throw new QueryException(
                         "Could not load SRS configuration files from directory referenced from GmlGeoX property '"
-                                + ETF_GMLGEOX_SRSCONFIG_DIR
-                                + "'. Reference is: "
-                                + srsConfigDirPath
-                                + " Exception message is: "
-                                + e.getMessage());
+                                + ETF_GMLGEOX_SRSCONFIG_DIR + "'. Reference is: " + srsConfigDirPath
+                                + " Exception message is: " + e.getMessage());
             }
         } else {
             try {
@@ -212,47 +208,29 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 }
                 tempDir.mkdirs();
 
-                IoUtils.copyResourceToFile(
-                        this, "/srsconfig/default.xml", new IFile(tempDir, "default.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/ntv2/beta2007.gsb",
+                IoUtils.copyResourceToFile(this, "/srsconfig/default.xml", new IFile(tempDir, "default.xml"));
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/ntv2/beta2007.gsb",
                         new IFile(tempDir, "deegree/d3/config/ntv2/beta2007.gsb"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/parser-files.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/parser-files.xml",
                         new IFile(tempDir, "deegree/d3/parser-files.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/crs-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/crs-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/crs-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/datum-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/datum-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/datum-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/ellipsoid-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/ellipsoid-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/ellipsoid-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/pm-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/pm-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/pm-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/projection-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/projection-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/projection-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/transformation-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/transformation-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/transformation-definitions.xml"));
 
                 crsMgr.init(tempDir);
             } catch (IOException e) {
                 throw new QueryException(
                         "Exception occurred while extracting the SRS configuration files provided by GmlGeoX to a temporary "
-                                + "directory and loading them from there. Exception message is: "
-                                + e.getMessage());
+                                + "directory and loading them from there. Exception message is: " + e.getMessage());
             }
         }
     }
@@ -266,13 +244,11 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      *             in case that the SRS configuration directory does not exist, is not a directory, cannot be read, or an exception occurred while loading the configuration files
      */
     @Requires(Permission.NONE)
-    public void configureSpatialReferenceSystems(final String configurationDirectoryPathName)
-            throws QueryException {
+    public void configureSpatialReferenceSystems(final String configurationDirectoryPathName) throws QueryException {
         final ClassLoader cl = Thread.currentThread().getContextClassLoader();
         try {
             final File configurationDirectory = new File(configurationDirectoryPathName);
-            if (!configurationDirectory.exists()
-                    || !configurationDirectory.isDirectory()
+            if (!configurationDirectory.exists() || !configurationDirectory.isDirectory()
                     || !configurationDirectory.canRead()) {
                 throw new IllegalArgumentException(
                         "Given path name does not identify a directory that exists and that can be read.");
@@ -358,17 +334,15 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Point[] directionChanges(
-            com.vividsolutions.jts.geom.Geometry geom, Object minAngle, Object maxAngle)
-            throws QueryException {
+    public com.vividsolutions.jts.geom.Point[] directionChanges(com.vividsolutions.jts.geom.Geometry geom,
+            Object minAngle, Object maxAngle) throws QueryException {
 
         if (geom == null) {
 
             return null;
 
         } else if (!(geom instanceof LineString || geom instanceof MultiLineString)) {
-            throw new QueryException(
-                    "Geometry must be a LineString. Found: " + geom.getClass().getName());
+            throw new QueryException("Geometry must be a LineString. Found: " + geom.getClass().getName());
         } else {
 
             double min;
@@ -380,12 +354,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 max = ((Number) maxAngle).doubleValue();
 
                 if (min < 0 || max < 0 || min > 180 || max > 180 || min > max) {
-                    throw new QueryException(
-                            "0 <= minAngle <= maxAngle <= 180. Found minAngle '"
-                                    + minAngle
-                                    + "', maxAngle '"
-                                    + maxAngle
-                                    + "'.");
+                    throw new QueryException("0 <= minAngle <= maxAngle <= 180. Found minAngle '" + minAngle
+                            + "', maxAngle '" + maxAngle + "'.");
                 }
             } else {
                 throw new QueryException("minAngle and maxAngle must be numbers");
@@ -452,8 +422,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             return null;
 
         } else if (!(geom instanceof LineString || geom instanceof MultiLineString)) {
-            throw new QueryException(
-                    "Geometry must be a LineString. Found: " + geom.getClass().getName());
+            throw new QueryException("Geometry must be a LineString. Found: " + geom.getClass().getName());
         } else {
 
             double limit;
@@ -463,8 +432,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 limit = ((Number) limitAngle).doubleValue();
 
                 if (limit < 0 || limit > 180) {
-                    throw new QueryException(
-                            "0 <= limitAngle <= 180. Found limitAngle '" + limitAngle + "'.");
+                    throw new QueryException("0 <= limitAngle <= 180. Found limitAngle '" + limitAngle + "'.");
                 }
             } else {
                 throw new QueryException("limitAngle must be a number");
@@ -883,26 +851,23 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
 
             // determine which tests to execute
-            boolean isTestGeonovum,
-                    isTestPolygonPatchConnectivity,
-                    isTestRepetitionInCurveSegments,
-                    isTestIsSimple;
+            boolean isTestGeneral, isTestPolygonPatchConnectivity, isTestRepetitionInCurveSegments, isTestIsSimple;
 
             if (testMask == null) {
 
-                isTestGeonovum = true;
+                isTestGeneral = true;
                 isTestPolygonPatchConnectivity = true;
                 isTestRepetitionInCurveSegments = true;
                 isTestIsSimple = true;
 
             } else {
-                isTestGeonovum = testMask.length() >= 1 && testMask.charAt(0) == '1';
+                isTestGeneral = testMask.length() >= 1 && testMask.charAt(0) == '1';
                 isTestPolygonPatchConnectivity = testMask.length() >= 2 && testMask.charAt(1) == '1';
                 isTestRepetitionInCurveSegments = testMask.length() >= 3 && testMask.charAt(2) == '1';
                 isTestIsSimple = testMask.length() >= 4 && testMask.charAt(3) == '1';
             }
 
-            boolean isValidGeonovum = false;
+            boolean generallyValid = false;
             boolean polygonPatchesAreConnected = false;
             boolean noRepetitionInCurveSegment = false;
             boolean isSimple = false;
@@ -912,14 +877,15 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             BXNode elem = node.toJava();
 
             List<ValidatorMessage> validationMessages = new ArrayList<ValidatorMessage>();
-            // ================
-            // Geonovum validation (deegree and JTS validation)
 
-            if (isTestGeonovum) {
+            if (isTestGeneral || isTestPolygonPatchConnectivity || isTestRepetitionInCurveSegments || isTestIsSimple) {
 
                 ValidatorContext ctx = new ValidatorContext();
 
-                GeometryElementHandler handler = new GeometryElementHandler(ctx, null, srsName, this.geometryFactory);
+                GeometryElementHandler handler = new GeometryElementHandler(isTestGeneral,
+                        isTestPolygonPatchConnectivity, isTestRepetitionInCurveSegments, isTestIsSimple, ctx, null,
+                        srsName, this.geoutils, this.geometryFactory);
+
                 /* configure handler with GML geometries specified through this class */
                 handler.unregisterAllGmlGeometries();
                 for (String additionalGmlElementName : gmlGeometries) {
@@ -932,36 +898,11 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 final InputStream stream = geoutils.nodeToInputStream(elem);
                 saxReader.read(stream);
 
-                isValidGeonovum = ctx.isSuccessful();
-
-                if (!isValidGeonovum) {
-                    validationMessages.addAll(ctx.getMessages());
+                // ================
+                // Geonovum validation (deegree and JTS validation)
+                if (isTestGeneral) {
+                    generallyValid = handler.isGenerallyValid();
                 }
-            }
-
-            if (isTestPolygonPatchConnectivity || isTestRepetitionInCurveSegments || isTestIsSimple) {
-
-                ValidatorContext ctx = new ValidatorContext();
-                SecondaryGeometryElementValidationHandler handler = new SecondaryGeometryElementValidationHandler(
-                        isTestPolygonPatchConnectivity,
-                        isTestRepetitionInCurveSegments,
-                        isTestIsSimple,
-                        ctx,
-                        srsName,
-                        this.geoutils,
-                        this.geometryFactory);
-
-                /* configure handler with GML geometries specified through this class */
-                handler.unregisterAllGmlGeometries();
-                for (String additionalGmlElementName : gmlGeometries) {
-                    handler.registerGmlGeometry(additionalGmlElementName);
-                }
-
-                SAXReader saxReader = new SAXReader();
-                saxReader.setDefaultHandler(handler);
-
-                final InputStream stream = geoutils.nodeToInputStream(elem);
-                saxReader.read(stream);
 
                 // ================
                 // Test: polygon patches of a surface are connected
@@ -981,17 +922,18 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                     isSimple = handler.isSimple();
                 }
 
-                if (!polygonPatchesAreConnected || !noRepetitionInCurveSegment || !isSimple) {
+                if (!generallyValid || !polygonPatchesAreConnected || !noRepetitionInCurveSegment || !isSimple) {
                     validationMessages.addAll(ctx.getMessages());
                 }
+
             }
 
             // combine results
             StringBuilder sb = new StringBuilder();
 
-            if (!isTestGeonovum) {
+            if (!isTestGeneral) {
                 sb.append("S");
-            } else if (isValidGeonovum) {
+            } else if (generallyValid) {
                 sb.append("V");
             } else {
                 sb.append("F");
@@ -1023,7 +965,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
             return new ValidationReport(sb.toString(), validationMessages);
 
-        } catch (Exception e) {
+        } catch (
+
+        Exception e) {
             throw new QueryException(e);
         }
     }
@@ -1079,8 +1023,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.CONTAINS, matchAll);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing contains(Value,Value,boolean). Message is: "
-                            + e.getMessage());
+                    "Exception while executing contains(Value,Value,boolean). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -1099,16 +1042,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean containsGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1, com.vividsolutions.jts.geom.Geometry geom2)
-            throws QueryException {
+    public boolean containsGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CONTAINS);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing containsGeomGeom(Geometry,Geometry). Message is: "
-                            + e.getMessage());
+                    "Exception while executing containsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -1129,11 +1070,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean containsGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1,
-            com.vividsolutions.jts.geom.Geometry geom2,
-            boolean matchAll)
-            throws QueryException {
+    public boolean containsGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2, boolean matchAll) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CONTAINS, matchAll);
@@ -1196,8 +1134,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.CROSSES, matchAll);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing crosses(Value,Value,boolean). Message is: "
-                            + e.getMessage());
+                    "Exception while executing crosses(Value,Value,boolean). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -1215,16 +1152,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean crossesGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1, com.vividsolutions.jts.geom.Geometry geom2)
-            throws QueryException {
+    public boolean crossesGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CROSSES);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing crossesGeomGeom(Geometry,Geometry). Message is: "
-                            + e.getMessage());
+                    "Exception while executing crossesGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -1245,11 +1180,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean crossesGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1,
-            com.vividsolutions.jts.geom.Geometry geom2,
-            boolean matchAll)
-            throws QueryException {
+    public boolean crossesGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2, boolean matchAll) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CROSSES, matchAll);
@@ -1312,8 +1244,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.EQUALS, matchAll);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing equals(Value,Value,boolean). Message is: "
-                            + e.getMessage());
+                    "Exception while executing equals(Value,Value,boolean). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -1331,16 +1262,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean equalsGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1, com.vividsolutions.jts.geom.Geometry geom2)
-            throws QueryException {
+    public boolean equalsGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.EQUALS);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing equalsGeomGeom(Geometry,Geometry). Message is: "
-                            + e.getMessage());
+                    "Exception while executing equalsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -1361,11 +1290,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean equalsGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1,
-            com.vividsolutions.jts.geom.Geometry geom2,
-            boolean matchAll)
-            throws QueryException {
+    public boolean equalsGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2, boolean matchAll) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.EQUALS, matchAll);
@@ -1429,8 +1355,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.INTERSECTS, matchAll);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing intersects(Value,Value,boolean). Message is: "
-                            + e.getMessage());
+                    "Exception while executing intersects(Value,Value,boolean). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -1449,16 +1374,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean intersectsGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1, com.vividsolutions.jts.geom.Geometry geom2)
-            throws QueryException {
+    public boolean intersectsGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.INTERSECTS);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing intersectsGeomGeom(Geometry,Geometry). Message is: "
-                            + e.getMessage());
+                    "Exception while executing intersectsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -1479,11 +1402,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean intersectsGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1,
-            com.vividsolutions.jts.geom.Geometry geom2,
-            boolean matchAll)
-            throws QueryException {
+    public boolean intersectsGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2, boolean matchAll) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.INTERSECTS, matchAll);
@@ -1569,8 +1489,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public String determineSrsNameForGeometryComponent(final ANode geometryComponentNode)
-            throws QueryException {
+    public String determineSrsNameForGeometryComponent(final ANode geometryComponentNode) throws QueryException {
 
         if (this.standardSRS != null) {
 
@@ -1615,14 +1534,12 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
                 return geoutils.toJTSGeometry(node);
 
-            } else if (v instanceof Jav
-                    && ((Jav) v).toJava() instanceof com.vividsolutions.jts.geom.Geometry) {
+            } else if (v instanceof Jav && ((Jav) v).toJava() instanceof com.vividsolutions.jts.geom.Geometry) {
 
                 return (com.vividsolutions.jts.geom.Geometry) ((Jav) v).toJava();
 
             } else {
-                throw new IllegalArgumentException(
-                        "First argument is neither a single node nor a JTS geometry.");
+                throw new IllegalArgumentException("First argument is neither a single node nor a JTS geometry.");
             }
         } catch (Exception e) {
             throw new QueryException(e);
@@ -1720,8 +1637,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             case TOUCHES:
                 return g1.touches(g2);
             default:
-                throw new IllegalArgumentException(
-                        "Unknown spatial relationship operator: " + op.toString());
+                throw new IllegalArgumentException("Unknown spatial relationship operator: " + op.toString());
             }
 
         } catch (Exception e) {
@@ -1733,15 +1649,12 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         }
     }
 
-    private boolean applySpatialRelationshipOperation(
-            Object arg1, Object arg2, SpatialRelOp op, boolean matchAll) throws QueryException {
+    private boolean applySpatialRelationshipOperation(Object arg1, Object arg2, SpatialRelOp op, boolean matchAll)
+            throws QueryException {
 
         try {
 
-            if (arg1 == null
-                    || arg2 == null
-                    || arg1 instanceof Empty
-                    || arg2 instanceof Empty
+            if (arg1 == null || arg2 == null || arg1 instanceof Empty || arg2 instanceof Empty
                     || (arg1 instanceof GeometryCollection && ((GeometryCollection) arg1).isEmpty())
                     || (arg2 instanceof GeometryCollection && ((GeometryCollection) arg2).isEmpty())) {
 
@@ -1889,8 +1802,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.ISDISJOINT, matchAll);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing isDisjoint(Value,Value,boolean). Message is: "
-                            + e.getMessage());
+                    "Exception while executing isDisjoint(Value,Value,boolean). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -1909,16 +1821,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean isDisjointGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1, com.vividsolutions.jts.geom.Geometry geom2)
-            throws QueryException {
+    public boolean isDisjointGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISDISJOINT);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing isDisjointGeomGeom(Geometry,Geometry). Message is: "
-                            + e.getMessage());
+                    "Exception while executing isDisjointGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -1939,11 +1849,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean isDisjointGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1,
-            com.vividsolutions.jts.geom.Geometry geom2,
-            boolean matchAll)
-            throws QueryException {
+    public boolean isDisjointGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2, boolean matchAll) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISDISJOINT, matchAll);
@@ -2007,8 +1914,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.ISWITHIN, matchAll);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing isWithin(Value,Value,boolean). Message is: "
-                            + e.getMessage());
+                    "Exception while executing isWithin(Value,Value,boolean). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -2027,16 +1933,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean isWithinGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1, com.vividsolutions.jts.geom.Geometry geom2)
-            throws QueryException {
+    public boolean isWithinGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISWITHIN);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing isWithinGeomGeom(Geometry,Geometry). Message is: "
-                            + e.getMessage());
+                    "Exception while executing isWithinGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -2057,11 +1961,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean isWithinGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1,
-            com.vividsolutions.jts.geom.Geometry geom2,
-            boolean matchAll)
-            throws QueryException {
+    public boolean isWithinGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2, boolean matchAll) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISWITHIN, matchAll);
@@ -2125,8 +2026,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.OVERLAPS, matchAll);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing overlaps(Value,Value,boolean). Message is: "
-                            + e.getMessage());
+                    "Exception while executing overlaps(Value,Value,boolean). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -2145,16 +2045,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean overlapsGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1, com.vividsolutions.jts.geom.Geometry geom2)
-            throws QueryException {
+    public boolean overlapsGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.OVERLAPS);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing overlapsGeomGeom(Geometry,Geometry). Message is: "
-                            + e.getMessage());
+                    "Exception while executing overlapsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -2175,11 +2073,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean overlapsGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1,
-            com.vividsolutions.jts.geom.Geometry geom2,
-            boolean matchAll)
-            throws QueryException {
+    public boolean overlapsGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2, boolean matchAll) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.OVERLAPS, matchAll);
@@ -2242,8 +2137,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.TOUCHES, matchAll);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing touches(Value,Value,boolean). Message is: "
-                            + e.getMessage());
+                    "Exception while executing touches(Value,Value,boolean). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -2262,16 +2156,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean touchesGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1, com.vividsolutions.jts.geom.Geometry geom2)
-            throws QueryException {
+    public boolean touchesGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.TOUCHES);
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing touchesGeomGeom(Geometry,Geometry). Message is: "
-                            + e.getMessage());
+                    "Exception while executing touchesGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
 
             throw qe;
         }
@@ -2292,11 +2184,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean touchesGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1,
-            com.vividsolutions.jts.geom.Geometry geom2,
-            boolean matchAll)
-            throws QueryException {
+    public boolean touchesGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2, boolean matchAll) throws QueryException {
 
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.TOUCHES, matchAll);
@@ -2345,8 +2234,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     public void setMaxNumPointsForInterpolation(int maxNumPoints) throws QueryException {
         if (maxNumPoints <= 0) {
-            throw new QueryException(
-                    "Given parameter value must be greater than zero. Was: " + maxNumPoints + ".");
+            throw new QueryException("Given parameter value must be greater than zero. Was: " + maxNumPoints + ".");
         } else {
             this.geometryFactory.setMaxNumPoints(maxNumPoints);
         }
@@ -2362,8 +2250,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     public void setMaxErrorForInterpolation(double maxError) throws QueryException {
         if (maxError <= 0) {
-            throw new QueryException(
-                    "Given parameter value must be greater than zero. Was: " + maxError + ".");
+            throw new QueryException("Given parameter value must be greater than zero. Was: " + maxError + ".");
         } else {
             this.geometryFactory.setMaxError(maxError);
         }
@@ -2380,13 +2267,17 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         gmlGeometries.remove(nodeName);
     }
 
-    /** Removes all names of GML geometry elements that are currently registered for validation. */
+    /**
+     * Removes all names of GML geometry elements that are currently registered for validation.
+     */
     @Requires(Permission.NONE)
     public void unregisterAllGmlGeometries() {
         gmlGeometries.clear();
     }
 
-    /** @return the currently registered GML geometry element names (comma separated) */
+    /**
+     * @return the currently registered GML geometry element names (comma separated)
+     */
     @Requires(Permission.NONE)
     public String registeredGmlGeometries() {
 
@@ -2474,8 +2365,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                     geomsInSublist.add(geom);
                 }
 
-                com.vividsolutions.jts.geom.GeometryCollection sublistGc = geoutils.toJTSGeometryCollection(geomsInSublist,
-                        true);
+                com.vividsolutions.jts.geom.GeometryCollection sublistGc = geoutils
+                        .toJTSGeometryCollection(geomsInSublist, true);
 
                 unions.add(sublistGc.union());
             }
@@ -2519,8 +2410,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public Coordinate checkSecondControlPointInMiddleThirdOfArc(ANode arcStringNode)
-            throws QueryException {
+    public Coordinate checkSecondControlPointInMiddleThirdOfArc(ANode arcStringNode) throws QueryException {
 
         Coordinate[] controlPoints = parseArcStringControlPoints(arcStringNode);
 
@@ -2619,8 +2509,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public Coordinate checkMinimumSeparationOfCircleControlPoints(
-            ANode circleNode, Object minSeparationInDegree) throws QueryException {
+    public Coordinate checkMinimumSeparationOfCircleControlPoints(ANode circleNode, Object minSeparationInDegree)
+            throws QueryException {
 
         double minSepDeg;
         if (minSeparationInDegree instanceof Number) {
@@ -2630,8 +2520,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         }
 
         if (minSepDeg < 0 || minSepDeg > 120) {
-            throw new QueryException(
-                    "Invalid parameter minSeparationInDegree (must be >= 0 and <= 120).");
+            throw new QueryException("Invalid parameter minSeparationInDegree (must be >= 0 and <= 120).");
         }
 
         Coordinate[] controlPoints = parseArcStringControlPoints(circleNode);
@@ -2676,10 +2565,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         if (crs == null) {
             if (!LOGGED_UNKNOWN_CRS.contains(srsName)) {
                 LOGGED_UNKNOWN_CRS.add(srsName);
-                LOGGER.error(
-                        "parseArcStringControlPoints: could not find SRS '"
-                                + srsName
-                                + "', which should be used to determine the SRS dimension. Using dimension 2 as fallback. Check if the SRS configuration contains the SRS. If not, add the SRS to the configuration.");
+                LOGGER.error("parseArcStringControlPoints: could not find SRS '" + srsName
+                        + "', which should be used to determine the SRS dimension. Using dimension 2 as fallback. Check if the SRS configuration contains the SRS. If not, add the SRS to the configuration.");
             }
             dimension = 2;
         } else {
@@ -2687,12 +2574,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         }
 
         if (dimension != 2 && dimension != 3) {
-            throw new QueryException(
-                    "SRS determined to be "
-                            + srsName
-                            + " with dimension "
-                            + dimension
-                            + ". Expected dimension of 2 or 3.");
+            throw new QueryException("SRS determined to be " + srsName + " with dimension " + dimension
+                    + ". Expected dimension of 2 or 3.");
         }
 
         String positions = null;
@@ -2709,24 +2592,15 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         String[] tmp = StringUtils.split(positions);
 
         if (tmp.length % dimension != 0) {
-            throw new QueryException(
-                    "SRS determined to be "
-                            + srsName
-                            + " with dimension "
-                            + dimension
-                            + ". Number of coordinates does not match. Found "
-                            + tmp.length
-                            + " coordinates in: "
-                            + positions);
+            throw new QueryException("SRS determined to be " + srsName + " with dimension " + dimension
+                    + ". Number of coordinates does not match. Found " + tmp.length + " coordinates in: " + positions);
         }
 
         int numberOfPoints = tmp.length / dimension;
 
         if (numberOfPoints < 3 || numberOfPoints % 2 != 1) {
             throw new QueryException(
-                    "Found "
-                            + numberOfPoints
-                            + " points. Expected three or a bigger, uneven number of points.");
+                    "Found " + numberOfPoints + " points. Expected three or a bigger, uneven number of points.");
         }
 
         double[] coordinates = new double[tmp.length];
@@ -2799,8 +2673,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean isClosedGeom(
-            com.vividsolutions.jts.geom.Geometry geom, boolean onlyCheckCurveGeometries)
+    public boolean isClosedGeom(com.vividsolutions.jts.geom.Geometry geom, boolean onlyCheckCurveGeometries)
             throws QueryException {
 
         try {
@@ -2934,8 +2807,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry holesAsGeometryCollection(
-            com.vividsolutions.jts.geom.Geometry geom) {
+    public com.vividsolutions.jts.geom.Geometry holesAsGeometryCollection(com.vividsolutions.jts.geom.Geometry geom) {
 
         if (isEmptyGeom(geom)) {
 
@@ -2953,8 +2825,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         }
     }
 
-    protected List<com.vividsolutions.jts.geom.Geometry> computeHoles(
-            com.vividsolutions.jts.geom.Geometry geom) {
+    protected List<com.vividsolutions.jts.geom.Geometry> computeHoles(com.vividsolutions.jts.geom.Geometry geom) {
 
         List<com.vividsolutions.jts.geom.Geometry> holes = new ArrayList<>();
 
@@ -3030,15 +2901,13 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing relate(Value,Value,String). Message is: "
-                            + e.getMessage());
+                    "Exception while executing relate(Value,Value,String). Message is: " + e.getMessage());
 
             throw qe;
         }
     }
 
-    private boolean applyRelate(Object geom1x, Object geom2x, String intersectionPattern)
-            throws QueryException {
+    private boolean applyRelate(Object geom1x, Object geom2x, String intersectionPattern) throws QueryException {
 
         if (geom1x instanceof Empty || geom2x instanceof Empty) {
             return false;
@@ -3107,8 +2976,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean relate(Value arg1, Value arg2, String intersectionPattern, boolean matchAll)
-            throws QueryException {
+    public boolean relate(Value arg1, Value arg2, String intersectionPattern, boolean matchAll) throws QueryException {
 
         try {
 
@@ -3117,15 +2985,13 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
         } catch (Exception e) {
             QueryException qe = new QueryException(
-                    "Exception while executing relate(Value,Value,String,boolean). Message is: "
-                            + e.getMessage());
+                    "Exception while executing relate(Value,Value,String,boolean). Message is: " + e.getMessage());
 
             throw qe;
         }
     }
 
-    private boolean applyRelate(
-            Object arg1, Object arg2, String intersectionPattern, boolean matchAll)
+    private boolean applyRelate(Object arg1, Object arg2, String intersectionPattern, boolean matchAll)
             throws QueryException {
 
         try {
@@ -3190,11 +3056,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean relateGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1,
-            com.vividsolutions.jts.geom.Geometry geom2,
-            String intersectionPattern)
-            throws QueryException {
+    public boolean relateGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2, String intersectionPattern) throws QueryException {
 
         try {
 
@@ -3227,11 +3090,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean relateGeomGeom(
-            com.vividsolutions.jts.geom.Geometry geom1,
-            com.vividsolutions.jts.geom.Geometry geom2,
-            String intersectionPattern,
-            boolean matchAll)
+    public boolean relateGeomGeom(com.vividsolutions.jts.geom.Geometry geom1,
+            com.vividsolutions.jts.geom.Geometry geom2, String intersectionPattern, boolean matchAll)
             throws QueryException {
 
         try {
@@ -3275,8 +3135,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry intersection(
-            final ANode geometry1, final ANode geometry2) throws QueryException {
+    public com.vividsolutions.jts.geom.Geometry intersection(final ANode geometry1, final ANode geometry2)
+            throws QueryException {
         try {
 
             final com.vividsolutions.jts.geom.Geometry geom1 = getOrCacheGeometry(geometry1);
@@ -3304,8 +3164,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     @Deterministic
     public com.vividsolutions.jts.geom.Geometry intersectionGeomGeom(
-            final com.vividsolutions.jts.geom.Geometry geometry1,
-            final com.vividsolutions.jts.geom.Geometry geometry2)
+            final com.vividsolutions.jts.geom.Geometry geometry1, final com.vividsolutions.jts.geom.Geometry geometry2)
             throws QueryException {
 
         try {
@@ -3332,8 +3191,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry difference(
-            final ANode geometry1, final ANode geometry2) throws QueryException {
+    public com.vividsolutions.jts.geom.Geometry difference(final ANode geometry1, final ANode geometry2)
+            throws QueryException {
         try {
 
             final com.vividsolutions.jts.geom.Geometry geom1 = getOrCacheGeometry(geometry1);
@@ -3353,8 +3212,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry boundary(final ANode geometryNode)
-            throws QueryException {
+    public com.vividsolutions.jts.geom.Geometry boundary(final ANode geometryNode) throws QueryException {
 
         return boundaryGeom(getOrCacheGeometry(geometryNode));
     }
@@ -3368,8 +3226,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry boundaryGeom(
-            final com.vividsolutions.jts.geom.Geometry geometry) throws QueryException {
+    public com.vividsolutions.jts.geom.Geometry boundaryGeom(final com.vividsolutions.jts.geom.Geometry geometry)
+            throws QueryException {
 
         try {
             if (geometry == null) {
@@ -3395,10 +3253,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry differenceGeomGeom(
-            final com.vividsolutions.jts.geom.Geometry geometry1,
-            final com.vividsolutions.jts.geom.Geometry geometry2)
-            throws QueryException {
+    public com.vividsolutions.jts.geom.Geometry differenceGeomGeom(final com.vividsolutions.jts.geom.Geometry geometry1,
+            final com.vividsolutions.jts.geom.Geometry geometry2) throws QueryException {
         try {
 
             return geometry1.difference(geometry2);
@@ -3451,8 +3307,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public Object[] envelopeGeom(com.vividsolutions.jts.geom.Geometry geometry)
-            throws QueryException {
+    public Object[] envelopeGeom(com.vividsolutions.jts.geom.Geometry geometry) throws QueryException {
         try {
             final Envelope env = geometry.getEnvelopeInternal();
             final Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()};
@@ -3564,8 +3419,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         }
     }
 
-    private DBNode[] performSearch(String indexName, double x1, double y1, double x2, double y2)
-            throws QueryException {
+    private DBNode[] performSearch(String indexName, double x1, double y1, double x2, double y2) throws QueryException {
 
         Iterable<DBNodeEntry> iter = mgr.search(indexName, Geometries.rectangle(x1, y1, x2, y2));
         List<DBNode> nodelist = new ArrayList<DBNode>();
@@ -3580,23 +3434,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
         if (debug && ++count % 5000 == 0) {
             String debugIndexName = indexName != null ? indexName : "default";
-            logMemUsage(
-                    "GmlGeoX#search "
-                            + count
-                            + ". Box: ("
-                            + x1
-                            + ", "
-                            + y1
-                            + ") ("
-                            + x2
-                            + ", "
-                            + y2
-                            + ")"
-                            + ". Hits: "
-                            + nodelist.size()
-                            + " (in index '"
-                            + debugIndexName
-                            + "')");
+            logMemUsage("GmlGeoX#search " + count + ". Box: (" + x1 + ", " + y1 + ") (" + x2 + ", " + y2 + ")"
+                    + ". Hits: " + nodelist.size() + " (in index '" + debugIndexName + "')");
         }
 
         return nodelist.toArray(new DBNode[nodelist.size()]);
@@ -3641,10 +3480,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(geometryNode);
 
             if (geom.isEmpty()) {
-                throw new QueryException(
-                        "Geometry determined for the given node is empty "
-                                + "(ensure that the given node is a geometry node that represents a non-empty geometry). "
-                                + "Cannot perform a search based upon an empty geometry.");
+                throw new QueryException("Geometry determined for the given node is empty "
+                        + "(ensure that the given node is a geometry node that represents a non-empty geometry). "
+                        + "Cannot perform a search based upon an empty geometry.");
             }
 
             mgr.addEnvelope(entry, geom.getEnvelopeInternal());
@@ -3681,8 +3519,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             throws QueryException {
 
         if (geom.isEmpty()) {
-            throw new QueryException(
-                    "Geometry is empty. Cannot perform a search based upon an empty geometry.");
+            throw new QueryException("Geometry is empty. Cannot perform a search based upon an empty geometry.");
         }
 
         return search(indexName, geom.getEnvelopeInternal());
@@ -3740,13 +3577,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
             String debugIndexName = indexName != null ? indexName : "default";
             logMemUsage(
-                    "GmlGeoX#search "
-                            + count
-                            + ". Hits: "
-                            + nodelist.size()
-                            + " (in index '"
-                            + debugIndexName
-                            + "')");
+                    "GmlGeoX#search " + count + ". Hits: " + nodelist.size() + " (in index '" + debugIndexName + "')");
 
             return nodelist.toArray(new DBNode[nodelist.size()]);
 
@@ -3765,13 +3596,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         if (debug) {
             final MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
             memory.gc();
-            LOGGER.debug(
-                    progress
-                            + ". Memory: "
-                            + Math.round(memory.getHeapMemoryUsage().getUsed() / 1048576)
-                            + " MB of "
-                            + Math.round(memory.getHeapMemoryUsage().getMax() / 1048576)
-                            + " MB.");
+            LOGGER.debug(progress + ". Memory: " + Math.round(memory.getHeapMemoryUsage().getUsed() / 1048576)
+                    + " MB of " + Math.round(memory.getHeapMemoryUsage().getMax() / 1048576) + " MB.");
         }
     }
 
@@ -3854,8 +3680,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * @throws QueryException
      */
     @Requires(Permission.NONE)
-    public void index(final String indexName, final ANode node, final ANode geometry)
-            throws QueryException {
+    public void index(final String indexName, final ANode node, final ANode geometry) throws QueryException {
 
         if (node instanceof DBNode && geometry instanceof DBNode) {
 
@@ -3870,9 +3695,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                     if (env.getHeight() == 0.0 && env.getWidth() == 0.0) {
                         mgr.index(indexName, nodeEntry, Geometries.point(env.getMinX(), env.getMinY()));
                     } else {
-                        mgr.index(
-                                indexName,
-                                nodeEntry,
+                        mgr.index(indexName, nodeEntry,
                                 Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()));
                     }
 
@@ -3884,10 +3707,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 if (debug && mgr.indexSize(indexName) % 5000 == 0) {
                     String debugIndexName = indexName != null ? indexName : "default";
                     logMemUsage(
-                            "GmlGeoX#index progress (for index '"
-                                    + debugIndexName
-                                    + "'): "
-                                    + mgr.indexSize(indexName));
+                            "GmlGeoX#index progress (for index '" + debugIndexName + "'): " + mgr.indexSize(indexName));
                 }
 
             } catch (final Exception e) {
@@ -3926,9 +3746,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean pointCoordInGeometryCoords(
-            com.vividsolutions.jts.geom.Point point, com.vividsolutions.jts.geom.Geometry geometry)
-            throws QueryException {
+    public boolean pointCoordInGeometryCoords(com.vividsolutions.jts.geom.Point point,
+            com.vividsolutions.jts.geom.Geometry geometry) throws QueryException {
 
         Coordinate pointCoord = point.getCoordinate();
 
@@ -3955,8 +3774,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry determineInteriorIntersectionOfCurveComponents(
-            ANode geomNode1, ANode geomNode2) throws QueryException {
+    public com.vividsolutions.jts.geom.Geometry determineInteriorIntersectionOfCurveComponents(ANode geomNode1,
+            ANode geomNode2) throws QueryException {
 
         try {
 
@@ -4077,9 +3896,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                          * The intersection matrix must be computed in any case (to determine that the two components are not equal). So we compute it once, and re-use it for tests on interior intersection. */
                         IntersectionMatrix im = g1CompGeom.relate(g2CompGeom);
                         if (!im.isEquals(g1CompGeom.getDimension(), g2CompGeom.getDimension())
-                                && (im.matches("T********")
-                                        || (!(g1IsPointGeom || g2IsPointGeom)
-                                                && (im.matches("*T*******") || im.matches("***T*****"))))) {
+                                && (im.matches("T********") || (!(g1IsPointGeom || g2IsPointGeom)
+                                        && (im.matches("*T*******") || im.matches("***T*****"))))) {
                             // invalid intersection detected
                             return g1CompGeom.intersection(g2CompGeom);
                         }
@@ -4108,8 +3926,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry getOrCacheGeometry(ANode geomNode)
-            throws QueryException {
+    public com.vividsolutions.jts.geom.Geometry getOrCacheGeometry(ANode geomNode) throws QueryException {
 
         if (debug && ++count2 % 5000 == 0) {
             logMemUsage("GmlGeoX#getGeometry.start " + count2);
@@ -4252,10 +4069,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 if (debug && mgr.indexSize(indexName) % 5000 == 0) {
                     String debugIndexName = indexName != null ? indexName : "default";
                     logMemUsage(
-                            "GmlGeoX#index progress (for index '"
-                                    + debugIndexName
-                                    + "'): "
-                                    + mgr.indexSize(indexName));
+                            "GmlGeoX#index progress (for index '" + debugIndexName + "'): " + mgr.indexSize(indexName));
                 }
             } catch (final Exception e) {
                 if (e instanceof XMLParsingException) {
@@ -4326,8 +4140,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public String[] georefFromCoord(com.vividsolutions.jts.geom.Coordinate coord)
-            throws QueryException {
+    public String[] georefFromCoord(com.vividsolutions.jts.geom.Coordinate coord) throws QueryException {
 
         return new String[]{"" + coord.x, "" + coord.y};
     }

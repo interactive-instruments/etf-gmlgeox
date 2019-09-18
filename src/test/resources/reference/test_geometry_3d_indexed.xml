@@ -1,5 +1,5 @@
 <test_3d>
-  <validationtest>Element MultiSurface at position 1 within element null (gml:id: Nc.3.3.1): Error in XML document (line: 7, column: 55, character offset: 442): Cannot parse 'gml:posList': contains 14 values, but coordinate dimension is 3. This does not match.Element MultiSurface at position 1 within element MultiSurface (gml:id: Nc.3.3.1): Error in XML document (line: 7, column: 55, character offset: 442): Cannot parse 'gml:posList': contains 14 values, but coordinate dimension is 3. This does not match.</validationtest>
+  <validationtest>Element MultiSurface at position 1 within element null (gml:id: Nc.3.3.1): Error in XML document (line: 7, column: 55, character offset: 442): Cannot parse 'gml:posList': contains 14 values, but coordinate dimension is 3. This does not match.</validationtest>
   <geoIndexTest>gmlid: Mem.14 - class org.deegree.commons.xml.XMLParsingException: Error in XML document (line: -1): Cannot parse 'gml:posList': contains 14 values, but coordinate dimension is 3. This does not match.
 &lt;&lt; is empty &gt;&gt;</geoIndexTest>
 </test_3d>

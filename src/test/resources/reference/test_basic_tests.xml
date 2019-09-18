@@ -16,4 +16,5 @@
   <test15>VFVV</test15>
   <test16>MULTIPOINT ((0 0), (1 1))</test16>
   <test17>true true true true true</test17>
+  <test18>FVVV</test18>
 </validationtest>

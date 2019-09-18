@@ -6,7 +6,6 @@
   </gml:Envelope>
  </gml:boundedBy>
  <ii:member gml:id="Member_1">
-  <!-- DETHL56P0000F1TJ -->
   <gml:Surface gml:id="DETHL56P0000F1TJ" srsName="urn:adv:crs:ETRS89_UTM32">
    <gml:patches>
     <gml:PolygonPatch>
@@ -100,7 +99,6 @@
   </gml:Surface>
  </ii:member>
  <ii:member gml:id="Member_2">
-  <!-- DETHL56P0000F1Z6 -->
   <gml:Surface gml:id="DETHL56P0000F1Z6" srsName="urn:adv:crs:ETRS89_UTM32">
    <gml:patches>
     <gml:PolygonPatch>
@@ -212,7 +210,6 @@
   </gml:Surface>
  </ii:member>
  <ii:member gml:id="Member_3">
-  <!-- DETHL56P0000UPnK -->
   <gml:Surface gml:id="DETHL56P0000UPnK">
    <gml:patches>
     <gml:PolygonPatch>
@@ -823,7 +820,6 @@
   </gml:Surface>
  </ii:member>
  <ii:member>
-  <!-- DETHL56P0000XslS -->
   <gml:Surface gml:id="DETHL56P0000XslS">
    <gml:patches>
     <gml:PolygonPatch>
@@ -1484,7 +1480,6 @@
   </gml:Surface>
  </ii:member>
  <ii:member>
-  <!-- DETHL56P0000Xsm5 -->
   <gml:Surface gml:id="DETHL56P0000Xsm5">
    <gml:patches>
     <gml:PolygonPatch>
@@ -1947,7 +1942,6 @@
   </gml:Surface>
  </ii:member>
  <ii:member>
-  <!-- DETHL56P0000Xsm9 -->
   <gml:Surface gml:id="DETHL56P0000Xsm9">
    <gml:patches>
     <gml:PolygonPatch>
@@ -2491,7 +2485,6 @@
   </gml:Surface>
  </ii:member>
  <ii:member>
-  <!-- DETHL56P0000Xsmx -->
   <gml:Surface gml:id="DETHL56P0000Xsmx">
    <gml:patches>
     <gml:PolygonPatch>
@@ -3773,7 +3766,6 @@
   </gml:Surface>
  </ii:member>
  <ii:member>
-  <!-- DETHL56P0000ZAxt -->
   <gml:Surface gml:id="DETHL56P0000ZAxt">
    <gml:patches>
     <gml:PolygonPatch>
@@ -4236,7 +4228,6 @@
   </gml:Surface>
  </ii:member>
  <ii:member>
-  <!-- DETHL56P00012i42 -->
   <gml:Surface gml:id="DETHL56P00012i42">
    <gml:patches>
     <gml:PolygonPatch>
@@ -5090,7 +5081,6 @@
   </gml:Surface>
  </ii:member>
  <ii:member>
-  <!-- DETHL56P00017VOF -->
   <gml:Surface gml:id="DETHL56P00017VOF">
    <gml:patches>
     <gml:PolygonPatch>
@@ -5346,7 +5336,6 @@
   </gml:Surface>
  </ii:member>
  <ii:member>
-  <!-- DETHL56P00019ALS -->
   <gml:Surface gml:id="DETHL56P00019ALS">
    <gml:patches>
     <gml:PolygonPatch>
@@ -5791,7 +5780,6 @@
   </gml:Surface>
  </ii:member>
  <ii:member>
-  <!-- DETHL56P0001arHE -->
   <gml:Surface gml:id="DETHL56P0001arHE">
    <gml:patches>
     <gml:PolygonPatch>
