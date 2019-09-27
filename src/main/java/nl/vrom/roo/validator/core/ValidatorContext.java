@@ -22,6 +22,8 @@ public class ValidatorContext extends TaskContext {
 
 	/** Set of messageTypes in context */
 	public HashMap<ValidatorMessageType, HashSet<String>> messageTypes;
+	
+	public EnumSet<ValidatorMessageType> relevantValidatorMessageTypes = EnumSet.allOf(ValidatorMessageType.class);
 
 
 	public String getDeterminedVersion() {
@@ -38,16 +40,17 @@ public class ValidatorContext extends TaskContext {
 	 * @param inputFile
 	 *            the file for which the context is valid
 	 */
-	public ValidatorContext(File inputFile) {
+	public ValidatorContext(List<ValidatorMessageType> relevantValidatorMessageTypes, File inputFile) {
 		super(inputFile);
 		messages = new ArrayList<ValidatorMessage>();
 		messageTypes = new HashMap<ValidatorMessageType, HashSet<String>>();
-	
+		this.relevantValidatorMessageTypes = EnumSet.copyOf(relevantValidatorMessageTypes);
 	}
 	
-	public ValidatorContext(){
+	public ValidatorContext(List<ValidatorMessageType> relevantValidatorMessageTypes){
 		messages = new ArrayList<ValidatorMessage>();
 		messageTypes = new HashMap<ValidatorMessageType, HashSet<String>>();
+		this.relevantValidatorMessageTypes = EnumSet.copyOf(relevantValidatorMessageTypes);
 	}
 
 	/**
@@ -377,6 +380,11 @@ public class ValidatorContext extends TaskContext {
 	 *            an aditional {@link ErrorLocation}
 	 */
 	private void addMessage(ValidatorMessageType type, String message, ErrorLocation errorLocation) {
+	    
+	    if(!this.relevantValidatorMessageTypes.contains(type)) {
+		return;
+	    }
+	    
 		if (messageTypes.containsKey(type)) {
 			messageTypes.get(type).add(this.getCurrentTaskHandlingName());
 		} else {
@@ -402,5 +410,4 @@ public class ValidatorContext extends TaskContext {
 		}
 		return result;
 	}
-
 }

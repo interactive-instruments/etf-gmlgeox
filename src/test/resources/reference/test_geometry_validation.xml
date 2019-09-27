@@ -94,10 +94,6 @@
     <result>VVFV</result>
     <messages>
       <message>
-        <type>NOTICE</type>
-        <text>Detected GML standard version: GML3.2.</text>
-      </message>
-      <message>
         <type>ERROR</type>
         <text>Invalid geometry (gml:id: c14). Repetition of coordinate in curve (segment). Internal representation of the curve segment: LINESTRING (0.000 0.000,1.000 0.000,2.000 0.000,2.000 0.000). Repeated point: (2.000 0.000).</text>
       </message>
@@ -148,10 +144,6 @@
     <result>FVVV</result>
     <messages>
       <message>
-        <type>NOTICE</type>
-        <text>Detected GML standard version: GML3.2.</text>
-      </message>
-      <message>
         <type>ERROR</type>
         <text>Invalid polygon. Outer ring of polygon is clockwise within element Surface, (gml:id: s8 with coordinates: LINESTRING (0.000000 0.000000,0.000000 2.000000,0.000000 2.0...)</text>
       </message>
@@ -161,10 +153,6 @@
     <isValid>false</isValid>
     <result>FVVV</result>
     <messages>
-      <message>
-        <type>NOTICE</type>
-        <text>Detected GML standard version: GML3.2.</text>
-      </message>
       <message>
         <type>ERROR</type>
         <text>Invalid polygon. Inner ring of polygon is counterclockwise within element Surface, (gml:id: s9 with coordinates: LINESTRING (1.000000 1.000000,2.000000 1.000000,2.000000 1.0...)</text>
@@ -176,10 +164,6 @@
     <result>VVFV</result>
     <messages>
       <message>
-        <type>NOTICE</type>
-        <text>Detected GML standard version: GML3.2.</text>
-      </message>
-      <message>
         <type>ERROR</type>
         <text>Invalid geometry (gml:id: s10). Repetition of coordinate in curve (segment). Internal representation of the curve segment: LINESTRING (1.000 0.000,1.000 1.000,1.000 1.000,1.000 4.000). Repeated point: (1.000 1.000).</text>
       </message>
@@ -190,10 +174,6 @@
     <result>VFVV</result>
     <messages>
       <message>
-        <type>NOTICE</type>
-        <text>Detected GML standard version: GML3.2.</text>
-      </message>
-      <message>
         <type>ERROR</type>
         <text>Invalid surface (gml:id: s11). The patches of the surface are not connected.</text>
       </message>
@@ -203,10 +183,6 @@
     <isValid>false</isValid>
     <result>VFVV</result>
     <messages>
-      <message>
-        <type>NOTICE</type>
-        <text>Detected GML standard version: GML3.2.</text>
-      </message>
       <message>
         <type>ERROR</type>
         <text>Invalid surface (gml:id: s12). The patches of the surface are not connected.</text>
@@ -223,10 +199,6 @@
     <result>VFVV</result>
     <messages>
       <message>
-        <type>NOTICE</type>
-        <text>Detected GML standard version: GML3.2.</text>
-      </message>
-      <message>
         <type>ERROR</type>
         <text>Invalid surface (gml:id: s14). The patches of the surface are not connected.</text>
       </message>
@@ -236,10 +208,6 @@
     <isValid>false</isValid>
     <result>FVVF</result>
     <messages>
-      <message>
-        <type>NOTICE</type>
-        <text>Detected GML standard version: GML3.2.</text>
-      </message>
       <message>
         <type>ERROR</type>
         <text>Element Surface at position 1 within element null (gml:id: s15): Self-intersection. Start: (0.000 0.000), end: (1.000 1.000), problem: (2.000 3.000)</text>
@@ -254,10 +222,6 @@
     <isValid>false</isValid>
     <result>FVVV</result>
     <messages>
-      <message>
-        <type>NOTICE</type>
-        <text>Detected GML standard version: GML3.2.</text>
-      </message>
       <message>
         <type>ERROR</type>
         <text>Element Surface at position 1 within element null (gml:id: s16): Interior is disconnected. Start: (0.000 0.000), end: (0.000 0.000), problem: (0.000 0.000)</text>

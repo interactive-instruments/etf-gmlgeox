@@ -41,6 +41,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import nl.vrom.roo.validator.core.ValidatorContext;
 import nl.vrom.roo.validator.core.ValidatorMessage;
+import nl.vrom.roo.validator.core.ValidatorMessageType;
 import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
 
 import com.github.davidmoten.rtree.geometry.Geometries;
@@ -880,7 +881,11 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
             if (isTestGeneral || isTestPolygonPatchConnectivity || isTestRepetitionInCurveSegments || isTestIsSimple) {
 
-                ValidatorContext ctx = new ValidatorContext();
+                List<ValidatorMessageType> relevantValidatorMessageTypes = new ArrayList<>();
+                relevantValidatorMessageTypes.add(ValidatorMessageType.FATAL);
+                relevantValidatorMessageTypes.add(ValidatorMessageType.ERROR);
+
+                ValidatorContext ctx = new ValidatorContext(relevantValidatorMessageTypes);
 
                 GeometryElementHandler handler = new GeometryElementHandler(isTestGeneral,
                         isTestPolygonPatchConnectivity, isTestRepetitionInCurveSegments, isTestIsSimple, ctx, null,

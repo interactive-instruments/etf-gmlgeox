@@ -262,12 +262,25 @@ public class GeometryElementHandler implements ElementHandler {
 	    com.vividsolutions.jts.geom.Geometry jtsGeom = null;
 
 	    if (isTestGeneral || isTestIsSimple || isTestPolygonPatchConnectivity) {
+		
+		try {
 		jtsGeom = geoutils.toJTSGeometry(geom);
+		}catch (Exception e) {
+		    String currentGmlId = Dom4JHelper.findGmlId(element);
+
+		    String message = getLocationDescription(element, currentGmlId) + ": " + e.getMessage();
+
+		    validatorContext.addError(message, new IdErrorLocation(currentGmlId));
+		    
+		    if(isTestGeneral) generallyValid = false;
+		    if(isTestIsSimple) isSimple = false;
+		    if(isTestPolygonPatchConnectivity) polygonPatchesAreConnected = false;
+		}
 	    }
 
 	    // ================
 	    // Test: general validity
-	    if (isTestGeneral) {
+	    if (isTestGeneral && generallyValid) {
 		boolean isValid = checkGeneralValidity(geom, jtsGeom, gmlVersion);
 		if (!isValid) {
 		    generallyValid = false;
@@ -276,7 +289,7 @@ public class GeometryElementHandler implements ElementHandler {
 
 	    // ================
 	    // Test: polygon patches of a surface are connected
-	    if (isTestPolygonPatchConnectivity) {
+	    if (isTestPolygonPatchConnectivity && polygonPatchesAreConnected) {
 		boolean isValid = checkConnectivityOfPolygonPatches(geom, jtsGeom);
 		if (!isValid) {
 		    polygonPatchesAreConnected = false;
@@ -294,7 +307,7 @@ public class GeometryElementHandler implements ElementHandler {
 
 	    // ================
 	    // Test: isSimple
-	    if (isTestIsSimple) {
+	    if (isTestIsSimple && isSimple) {
 
 		IsSimpleOp op = new IsSimpleOp(jtsGeom);
 		boolean isValid = op.isSimple();
@@ -332,14 +345,14 @@ public class GeometryElementHandler implements ElementHandler {
 	    LOGGER.error(e.getMessage(), e);
 	    validatorContext.addError(
 		    ValidatorMessageBundle.getMessage("validator.core.validation.geometry.unknown-exception"));
-
+	    
 	} catch (Exception e) {
 	    String currentGmlId = Dom4JHelper.findGmlId(element);
 
 	    String message = getLocationDescription(element, currentGmlId) + ": " + e.getMessage();
 
 	    validatorContext.addError(message, new IdErrorLocation(currentGmlId));
-
+	    
 	    LOGGER.error(e.getMessage(), e);
 	}
 
