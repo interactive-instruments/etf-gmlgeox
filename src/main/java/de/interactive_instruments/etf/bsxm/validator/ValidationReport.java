@@ -62,7 +62,8 @@ public final class ValidationReport {
     }
 
     // only copy skipped
-    @NotNull @Contract(" -> new")
+    @NotNull
+    @Contract(" -> new")
     ValidationReport creatCopyWithResults() {
         return new ValidationReport(this);
     }
@@ -70,7 +71,8 @@ public final class ValidationReport {
     /**
      * @return the validationResult
      */
-    @NotNull @Contract(pure = true)
+    @NotNull
+    @Contract(pure = true)
     public String getValidationResult() {
         return Token.string(testResults);
     }
@@ -79,7 +81,8 @@ public final class ValidationReport {
         testResults[validatorId] = 'S';
     }
 
-    @NotNull @Contract(" -> new")
+    @NotNull
+    @Contract(" -> new")
     private FTxt isValidAsBytes() {
         for (int i = 0; i < testResults.length; i++) {
             if (testResults[i] == 'F') {

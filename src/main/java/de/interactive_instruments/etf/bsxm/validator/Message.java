@@ -15,6 +15,8 @@
  */
 package de.interactive_instruments.etf.bsxm.validator;
 
+import static de.interactive_instruments.etf.bsxm.validator.ValidationReport.*;
+
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.MessageFormat;
@@ -31,8 +33,6 @@ import org.basex.query.value.node.FAttr;
 import org.basex.query.value.node.FElem;
 import org.basex.util.Token;
 import org.deegree.geometry.primitive.Point;
-
-import static de.interactive_instruments.etf.bsxm.validator.ValidationReport.*;
 
 /**
  * @author Jon Herrmann ( herrmann aT interactive-instruments doT de )

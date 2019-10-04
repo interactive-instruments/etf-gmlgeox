@@ -26,7 +26,6 @@ import com.vividsolutions.jts.geom.Coordinate;
 
 import org.basex.query.util.list.ANodeList;
 import org.basex.query.value.node.FElem;
-import org.basex.query.value.node.FTxt;
 import org.deegree.geometry.points.Points;
 import org.deegree.geometry.primitive.Curve;
 import org.deegree.geometry.primitive.Point;

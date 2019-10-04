@@ -21,11 +21,11 @@ import org.basex.util.hash.TokenIntMap;
 import org.deegree.cs.CRSCodeType;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
-
-import de.interactive_instruments.SUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import de.interactive_instruments.SUtils;
 
 /**
  * Command to determine the SRS
