@@ -11,6 +11,6 @@ nl.vrom.roo.validator.core.reporting
 nl.vrom.roo.validator.core.reporting.exception
 nl.vrom.roo.validator.core.util
 nl.vrom.roo.validator.core.validation
-nl.vrom.roo.validator.core.validation.exception
-nl.vrom.roo.validator.core.validation.impl
-nl.vrom.roo.validator.core.validation.resolver
+nl.vrom.roo.gmlgeox.validation.exception
+nl.vrom.roo.gmlgeox.validation.impl
+nl.vrom.roo.gmlgeox.validation.resolver

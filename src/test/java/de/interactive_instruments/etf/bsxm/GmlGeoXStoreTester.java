@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import org.apache.commons.io.FileUtils;
 import org.basex.query.QueryException;
 import org.basex.query.QueryModule;
 
@@ -52,7 +51,7 @@ public class GmlGeoXStoreTester extends QueryModule {
         final File tempFile = new File(tempDir, moduleId + ".tmp");
 
         if (tempFile.exists()) {
-            FileUtils.deleteQuietly(tempFile);
+            tempFile.delete();
         }
 
         try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile);

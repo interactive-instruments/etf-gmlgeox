@@ -32,6 +32,8 @@ import org.deegree.geometry.standard.AbstractDefaultGeometry;
 import org.deegree.geometry.standard.JTSGeometryPair;
 import org.junit.Test;
 
+import de.interactive_instruments.etf.bsxm.geometry.IIGeometryFactory;
+
 public final class DegreeArcTest {
 
     @Test

@@ -3,8 +3,9 @@ import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';
 declare namespace gml = 'http://www.opengis.net/gml/3.2';
 declare namespace ii = 'http://www.interactive-instruments.de/test';
 
-let $candidates := db:open("GmlGeoXUnitTestDB")//ii:member/*
+let $candidates := db:open("GmlGeoXUnitTestDB-000")//ii:member/*
 
+let $init := ggeo:init('GmlGeoXUnitTestDB-000')
 let $dummyUnregisterDefaultGmlGeoXGeometryTypes := prof:void(ggeo:unregisterAllGmlGeometries())
 let $dummyRegisterRelevantGmlGeometryTypes :=  prof:void(('Point','MultiPoint','Curve','MultiCurve','CompositeCurve','PolyhedralSurface','Surface','MultiSurface','CompositeSurface') ! ggeo:registerGmlGeometry(.))
 
@@ -24,15 +25,10 @@ let $featuresWithErrors_map :=
     else 
       (: map:entry(string($candidate/@gml:id), $validationResult) :)
       let $result := $validationResult/*:result/text()
-      let $messages := 
-        for $msg in $validationResult/*:message
-        let $type :=  $msg/data(@type)
-        return
-          if($type = ('WARNING','NOTICE')) then
-            ()
-          else
-            '(' ||$type || ') ' || $msg/text()
-      let $errDescription := string-join(($result,$messages),' ')
+      let $messages :=
+        for $error in $validationResult/*:errors/*:message
+            return ' ID ' || $error/*:argument[@token='ID']/text() || ', context element ' || $error/*:argument[@token='context'] || " : " || $error/*:argument[@token='original'] || " Coordinates (" ||  $error/*:argument[@token='coordinates'] || ')'
+      let $errDescription := string-join(($result, $messages),' ')
       return
         map:entry(string($candidate/@gml:id), ($candidate,$errDescription))
  )

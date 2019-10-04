@@ -1,0 +1,239 @@
+<!--Die NAS-Datei wurde mit der FI-Version 6.4.3.17504 erstellt.-->
+<AX_Bestandsdatenauszug xmlns="http://www.adv-online.de/namespaces/adv/gid/6.0" xmlns:gsr="http://www.isotc211.org/2005/gsr" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:fc="http://www.adv-online.de/namespaces/adv/gid/fc/6.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:wfsext="http://www.adv-online.de/namespaces/adv/gid/wfsext" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:ogc="http://www.adv-online.de/namespaces/adv/gid/ogc" xmlns:wfs="http://www.adv-online.de/namespaces/adv/gid/wfs" xmlns:gss="http://www.isotc211.org/2005/gss" xsi:schemaLocation="http://www.adv-online.de/namespaces/adv/gid/6.0 NAS-Operationen.xsd">
+  <erlaeuterung>&lt;?xml version="1.0" encoding="utf-8"?&gt;&lt;Protocol
+    xmlns="http://www.aed-sicad.de/namespaces/va"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"&gt;&lt;auftragsid&gt;AMGR000000002866&lt;/auftragsid&gt;&lt;profilkennung&gt;P#AAA-DB#fleischh&lt;/profilkennung&gt;&lt;antragsnummer&gt;BASNRW#L#QUARTALSABGABE
+    NRW&lt;/antragsnummer&gt;&lt;nasoperation&gt;Bestandsdatenauszug&lt;/nasoperation&gt;&lt;status&gt;beendet&lt;/status&gt;&lt;startzeitreal&gt;2018-06-27T17:57:55.8287725+02:00&lt;/startzeitreal&gt;&lt;endzeitreal&gt;2018-06-27T17:57:56.0783725+02:00&lt;/endzeitreal&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Das
+    Ergebnis wurde mit der FI-Version 6.4.3.17504
+    erstellt.&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:55.8287725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 1 für
+    AX_Bahnstrecke&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 77 für
+    AX_BauwerkImGewaesserbereich&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 32 für
+    AX_BauwerkImVerkehrsbereich&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 50 für
+    AX_BauwerkOderAnlageFuerIndustrieUndGewerbe&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 2 für
+    AX_BauwerkOderAnlageFuerSportFreizeitUndErholung&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 20 für
+    AX_Fahrbahnachse&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 648 für
+    AX_Fahrwegachse&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 3 für
+    AX_FlaecheBesondererFunktionalerPraegung&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 47 für
+    AX_FlaecheGemischterNutzung&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 2 für
+    AX_Friedhof&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 2 für
+    AX_Gebietsgrenze&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 139 für
+    AX_Gehoelz&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 200 für
+    AX_Gewaesserachse&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 3 für
+    AX_Gewaesserstationierungsachse&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 11 für
+    AX_IndustrieUndGewerbeflaeche&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 1 für
+    AX_KommunalesGebiet&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 333 für
+    AX_Landwirtschaft&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 9 für
+    AX_Leitung&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 28 für
+    AX_NaturUmweltOderBodenschutzrecht&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 7 für
+    AX_Ortslage&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 1 für
+    AX_Platz&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 2 für
+    AX_SonstigesBauwerkOderSonstigeEinrichtung&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 6 für
+    AX_SportFreizeitUndErholungsflaeche&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 3 für
+    AX_StehendesGewaesser&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 107 für
+    AX_Strasse&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 302 für
+    AX_Strassenachse&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 30 für
+    AX_Strassenverkehr&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 1 für
+    AX_TagebauGrubeSteinbruch&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 2 für
+    AX_UnlandVegetationsloseFlaeche&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 68 für
+    AX_Vegetationsmerkmal&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 186 für
+    AX_Wald&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 35 für
+    AX_Wasserlauf&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 1 für
+    AX_Wasserspiegelhoehe&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 28 für
+    AX_WegPfadSteig&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;Message&gt;&lt;Category&gt;NOTHING&lt;/Category&gt;&lt;MessageLevel&gt;Info&lt;/MessageLevel&gt;&lt;MessageText&gt;Bestandsdatenauszug:
+    Anzahl gefundener Features für Portion 5: 85 für
+    AX_Wohnbauflaeche&lt;/MessageText&gt;&lt;ProcessingTime&gt;2018-06-27T17:57:56.0783725+02:00&lt;/ProcessingTime&gt;&lt;StateSpecified&gt;false&lt;/StateSpecified&gt;&lt;MapCategorySpecified&gt;false&lt;/MapCategorySpecified&gt;&lt;/Message&gt;&lt;portionskennung&gt;&lt;profilkennung&gt;P#AAA-DB#fleischh&lt;/profilkennung&gt;&lt;datum&gt;2018-06-27T15:57:40Z&lt;/datum&gt;&lt;laufendeNummerVonGesamtzahl&gt;5&lt;/laufendeNummerVonGesamtzahl&gt;&lt;gesamtzahl&gt;676&lt;/gesamtzahl&gt;&lt;suedwestEcke
+    xsi:type="q1:DirectPositionType" srsName="urn:adv:crs:ETRS89_UTM32"
+    xmlns:q1="http://www.opengis.net/gml/3.2"&gt;316000.000
+    5574000.000&lt;/suedwestEcke&gt;&lt;/portionskennung&gt;&lt;/Protocol&gt;</erlaeuterung>
+  <erfolgreich>true</erfolgreich>
+  <antragsnummer>BASNRW#L#QUARTALSABGABE NRW</antragsnummer>
+  <allgemeineAngaben>
+    <AX_K_Benutzungsergebnis>
+      <folgeverarbeitung>
+        <AX_FOLGEVA>
+          <datenformat>1000</datenformat>
+        </AX_FOLGEVA>
+      </folgeverarbeitung>
+      <empfaenger>
+        <AA_Empfaenger>
+          <direkt>true</direkt>
+        </AA_Empfaenger>
+      </empfaenger>
+    </AX_K_Benutzungsergebnis>
+  </allgemeineAngaben>
+  <koordinatenangaben>
+    <AA_Koordinatenreferenzsystemangaben>
+      <crs xlink:href="urn:adv:crs:ETRS89_UTM32"/>
+      <anzahlDerNachkommastellen>3</anzahlDerNachkommastellen>
+      <standard>true</standard>
+    </AA_Koordinatenreferenzsystemangaben>
+  </koordinatenangaben>
+  <enthaelt>
+    <wfsadv:FeatureCollection xmlns:wfsadv="http://www.adv-online.de/namespaces/adv/gid/wfs">
+      <gml:featureMember>
+        <AX_Boeschungsflaeche xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ows="http://www.opengis.net/ows" xmlns:adv="http://www.adv-online.de/namespaces/adv/gid/6.0" gml:id="DEBWLT010000r2HA">
+          <!-- DE.61002.G.b.001 -->
+          <gml:identifier codeSpace="http://www.adv-online.de/">urn:adv:oid:DEBWLT010000r2HA</gml:identifier>
+          <lebenszeitintervall>
+            <AA_Lebenszeitintervall>
+              <beginnt>2011-12-03T08:16:15Z</beginnt>
+            </AA_Lebenszeitintervall>
+          </lebenszeitintervall>
+          <modellart>
+            <AA_Modellart>
+              <advStandardModell>DLKM</advStandardModell>
+            </AA_Modellart>
+          </modellart>
+          <istTeilVon xlink:href="urn:adv:oid:DEBWLT010000r2Hf"/>
+          <position>
+            <gml:Surface srsName="urn:adv:crs:DE_DHDN_3GK3_BW100" gml:id="BZBF">
+              <gml:patches>
+                <gml:PolygonPatch>
+                  <gml:exterior>
+                    <gml:Ring>
+                      <gml:curveMember>
+                        <gml:Curve gml:id="BZBG">
+                          <gml:segments>
+                            <gml:LineStringSegment>
+                              <gml:posList>565405.930 5409722.460 565416.170 5409725.990 565433.990 5409736.460 565451.370 5409752.990 565467.710 5409768.540 565484.360 5409779.760 565517.800 5409824.140 565516.740 5409834.410 565513.640 5409835.980 565505.470 5409826.280 565492.200 5409809.160 565475.160 5409788.890 565461.780 5409774.210 565446.050 5409758.470 565428.980 5409742.750 565413.110 5409729.540 565407.480 5409725.180 565406.510 5409724.430</gml:posList>
+                            </gml:LineStringSegment>
+                          </gml:segments>
+                        </gml:Curve>
+                      </gml:curveMember>
+                      <gml:curveMember>
+                        <gml:Curve gml:id="BZBH">
+                          <gml:segments>
+                            <gml:Arc>
+                              <gml:posList>565406.510 5409724.430 565405.916 5409723.535 565405.930 5409722.460</gml:posList>
+                            </gml:Arc>
+                          </gml:segments>
+                        </gml:Curve>
+                      </gml:curveMember>
+                    </gml:Ring>
+                  </gml:exterior>
+                </gml:PolygonPatch>
+              </gml:patches>
+            </gml:Surface>
+          </position>
+        </AX_Boeschungsflaeche>
+      </gml:featureMember>
+      <gml:featureMember>
+        <AX_Gelaendekante xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ows="http://www.opengis.net/ows" xmlns:adv="http://www.adv-online.de/namespaces/adv/gid/6.0" gml:id="DEBWLT010000r2HW">
+          <!-- DE.61002.G.b.001 -->
+          <gml:identifier codeSpace="http://www.adv-online.de/">urn:adv:oid:DEBWLT010000r2HW</gml:identifier>
+          <lebenszeitintervall>
+            <AA_Lebenszeitintervall>
+              <beginnt>2011-12-03T08:16:15Z</beginnt>
+            </AA_Lebenszeitintervall>
+          </lebenszeitintervall>
+          <modellart>
+            <AA_Modellart>
+              <advStandardModell>DLKM</advStandardModell>
+            </AA_Modellart>
+          </modellart>
+          <istTeilVon xlink:href="urn:adv:oid:DEBWLT010000r2Hf"/>
+          <position>
+            <gml:CompositeCurve gml:id="BZDC">
+              <gml:curveMember>
+                <gml:Curve srsName="urn:adv:crs:DE_DHDN_3GK3_BW100" gml:id="BZDD">
+                  <gml:segments>
+                    <gml:Arc>
+                      <gml:posList>565405.930 5409722.460 565405.916 5409723.535 565406.510 5409724.430</gml:posList>
+                    </gml:Arc>
+                    <gml:LineStringSegment>
+                      <gml:posList>565406.510 5409724.430 565407.480 5409725.180 565413.110 5409729.540 565428.980 5409742.750 565446.050 5409758.470 565461.780 5409774.210 565475.160 5409788.890 565492.200 5409809.160 565505.470 5409826.280 565513.640 5409835.980 565516.740 5409834.410</gml:posList>
+                    </gml:LineStringSegment>
+                  </gml:segments>
+                </gml:Curve>
+              </gml:curveMember>
+            </gml:CompositeCurve>
+          </position>
+          <artDerGelaendekante>1220</artDerGelaendekante>
+          <erfassung>
+            <AX_Erfassung_DGM>
+              <description>
+                <AX_DQErfassungsmethode>5030</AX_DQErfassungsmethode>
+              </description>
+              <identifikation>5410</identifikation>
+            </AX_Erfassung_DGM>
+          </erfassung>
+        </AX_Gelaendekante>
+      </gml:featureMember>
+      <gml:featureMember>
+        <AX_Gelaendekante xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ows="http://www.opengis.net/ows" xmlns:adv="http://www.adv-online.de/namespaces/adv/gid/6.0" gml:id="DEBWLT010000r2HX">
+          <!-- DE.61002.G.b.001 -->
+          <gml:identifier codeSpace="http://www.adv-online.de/">urn:adv:oid:DEBWLT010000r2HX</gml:identifier>
+          <lebenszeitintervall>
+            <AA_Lebenszeitintervall>
+              <beginnt>2011-12-03T08:16:15Z</beginnt>
+            </AA_Lebenszeitintervall>
+          </lebenszeitintervall>
+          <modellart>
+            <AA_Modellart>
+              <advStandardModell>DLKM</advStandardModell>
+            </AA_Modellart>
+          </modellart>
+          <istTeilVon xlink:href="urn:adv:oid:DEBWLT010000r2Hf"/>
+          <position>
+            <gml:CompositeCurve gml:id="BZDE">
+              <gml:curveMember>
+                <gml:Curve srsName="urn:adv:crs:DE_DHDN_3GK3_BW100" gml:id="BZDF">
+                  <gml:segments>
+                    <gml:LineStringSegment>
+                      <gml:posList>565516.740 5409834.410 565517.800 5409824.140 565484.360 5409779.760 565467.710 5409768.540 565451.370 5409752.990 565433.990 5409736.460 565416.170 5409725.990 565405.930 5409722.460</gml:posList>
+                    </gml:LineStringSegment>
+                  </gml:segments>
+                </gml:Curve>
+              </gml:curveMember>
+            </gml:CompositeCurve>
+          </position>
+          <artDerGelaendekante>1230</artDerGelaendekante>
+          <erfassung>
+            <AX_Erfassung_DGM>
+              <description>
+                <AX_DQErfassungsmethode>5030</AX_DQErfassungsmethode>
+              </description>
+              <identifikation>5410</identifikation>
+            </AX_Erfassung_DGM>
+          </erfassung>
+        </AX_Gelaendekante>
+      </gml:featureMember>
+    </wfsadv:FeatureCollection>
+  </enthaelt>
+</AX_Bestandsdatenauszug>
+        <!-- Kom=L@000000002866@QUARTALSABGABE NRW -->

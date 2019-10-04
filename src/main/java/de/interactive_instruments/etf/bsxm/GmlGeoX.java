@@ -15,36 +15,26 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
+import static de.interactive_instruments.etf.bsxm.index.GeometryCache.DEFAULT_SPATIAL_INDEX;
+import static de.interactive_instruments.etf.bsxm.validator.GeometryValidator.VALIDATE_ALL;
+
 import java.io.Externalizable;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
+import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import nl.vrom.roo.validator.core.ValidatorContext;
-import nl.vrom.roo.validator.core.ValidatorMessage;
-import nl.vrom.roo.validator.core.dom4j.handlers.GeometryElementHandler;
+import java.util.stream.Stream;
 
 import com.github.davidmoten.rtree.geometry.Geometries;
-import com.google.common.base.Joiner;
 import com.vividsolutions.jts.algorithm.Angle;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
@@ -57,37 +47,35 @@ import com.vividsolutions.jts.geom.util.GeometryExtracter;
 import com.vividsolutions.jts.index.strtree.STRtree;
 import com.vividsolutions.jts.operation.union.CascadedPolygonUnion;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.basex.api.dom.BXNode;
-import org.basex.core.Context;
-import org.basex.data.Data;
 import org.basex.query.QueryException;
 import org.basex.query.QueryModule;
-import org.basex.query.QueryProcessor;
 import org.basex.query.value.Value;
-import org.basex.query.value.item.Atm;
 import org.basex.query.value.item.Item;
 import org.basex.query.value.item.Jav;
 import org.basex.query.value.node.ANode;
 import org.basex.query.value.node.DBNode;
+import org.basex.query.value.node.FElem;
 import org.basex.query.value.seq.Empty;
-import org.basex.util.InputInfo;
 import org.deegree.commons.xml.XMLParsingException;
-import org.deegree.cs.CRSCodeType;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
 import org.deegree.geometry.primitive.Curve;
-import org.dom4j.io.SAXReader;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
-import de.interactive_instruments.IFile;
-import de.interactive_instruments.IoUtils;
-import de.interactive_instruments.properties.PropertyUtils;
+import de.interactive_instruments.etf.bsxm.geometry.Circle;
+import de.interactive_instruments.etf.bsxm.geometry.IIGeometryFactory;
+import de.interactive_instruments.etf.bsxm.geometry.InvalidCircleException;
+import de.interactive_instruments.etf.bsxm.index.GeometryCache;
+import de.interactive_instruments.etf.bsxm.node.DBNodeRef;
+import de.interactive_instruments.etf.bsxm.node.DBNodeRefFactory;
+import de.interactive_instruments.etf.bsxm.node.DBNodeRefLookup;
+import de.interactive_instruments.etf.bsxm.parser.BxNamespaceHolder;
+import de.interactive_instruments.etf.bsxm.validator.GeometryValidator;
 
 /**
  * This module supports the validation of geometries as well as computing the spatial relationship between geometries.
@@ -97,164 +85,42 @@ import de.interactive_instruments.properties.PropertyUtils;
  *
  * @author Johannes Echterhoff (echterhoff at interactive-instruments dot de)
  */
-public class GmlGeoX extends QueryModule implements Externalizable {
+final public class GmlGeoX extends QueryModule implements Externalizable {
 
-    public static final String NS = "de.interactive_instruments.etf.bsxm.GmlGeoX";
-    public static final String PREFIX = "ggeo";
+    private static final Pattern INTERSECTIONPATTERN = Pattern.compile("[0-2*TF]{9}");
 
-    public static final String ETF_GMLGEOX_SRSCONFIG_DIR = "etf.gmlgeox.srsconfig.dir";
+    private final com.vividsolutions.jts.geom.GeometryFactory jtsFactory = new com.vividsolutions.jts.geom.GeometryFactory();
+    private IIGeometryFactory geometryFactory;
+    private JtsTransformer jtsTransformer;
+    private DeegreeTransformer deegreeTransformer;
+    private DBNodeRefLookup dbNodeRefLookup;
+    private DBNodeRefFactory dbNodeRefFactory;
+    private SrsLookup srsLookup;
+    private GeometryValidator geometryValidator;
+    private GeometryCache geometryCache;
 
-    public enum SpatialRelOp {
-        CONTAINS, CROSSES, EQUALS, INTERSECTS, ISDISJOINT, ISWITHIN, OVERLAPS, TOUCHES
-    }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(GmlGeoX.class);
-
-    private static final Pattern INTERSECTIONPATTERN = Pattern.compile("[0-2\\*TF]{9}");
-
-    private static final String SRS_SEARCH_QUERY = "declare namespace xlink='http://www.w3.org/1999/xlink';"
-            + " declare variable $geom external; let $adv := root($geom)/*[local-name() = ('AX_Bestandsdatenauszug','AX_NutzerbezogeneBestandsdatenaktualisierung_NBA','AA_Fortfuehrungsauftrag','AX_Einrichtungsauftrag')]"
-            + " return if($adv) then $adv/*:koordinatenangaben/*[xs:boolean(*:standard)]/*:crs/data(@xlink:href)"
-            + " else let $ancestors := $geom/ancestor::* let $ancestorWithSrsName := $ancestors[@srsName][1]"
-            + " return if($ancestorWithSrsName) then $ancestorWithSrsName/data(@srsName)"
-            + " else $ancestors[*:boundedBy/*:Envelope/@srsName][1]/*:boundedBy/*:Envelope/data(@srsName)";
-
-    private static final String SRS_SEARCH_QUERY_GEOMETRY_COMPONENT = "declare namespace xlink='http://www.w3.org/1999/xlink';"
-            + " declare variable $geomComp external; let $ancestors := $geomComp/ancestor::* let $ancestorWithSrsName := $ancestors[@srsName][1]"
-            + " return if($ancestorWithSrsName) then $ancestorWithSrsName/data(@srsName)"
-            + " else let $adv := root($geomComp)/*[local-name() = ('AX_Bestandsdatenauszug','AX_NutzerbezogeneBestandsdatenaktualisierung_NBA','AA_Fortfuehrungsauftrag','AX_Einrichtungsauftrag')]"
-            + " return if($adv) then $adv/*:koordinatenangaben/*[xs:boolean(*:standard)]/*:crs/data(@xlink:href)"
-            + " else $ancestors[*:boundedBy/*:Envelope/@srsName][1]/*:boundedBy/*:Envelope/data(@srsName)";
-
-    // Byte comparison
-    private static final byte[] srsNameB = new String("srsName").getBytes();
-
-    protected IIGeometryFactory geometryFactory;
-    protected com.vividsolutions.jts.geom.GeometryFactory jtsFactory;
-    protected GmlGeoXUtils geoutils;
-    private TreeSet<String> gmlGeometries = new TreeSet<String>();
-    private String standardSRS = null;
-
-    private static final boolean debug = LOGGER.isDebugEnabled();
-
-    // SERIALIZATION TBD
-    private static final Set<String> LOGGED_UNKNOWN_CRS = new HashSet<>();
-
-    private GeometryManager mgr = new GeometryManager();
+    private static final Logger logger = LoggerFactory.getLogger(GmlGeoX.class);
+    private static final boolean debug = logger.isDebugEnabled();
 
     private int count = 0;
     private int count2 = 0;
 
-    public GmlGeoX() throws QueryException {
+    public GmlGeoX() {
 
-        logMemUsage("GmlGeoX#init");
-
-        // default geometry types for which validation is performed
-        registerGmlGeometry("Point");
-        registerGmlGeometry("Polygon");
-        registerGmlGeometry("Surface");
-        registerGmlGeometry("Curve");
-        registerGmlGeometry("LinearRing");
-
-        registerGmlGeometry("MultiPoint");
-        registerGmlGeometry("MultiPolygon");
-        registerGmlGeometry("MultiGeometry");
-        registerGmlGeometry("MultiSurface");
-        registerGmlGeometry("MultiCurve");
-
-        registerGmlGeometry("Ring");
-        registerGmlGeometry("LineString");
-
-        final ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-            if (CRSManager.get("default") == null
-                    || CRSManager.get("default")
-                            .getCRSByCode(CRSCodeType.valueOf("http://www.opengis.net/def/crs/EPSG/0/5555")) == null) {
-                loadGmlGeoXSrsConfiguration();
-            }
-        } finally {
-            Thread.currentThread().setContextClassLoader(cl);
-        }
-
-        this.geometryFactory = new IIGeometryFactory();
-        this.jtsFactory = new com.vividsolutions.jts.geom.GeometryFactory();
-        this.geoutils = new GmlGeoXUtils(this, this.geometryFactory, this.jtsFactory);
     }
 
-    private void loadGmlGeoXSrsConfiguration() throws QueryException {
-        final String srsConfigDirPath = PropertyUtils.getenvOrProperty(ETF_GMLGEOX_SRSCONFIG_DIR, null);
-        final CRSManager crsMgr = new CRSManager();
-        /* If the configuration for EPSG 5555 can be accessed, the CRSManger is already configured by the test driver. */
-        if (srsConfigDirPath != null) {
-            final IFile srsConfigDirectory = new IFile(srsConfigDirPath, ETF_GMLGEOX_SRSCONFIG_DIR);
-
-            try {
-                srsConfigDirectory.expectDirIsWritable();
-                crsMgr.init(srsConfigDirectory);
-            } catch (Exception e) {
-                throw new QueryException(
-                        "Could not load SRS configuration files from directory referenced from GmlGeoX property '"
-                                + ETF_GMLGEOX_SRSCONFIG_DIR
-                                + "'. Reference is: "
-                                + srsConfigDirPath
-                                + " Exception message is: "
-                                + e.getMessage());
-            }
-        } else {
-            try {
-                /* We use the same folder each time an instance of GmlGeoX is created. The configuration files will not be deleted upon exit. That shouldn't be a problem since we always use the same folder. */
-                final String tempDirPath = System.getProperty("java.io.tmpdir");
-                final File tempDir = new File(tempDirPath, "gmlGeoXSrsConfig");
-
-                if (tempDir.exists()) {
-                    FileUtils.deleteQuietly(tempDir);
-                }
-                tempDir.mkdirs();
-
-                IoUtils.copyResourceToFile(
-                        this, "/srsconfig/default.xml", new IFile(tempDir, "default.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/ntv2/beta2007.gsb",
-                        new IFile(tempDir, "deegree/d3/config/ntv2/beta2007.gsb"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/parser-files.xml",
-                        new IFile(tempDir, "deegree/d3/parser-files.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/crs-definitions.xml",
-                        new IFile(tempDir, "deegree/d3/config/crs-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/datum-definitions.xml",
-                        new IFile(tempDir, "deegree/d3/config/datum-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/ellipsoid-definitions.xml",
-                        new IFile(tempDir, "deegree/d3/config/ellipsoid-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/pm-definitions.xml",
-                        new IFile(tempDir, "deegree/d3/config/pm-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/projection-definitions.xml",
-                        new IFile(tempDir, "deegree/d3/config/projection-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/transformation-definitions.xml",
-                        new IFile(tempDir, "deegree/d3/config/transformation-definitions.xml"));
-
-                crsMgr.init(tempDir);
-            } catch (IOException e) {
-                throw new QueryException(
-                        "Exception occurred while extracting the SRS configuration files provided by GmlGeoX to a temporary "
-                                + "directory and loading them from there. Exception message is: "
-                                + e.getMessage());
-            }
-        }
+    @Requires(Permission.NONE)
+    public void init(final String databaseName) {
+        final BxNamespaceHolder bxNamespaceHolder = BxNamespaceHolder.init(queryContext);
+        this.srsLookup = new SrsLookup(null);
+        this.geometryFactory = new IIGeometryFactory();
+        this.geometryCache = new GeometryCache();
+        this.deegreeTransformer = new DeegreeTransformer(this.geometryFactory, bxNamespaceHolder);
+        this.jtsTransformer = new JtsTransformer(this.deegreeTransformer, this.jtsFactory, this.srsLookup);
+        this.dbNodeRefFactory = DBNodeRefFactory.create(databaseName);
+        this.dbNodeRefLookup = new DBNodeRefLookup(this.queryContext, this.dbNodeRefFactory);
+        this.geometryValidator = new GeometryValidator(this.srsLookup, this.jtsTransformer, this.deegreeTransformer,
+                bxNamespaceHolder);
     }
 
     /**
@@ -266,15 +132,15 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      *             in case that the SRS configuration directory does not exist, is not a directory, cannot be read, or an exception occurred while loading the configuration files
      */
     @Requires(Permission.NONE)
-    public void configureSpatialReferenceSystems(final String configurationDirectoryPathName)
-            throws QueryException {
+    public void init(final String databaseName, final String configurationDirectoryPathName) throws QueryException {
+        init(databaseName);
         final ClassLoader cl = Thread.currentThread().getContextClassLoader();
         try {
             final File configurationDirectory = new File(configurationDirectoryPathName);
             if (!configurationDirectory.exists()
                     || !configurationDirectory.isDirectory()
                     || !configurationDirectory.canRead()) {
-                throw new IllegalArgumentException(
+                throw new GmlGeoXException(
                         "Given path name does not identify a directory that exists and that can be read.");
             } else {
                 Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
@@ -283,7 +149,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             }
 
         } catch (Exception e) {
-            throw new QueryException(e);
+            throw new GmlGeoXException(e);
         } finally {
             Thread.currentThread().setContextClassLoader(cl);
         }
@@ -314,32 +180,23 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry[] flattenAllGeometryCollections(
+    public static com.vividsolutions.jts.geom.Geometry[] flattenAllGeometryCollections(
             com.vividsolutions.jts.geom.Geometry geom) {
 
         if (geom == null) {
-
             return new com.vividsolutions.jts.geom.Geometry[]{};
-
         } else {
-
             final List<com.vividsolutions.jts.geom.Geometry> geoms;
-
             if (geom instanceof GeometryCollection) {
-
-                GeometryCollection col = (GeometryCollection) geom;
-
+                final GeometryCollection col = (GeometryCollection) geom;
                 geoms = new ArrayList<>(col.getNumGeometries());
-
                 for (int i = 0; i < col.getNumGeometries(); i++) {
                     geoms.addAll(Arrays.asList(flattenAllGeometryCollections(col.getGeometryN(i))));
                 }
-
             } else {
                 geoms = Collections.singletonList(geom);
             }
-
-            return geoms.toArray(new com.vividsolutions.jts.geom.Geometry[geoms.size()]);
+            return geoms.toArray(new com.vividsolutions.jts.geom.Geometry[0]);
         }
     }
 
@@ -367,7 +224,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             return null;
 
         } else if (!(geom instanceof LineString || geom instanceof MultiLineString)) {
-            throw new QueryException(
+            throw new GmlGeoXException(
                     "Geometry must be a LineString. Found: " + geom.getClass().getName());
         } else {
 
@@ -380,7 +237,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 max = ((Number) maxAngle).doubleValue();
 
                 if (min < 0 || max < 0 || min > 180 || max > 180 || min > max) {
-                    throw new QueryException(
+                    throw new GmlGeoXException(
                             "0 <= minAngle <= maxAngle <= 180. Found minAngle '"
                                     + minAngle
                                     + "', maxAngle '"
@@ -388,7 +245,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                                     + "'.");
                 }
             } else {
-                throw new QueryException("minAngle and maxAngle must be numbers");
+                throw new GmlGeoXException("minAngle and maxAngle must be numbers");
             }
 
             Coordinate[] coords = geom.getCoordinates();
@@ -399,22 +256,19 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
             } else {
 
-                GeometryFactory fac = geom.getFactory();
-
-                List<com.vividsolutions.jts.geom.Point> result = new ArrayList<>();
-
+                final GeometryFactory fac = geom.getFactory();
+                final List<com.vividsolutions.jts.geom.Point> result = new ArrayList<>(coords.length / 3);
                 for (int i = 0; i < coords.length - 2; i++) {
+                    final Coordinate coord1 = coords[i];
+                    final Coordinate coord2 = coords[i + 1];
+                    final Coordinate coord3 = coords[i + 2];
 
-                    Coordinate coord1 = coords[i];
-                    Coordinate coord2 = coords[i + 1];
-                    Coordinate coord3 = coords[i + 2];
+                    final double angleVector1to2 = Angle.angle(coord1, coord2);
+                    final double angleVector2to3 = Angle.angle(coord2, coord3);
 
-                    double angleVector1to2 = Angle.angle(coord1, coord2);
-                    double angleVector2to3 = Angle.angle(coord2, coord3);
+                    final double diff_rad = Angle.diff(angleVector1to2, angleVector2to3);
 
-                    double diff_rad = Angle.diff(angleVector1to2, angleVector2to3);
-
-                    double diff_deg = Angle.toDegrees(diff_rad);
+                    final double diff_deg = Angle.toDegrees(diff_rad);
 
                     if (diff_deg >= min && diff_deg <= max) {
                         com.vividsolutions.jts.geom.Point p = fac.createPoint(coord2);
@@ -425,7 +279,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 if (result.isEmpty()) {
                     return null;
                 } else {
-                    return result.toArray(new com.vividsolutions.jts.geom.Point[result.size()]);
+                    return result.toArray(new com.vividsolutions.jts.geom.Point[0]);
                 }
             }
         }
@@ -448,11 +302,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             com.vividsolutions.jts.geom.Geometry geom, Object limitAngle) throws QueryException {
 
         if (geom == null) {
-
             return null;
-
         } else if (!(geom instanceof LineString || geom instanceof MultiLineString)) {
-            throw new QueryException(
+            throw new GmlGeoXException(
                     "Geometry must be a LineString. Found: " + geom.getClass().getName());
         } else {
 
@@ -463,24 +315,22 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 limit = ((Number) limitAngle).doubleValue();
 
                 if (limit < 0 || limit > 180) {
-                    throw new QueryException(
+                    throw new GmlGeoXException(
                             "0 <= limitAngle <= 180. Found limitAngle '" + limitAngle + "'.");
                 }
             } else {
-                throw new QueryException("limitAngle must be a number");
+                throw new GmlGeoXException("limitAngle must be a number");
             }
 
-            Coordinate[] coords = geom.getCoordinates();
+            final Coordinate[] coords = geom.getCoordinates();
 
             if (coords.length < 3) {
-
                 return null;
-
             } else {
 
-                GeometryFactory fac = geom.getFactory();
+                final GeometryFactory fac = geom.getFactory();
 
-                List<com.vividsolutions.jts.geom.Point> result = new ArrayList<>();
+                final List<com.vividsolutions.jts.geom.Point> result = new ArrayList<>(coords.length / 3);
 
                 for (int i = 0; i < coords.length - 2; i++) {
 
@@ -504,14 +354,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 if (result.isEmpty()) {
                     return null;
                 } else {
-                    return result.toArray(new com.vividsolutions.jts.geom.Point[result.size()]);
+                    return result.toArray(new com.vividsolutions.jts.geom.Point[0]);
                 }
             }
         }
     }
 
     /**
-     * Calls the {@link #validate(ANode, String)} method, with <code>null</code> as the bitmask, resulting in a validation with all tests enabled.
+     * Calls the {@link #validate(ANode)} method, with <code>null</code> as the bitmask, resulting in a validation with all tests enabled.
      *
      * <p>
      * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry types.
@@ -519,11 +369,10 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * @param node
      *            Node
      * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed.
-     * @throws QueryException
      */
     @Requires(Permission.NONE)
-    public String validate(ANode node) throws QueryException {
-        return this.validate(node, null);
+    public String validate(ANode node) {
+        return geometryValidator.validateWithSimplifiedResults(node, VALIDATE_ALL);
     }
 
     /**
@@ -577,93 +426,10 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * @param testMask
      *            test mask
      * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed.
-     * @throws QueryException
      */
-    public String validate(ANode node, String testMask) throws QueryException {
-        ValidationReport vr = this.executeValidate(node, testMask);
-        return vr.getValidationResult();
-    }
-
-    public Element validateAndReport(ANode node) throws QueryException {
-        return validateAndReport(node, null);
-    }
-
-    /**
-     * @see #executeValidate(ANode, String)
-     * @param node
-     *            Node
-     * @param testMask
-     *            test mask
-     * @return a DOM element like the following:
-     *
-     *         <pre>
-     * {@code
-     *         <ggeo:ValidationResult xmlns:ggeo=
-     * "de.interactive_instruments.etf.bsxm.GmlGeoX">
-     *           <ggeo:isValid>false</ggeo:isValid>
-     *           <ggeo:result>VFV</ggeo:result>
-     *           <ggeo:message type=
-     * "NOTICE">Detected GML standard version: GML3.2.</ggeo:message>
-     *           <ggeo:message type=
-     * "ERROR">Invalid surface (gml:id: s14). The patches of the surface are not connected.</ggeo:message>
-     *         </ggeo:ValidationResult>
-     * }
-     *         </pre>
-     *
-     *         Where:
-     *         <ul>
-     *         <li>ggeo:isValid - contains the boolean value indicating if the object passed all tests (defined by the testMask).
-     *         <li>ggeo:result - contains a string that is a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed
-     *         <li>ggeo:message (one for each message produced during validation) contains:
-     *         <ul>
-     *         <li>an XML attribute 'type' that indicates the severity level of the message ('FATAL', 'ERROR', 'WARNING', or 'NOTICE')
-     *         <li>the actual validation message as text content
-     *         </ul>
-     *         </ul>
-     *
-     * @throws QueryException
-     */
-    public Element validateAndReport(ANode node, String testMask) throws QueryException {
-
-        ValidationReport vr = this.executeValidate(node, testMask);
-
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-        docFactory.setNamespaceAware(true);
-
-        DocumentBuilder docBuilder;
-
-        try {
-            docBuilder = docFactory.newDocumentBuilder();
-        } catch (ParserConfigurationException e) {
-            throw new QueryException(e);
-        }
-
-        // root elements
-        Document doc = docBuilder.newDocument();
-
-        Element root = doc.createElementNS(NS, PREFIX + ":ValidationResult");
-        doc.appendChild(root);
-
-        Element isValid = doc.createElementNS(NS, PREFIX + ":isValid");
-        isValid.setTextContent(vr.isValid() ? "true" : "false");
-
-        root.appendChild(isValid);
-
-        Element result = doc.createElementNS(NS, PREFIX + ":result");
-        result.setTextContent(vr.getValidationResult());
-
-        root.appendChild(result);
-
-        for (ValidatorMessage vm : vr.getValidatorMessages()) {
-
-            Element msg = doc.createElementNS(NS, PREFIX + ":message");
-            root.appendChild(msg);
-
-            msg.setAttribute("type", vm.getType().toString());
-            msg.setTextContent(vm.getMessage());
-        }
-
-        return root;
+    @Requires(Permission.NONE)
+    public String validate(final ANode node, final String testMask) {
+        return geometryValidator.validateWithSimplifiedResults(node, testMask.getBytes());
     }
 
     /**
@@ -872,167 +638,58 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      *
      * @param node
      *            The GML geometry element to validate.
-     * @param testMask
-     *            Defines which tests shall be executed; if <code>null</code>, all tests will be executed.
      * @return a validation report, with the validation result and validation message (providing further details about any errors). The validation result is encoded as a sequence of characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF' shows that the first test was skipped, while the second test passed and the third and fourth failed.
      * @throws QueryException
      */
     @Requires(Permission.NONE)
-    ValidationReport executeValidate(ANode node, String testMask) throws QueryException {
+    public FElem validateAndReport(ANode node) {
+        return geometryValidator.validate(node, VALIDATE_ALL);
+    }
 
-        try {
-
-            // determine which tests to execute
-            boolean isTestGeonovum,
-                    isTestPolygonPatchConnectivity,
-                    isTestRepetitionInCurveSegments,
-                    isTestIsSimple;
-
-            if (testMask == null) {
-
-                isTestGeonovum = true;
-                isTestPolygonPatchConnectivity = true;
-                isTestRepetitionInCurveSegments = true;
-                isTestIsSimple = true;
-
-            } else {
-                isTestGeonovum = testMask.length() >= 1 && testMask.charAt(0) == '1';
-                isTestPolygonPatchConnectivity = testMask.length() >= 2 && testMask.charAt(1) == '1';
-                isTestRepetitionInCurveSegments = testMask.length() >= 3 && testMask.charAt(2) == '1';
-                isTestIsSimple = testMask.length() >= 4 && testMask.charAt(3) == '1';
-            }
-
-            boolean isValidGeonovum = false;
-            boolean polygonPatchesAreConnected = false;
-            boolean noRepetitionInCurveSegment = false;
-            boolean isSimple = false;
-
-            String srsName = determineSrsName(node);
-
-            BXNode elem = node.toJava();
-
-            List<ValidatorMessage> validationMessages = new ArrayList<ValidatorMessage>();
-            // ================
-            // Geonovum validation (deegree and JTS validation)
-
-            if (isTestGeonovum) {
-
-                ValidatorContext ctx = new ValidatorContext();
-
-                GeometryElementHandler handler = new GeometryElementHandler(ctx, null, srsName, this.geometryFactory);
-                /* configure handler with GML geometries specified through this class */
-                handler.unregisterAllGmlGeometries();
-                for (String additionalGmlElementName : gmlGeometries) {
-                    handler.registerGmlGeometry(additionalGmlElementName);
-                }
-
-                SAXReader saxReader = new SAXReader();
-                saxReader.setDefaultHandler(handler);
-
-                final InputStream stream = geoutils.nodeToInputStream(elem);
-                saxReader.read(stream);
-
-                isValidGeonovum = ctx.isSuccessful();
-
-                if (!isValidGeonovum) {
-                    validationMessages.addAll(ctx.getMessages());
-                }
-            }
-
-            if (isTestPolygonPatchConnectivity || isTestRepetitionInCurveSegments || isTestIsSimple) {
-
-                ValidatorContext ctx = new ValidatorContext();
-                SecondaryGeometryElementValidationHandler handler = new SecondaryGeometryElementValidationHandler(
-                        isTestPolygonPatchConnectivity,
-                        isTestRepetitionInCurveSegments,
-                        isTestIsSimple,
-                        ctx,
-                        srsName,
-                        this.geoutils,
-                        this.geometryFactory);
-
-                /* configure handler with GML geometries specified through this class */
-                handler.unregisterAllGmlGeometries();
-                for (String additionalGmlElementName : gmlGeometries) {
-                    handler.registerGmlGeometry(additionalGmlElementName);
-                }
-
-                SAXReader saxReader = new SAXReader();
-                saxReader.setDefaultHandler(handler);
-
-                final InputStream stream = geoutils.nodeToInputStream(elem);
-                saxReader.read(stream);
-
-                // ================
-                // Test: polygon patches of a surface are connected
-                if (isTestPolygonPatchConnectivity) {
-                    polygonPatchesAreConnected = handler.arePolygonPatchesConnected();
-                }
-
-                // ================
-                // Test: point repetition in curve segment
-                if (isTestRepetitionInCurveSegments) {
-                    noRepetitionInCurveSegment = handler.isNoRepetitionInCurveSegments();
-                }
-
-                // ================
-                // Test: isSimple
-                if (isTestIsSimple) {
-                    isSimple = handler.isSimple();
-                }
-
-                if (!polygonPatchesAreConnected || !noRepetitionInCurveSegment || !isSimple) {
-                    validationMessages.addAll(ctx.getMessages());
-                }
-            }
-
-            // combine results
-            StringBuilder sb = new StringBuilder();
-
-            if (!isTestGeonovum) {
-                sb.append("S");
-            } else if (isValidGeonovum) {
-                sb.append("V");
-            } else {
-                sb.append("F");
-            }
-
-            if (!isTestPolygonPatchConnectivity) {
-                sb.append("S");
-            } else if (polygonPatchesAreConnected) {
-                sb.append("V");
-            } else {
-                sb.append("F");
-            }
-
-            if (!isTestRepetitionInCurveSegments) {
-                sb.append("S");
-            } else if (noRepetitionInCurveSegment) {
-                sb.append("V");
-            } else {
-                sb.append("F");
-            }
-
-            if (!isTestIsSimple) {
-                sb.append("S");
-            } else if (isSimple) {
-                sb.append("V");
-            } else {
-                sb.append("F");
-            }
-
-            return new ValidationReport(sb.toString(), validationMessages);
-
-        } catch (Exception e) {
-            throw new QueryException(e);
-        }
+    /**
+     * @see #validateAndReport(ANode, String)
+     * @param node
+     *            Node
+     * @param testMask
+     *            Defines which tests shall be executed; if <code>null</code>, all tests will be executed.
+     * @return a DOM element like the following:
+     *
+     *         <pre>
+     * {@code
+     *         <ggeo:ValidationResult xmlns:ggeo=
+     * "de.interactive_instruments.etf.bsxm.GmlGeoX">
+     *           <ggeo:valid>false</ggeo:valid>
+     *           <ggeo:result>VFV</ggeo:result>
+     *           <ggeo:message type=
+     * "NOTICE">Detected GML standard version: GML3.2.</ggeo:message>
+     *           <ggeo:message type=
+     * "ERROR">Invalid surface (gml:id: s14). The patches of the surface are not connected.</ggeo:message>
+     *         </ggeo:ValidationResult>
+     * }
+     *         </pre>
+     *
+     *         Where:
+     *         <ul>
+     *         <li>ggeo:valid - contains the boolean value indicating if the object passed all tests (defined by the testMask).
+     *         <li>ggeo:result - contains a string that is a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed
+     *         <li>ggeo:message (one for each message produced during validation) contains:
+     *         <ul>
+     *         <li>an XML attribute 'type' that indicates the severity level of the message ('FATAL', 'ERROR', 'WARNING', or 'NOTICE')
+     *         <li>the actual validation message as text content
+     *         </ul>
+     *         </ul>
+     *
+     */
+    @Requires(Permission.NONE)
+    public FElem validateAndReport(ANode node, String testMask) {
+        return geometryValidator.validate(node, testMask.getBytes());
     }
 
     /**
      * Tests if the first geometry contains the second geometry.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geom1
      *            represents the first geometry, encoded as a GML geometry element
@@ -1048,10 +705,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CONTAINS);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing contains(Value,Value). Message is: " + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1059,7 +714,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if one geometry contains a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param arg1
      *            represents the first geometry, encoded as a GML geometry element
@@ -1078,11 +733,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.CONTAINS, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing contains(Value,Value,boolean). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1106,11 +759,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CONTAINS);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing containsGeomGeom(Geometry,Geometry). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1138,11 +789,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CONTAINS, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing containsGeomGeom(Geometry,Geometry,boolean). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1150,7 +799,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if the first geometry crosses the second geometry.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geom1
      *            represents the first geometry, encoded as a GML geometry element
@@ -1165,10 +814,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CROSSES);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing crosses(Value,Value). Message is: " + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1176,7 +823,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if one geometry crosses a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param arg1
      *            represents the first geometry, encoded as a GML geometry element
@@ -1195,11 +842,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.CROSSES, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing crosses(Value,Value,boolean). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1222,11 +867,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CROSSES);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing crossesGeomGeom(Geometry,Geometry). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1254,11 +897,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CROSSES, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing crossesGeomGeom(Geometry,Geometry,boolean). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1266,7 +907,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if the first geometry equals the second geometry.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geom1
      *            represents the first geometry, encoded as a GML geometry element
@@ -1281,10 +922,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.EQUALS);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing equals(Value,Value). Message is: " + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1292,7 +931,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if one geometry equals a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param arg1
      *            represents the first geometry, encoded as a GML geometry element
@@ -1311,11 +950,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.EQUALS, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing equals(Value,Value,boolean). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1338,11 +975,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.EQUALS);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing equalsGeomGeom(Geometry,Geometry). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1370,11 +1005,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.EQUALS, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing equalsGeomGeom(Geometry,Geometry,boolean). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1382,7 +1015,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if the first geometry intersects the second geometry.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geom1
      *            represents the first geometry, encoded as a GML geometry element
@@ -1398,10 +1031,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.INTERSECTS);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing intersects(Value,Value). Message is: " + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1409,7 +1040,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if one geometry intersects a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param arg1
      *            represents the first geometry, encoded as a GML geometry element
@@ -1516,38 +1147,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public String determineSrsName(final ANode geometryNode) throws QueryException {
-
-        byte[] srsDirect = geometryNode.attribute(srsNameB);
-
-        if (srsDirect != null) {
-
-            return new String(srsDirect);
-
-        } else if (this.standardSRS != null) {
-
-            return this.standardSRS;
-
-        } else {
-
-            Context ctx = queryContext.context;
-
-            try (QueryProcessor qp = new QueryProcessor(SRS_SEARCH_QUERY, ctx)) {
-                // Bind to context:
-                qp.bind("geom", geometryNode);
-                qp.context(geometryNode);
-                Value value = qp.value();
-
-                if (value instanceof Empty) {
-                    return null;
-                } else if (value instanceof Atm) {
-                    return ((Atm) value).toJava();
-                } else {
-                    // TBD if this case can occur when searching for the SRS
-                    return null;
-                }
-            }
-        }
+    public String determineSrsName(final ANode geometryNode) {
+        return this.srsLookup.determineSrsName(geometryNode);
     }
 
     /**
@@ -1569,33 +1170,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public String determineSrsNameForGeometryComponent(final ANode geometryComponentNode)
-            throws QueryException {
-
-        if (this.standardSRS != null) {
-
-            return this.standardSRS;
-
-        } else {
-
-            Context ctx = queryContext.context;
-
-            try (QueryProcessor qp = new QueryProcessor(SRS_SEARCH_QUERY_GEOMETRY_COMPONENT, ctx)) {
-                // Bind to context:
-                qp.bind("geomComp", geometryComponentNode);
-                qp.context(geometryComponentNode);
-                Value value = qp.value();
-
-                if (value instanceof Empty) {
-                    return null;
-                } else if (value instanceof Atm) {
-                    return ((Atm) value).toJava();
-                } else {
-                    // TBD if this case can occur when searching for the SRS
-                    return null;
-                }
-            }
-        }
+    @Deprecated
+    public String determineSrsNameForGeometryComponent(final ANode geometryComponentNode) {
+        return this.srsLookup.determineSrsName(geometryComponentNode);
     }
 
     /**
@@ -1607,25 +1184,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * @throws QueryException
      */
     public com.vividsolutions.jts.geom.Geometry parseGeometry(Value v) throws QueryException {
-
-        try {
-            if (v instanceof ANode) {
-
-                ANode node = (ANode) v;
-
-                return geoutils.toJTSGeometry(node);
-
-            } else if (v instanceof Jav
-                    && ((Jav) v).toJava() instanceof com.vividsolutions.jts.geom.Geometry) {
-
-                return (com.vividsolutions.jts.geom.Geometry) ((Jav) v).toJava();
-
-            } else {
-                throw new IllegalArgumentException(
-                        "First argument is neither a single node nor a JTS geometry.");
-            }
-        } catch (Exception e) {
-            throw new QueryException(e);
+        if (v instanceof ANode) {
+            ANode node = (ANode) v;
+            return jtsTransformer.toJTSGeometry(node);
+        } else if (v instanceof Jav && ((Jav) v).toJava() instanceof com.vividsolutions.jts.geom.Geometry) {
+            return (com.vividsolutions.jts.geom.Geometry) ((Jav) v).toJava();
+        } else {
+            throw new GmlGeoXException(
+                    "First argument is neither a single node nor a JTS geometry.");
         }
     }
 
@@ -1638,7 +1204,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * @return
      * @throws QueryException
      */
-    private boolean applySpatialRelationshipOperation(Object geom1x, Object geom2x, SpatialRelOp op)
+    private boolean applySpatialRelationshipOperation(final Object geom1x, final Object geom2x, final SpatialRelOp op)
             throws QueryException {
 
         if (geom1x == null || geom2x == null || geom1x instanceof Empty || geom2x instanceof Empty) {
@@ -1646,95 +1212,28 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         }
 
         if ((geom1x instanceof GeometryCollection
-                && geoutils.isGeometryCollectionButNotASubtype((GeometryCollection) geom1x))
+                && JtsTransformer.isGeometryCollectionButNotASubtype((GeometryCollection) geom1x))
                 || (geom2x instanceof GeometryCollection
-                        && geoutils.isGeometryCollectionButNotASubtype((GeometryCollection) geom2x))) {
-
+                        && JtsTransformer.isGeometryCollectionButNotASubtype((GeometryCollection) geom2x))) {
             if (geom1x instanceof GeometryCollection && !((GeometryCollection) geom1x).isEmpty()) {
-                throw new QueryException(
+                throw new GmlGeoXException(
                         "First argument is a non-empty geometry collection. This is not supported by this method.");
             } else if (geom2x instanceof GeometryCollection && !((GeometryCollection) geom2x).isEmpty()) {
-                throw new QueryException(
+                throw new GmlGeoXException(
                         "Second argument is a non-empty geometry collection. This is not supported by this method.");
             }
 
             return false;
         }
 
-        try {
+        final com.vividsolutions.jts.geom.Geometry g1 = getCachedGeometryFromNodeOrTransform(geom1x);
+        final com.vividsolutions.jts.geom.Geometry g2 = getCachedGeometryFromNodeOrTransform(geom2x);
 
-            DBNode geom1db = null;
-            DBNode geom2db = null;
-
-            com.vividsolutions.jts.geom.Geometry g1 = null;
-            com.vividsolutions.jts.geom.Geometry g2 = null;
-
-            /* Try to get hold of a database node. Otherwise, parse the geometry. */
-            if (geom1x instanceof DBNode) {
-                geom1db = (DBNode) geom1x;
-            } else if (geom1x instanceof com.vividsolutions.jts.geom.Geometry) {
-                g1 = (com.vividsolutions.jts.geom.Geometry) geom1x;
-            } else {
-                g1 = geoutils.singleObjectToJTSGeometry(geom1x);
-            }
-
-            if (geom2x instanceof DBNode) {
-                geom2db = (DBNode) geom2x;
-            } else if (geom2x instanceof com.vividsolutions.jts.geom.Geometry) {
-                g2 = (com.vividsolutions.jts.geom.Geometry) geom2x;
-            } else {
-                g2 = geoutils.singleObjectToJTSGeometry(geom2x);
-            }
-
-            if (g1 == null) {
-                if (geom1db != null) {
-                    g1 = getOrCacheGeometry(geom1db);
-                } else {
-                    g1 = geoutils.singleObjectToJTSGeometry(geom1x);
-                }
-            }
-
-            if (g2 == null) {
-                if (geom2db != null) {
-                    g2 = getOrCacheGeometry(geom2db);
-                } else {
-                    g2 = geoutils.singleObjectToJTSGeometry(geom2x);
-                }
-            }
-
-            switch (op) {
-            case CONTAINS:
-                return g1.contains(g2);
-            case CROSSES:
-                return g1.crosses(g2);
-            case EQUALS:
-                return g1.equals(g2);
-            case INTERSECTS:
-                return g1.intersects(g2);
-            case ISDISJOINT:
-                return g1.disjoint(g2);
-            case ISWITHIN:
-                return g1.within(g2);
-            case OVERLAPS:
-                return g1.overlaps(g2);
-            case TOUCHES:
-                return g1.touches(g2);
-            default:
-                throw new IllegalArgumentException(
-                        "Unknown spatial relationship operator: " + op.toString());
-            }
-
-        } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception occurred while applying spatial relationship operation (with single geometry to compare). Message is: "
-                            + e.getMessage());
-
-            throw qe;
-        }
+        return op.call(g1, g2);
     }
 
     private boolean applySpatialRelationshipOperation(
-            Object arg1, Object arg2, SpatialRelOp op, boolean matchAll) throws QueryException {
+            final Object arg1, final Object arg2, final SpatialRelOp op, boolean matchAll) throws QueryException {
 
         try {
 
@@ -1749,8 +1248,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
             } else {
 
-                List<Object> arg1_list = toObjectList(arg1);
-                List<Object> arg2_list = toObjectList(arg2);
+                final Collection<Object> arg1_list = toObjectCollection(arg1);
+                final Collection<Object> arg2_list = toObjectCollection(arg2);
 
                 boolean allMatch = true;
 
@@ -1758,38 +1257,29 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                     for (Object o2 : arg2_list) {
 
                         if (matchAll) {
-
-                            if (applySpatialRelationshipOperation(o1, o2, op)) {
-                                /* check the next geometry pair to see if it also satisfies the spatial relationship */
-                            } else {
+                            if (!applySpatialRelationshipOperation(o1, o2, op)) {
                                 allMatch = false;
                                 break outer;
                             }
-
+                            // check the next geometry pair to see if it also satisfies the spatial relationship
                         } else {
-
                             if (applySpatialRelationshipOperation(o1, o2, op)) {
                                 return true;
-                            } else {
-                                /* check the next geometry pair to see if it satisfies the spatial relationship */
                             }
+                            // check the next geometry pair to see if it satisfies the spatial relationship
                         }
                     }
                 }
-
                 if (matchAll) {
                     return allMatch;
                 } else {
                     return false;
                 }
             }
-
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception occurred while applying spatial relationship operation (with multiple geometries to compare). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1798,51 +1288,39 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      *            A Value, an Object[], a JTS geometry (also a geometry collection) or anything else
      * @return a list of single objects (Value of size > 1 is flattened to a list of Items, a JTS geometry collection is flattened as well)
      */
-    private List<Object> toObjectList(Object o) {
-
-        List<Object> result = new ArrayList<>();
-
+    private static Collection toObjectCollection(final @NotNull Object o) {
         if (o instanceof Value) {
-
-            Value v = (Value) o;
-
+            final Value v = (Value) o;
             if (v.size() > 1) {
-
+                final List<Object> result = new ArrayList<>((int) v.size());
                 for (Item i : v) {
-                    result.addAll(toObjectList(i));
+                    result.addAll(toObjectCollection(i));
                 }
-
+                return result;
             } else {
-
-                result.add(o);
+                return Collections.singleton(o);
             }
-
         } else if (o instanceof Object[]) {
-
+            final List<Object> result = new ArrayList<>(((Object[]) o).length);
             for (Object os : (Object[]) o) {
-
-                result.addAll(toObjectList(os));
+                result.addAll(toObjectCollection(os));
             }
-
+            return result;
         } else {
-
             if (o instanceof com.vividsolutions.jts.geom.Geometry) {
-                com.vividsolutions.jts.geom.Geometry geom = (com.vividsolutions.jts.geom.Geometry) o;
-                List<com.vividsolutions.jts.geom.Geometry> gc = geoutils.toFlattenedJTSGeometryCollection(geom);
-                result.addAll(gc);
+                final com.vividsolutions.jts.geom.Geometry geom = (com.vividsolutions.jts.geom.Geometry) o;
+                return JtsTransformer.toFlattenedJTSGeometryCollection(geom);
             } else {
-                result.add(o);
+                return Collections.singleton(o);
             }
         }
-
-        return result;
     }
 
     /**
      * Tests if the first and the second geometry are disjoint.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geom1
      *            represents the first geometry, encoded as a GML geometry element
@@ -1869,7 +1347,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if one geometry is disjoint with a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param arg1
      *            represents the first geometry, encoded as a GML geometry element
@@ -1884,15 +1362,12 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     @Deterministic
     public boolean isDisjoint(Value arg1, Value arg2, boolean matchAll) throws QueryException {
-
         try {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.ISDISJOINT, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing isDisjoint(Value,Value,boolean). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -1960,7 +1435,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if the first geometry is within the second geometry.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geom1
      *            represents the first geometry, encoded as a GML geometry element
@@ -1987,7 +1462,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if one geometry is within a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param arg1
      *            represents the first geometry, encoded as a GML geometry element
@@ -2078,7 +1553,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if the first geometry overlaps the second geometry.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geom1
      *            represents the first geometry, encoded as a GML geometry element
@@ -2105,7 +1580,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if one geometry overlaps a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param arg1
      *            represents the first geometry, encoded as a GML geometry element
@@ -2196,7 +1671,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if the first geometry touches the second geometry.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geom1
      *            represents the first geometry, encoded as a GML geometry element
@@ -2222,7 +1697,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Tests if one geometry touches a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param arg1
      *            represents the first geometry, encoded as a GML geometry element
@@ -2312,12 +1787,12 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     /**
      * Adds the name of a GML geometry element to the set of elements for which validation is performed.
      *
-     * @param nodeName
+     * @param gmlGeometry
      *            name (simple, i.e. without namespace (prefix)) of a GML geometry element to validate.
      */
     @Requires(Permission.NONE)
-    public void registerGmlGeometry(String nodeName) {
-        gmlGeometries.add(nodeName);
+    public void registerGmlGeometry(final String gmlGeometry) {
+        geometryValidator.registerGmlGeometry(gmlGeometry);
     }
 
     /**
@@ -2327,11 +1802,11 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      *            name of the SRS to assign to a geometry if it does not have an srsName attribute itself.
      */
     @Requires(Permission.NONE)
-    public void setStandardSRS(String srsName) throws QueryException {
+    public void setStandardSRS(final String srsName) throws QueryException {
         if (StringUtils.isBlank(srsName)) {
-            throw new QueryException("Given parameter value is blank.");
+            throw new GmlGeoXException("Given parameter value is blank.");
         } else {
-            this.standardSRS = srsName;
+            this.srsLookup = new SrsLookup(srsName);
         }
     }
 
@@ -2345,7 +1820,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     public void setMaxNumPointsForInterpolation(int maxNumPoints) throws QueryException {
         if (maxNumPoints <= 0) {
-            throw new QueryException(
+            throw new GmlGeoXException(
                     "Given parameter value must be greater than zero. Was: " + maxNumPoints + ".");
         } else {
             this.geometryFactory.setMaxNumPoints(maxNumPoints);
@@ -2362,7 +1837,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     public void setMaxErrorForInterpolation(double maxError) throws QueryException {
         if (maxError <= 0) {
-            throw new QueryException(
+            throw new GmlGeoXException(
                     "Given parameter value must be greater than zero. Was: " + maxError + ".");
         } else {
             this.geometryFactory.setMaxError(maxError);
@@ -2377,25 +1852,19 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     public void unregisterGmlGeometry(String nodeName) {
-        gmlGeometries.remove(nodeName);
+        geometryValidator.unregisterGmlGeometry(nodeName);
     }
 
     /** Removes all names of GML geometry elements that are currently registered for validation. */
     @Requires(Permission.NONE)
     public void unregisterAllGmlGeometries() {
-        gmlGeometries.clear();
+        geometryValidator.unregisterAllGmlGeometries();
     }
 
     /** @return the currently registered GML geometry element names (comma separated) */
     @Requires(Permission.NONE)
     public String registeredGmlGeometries() {
-
-        if (gmlGeometries.isEmpty()) {
-            return "";
-        } else {
-            Joiner joiner = Joiner.on(", ").skipNulls();
-            return joiner.join(gmlGeometries);
-        }
+        return geometryValidator.registeredGmlGeometries();
     }
 
     /**
@@ -2412,15 +1881,13 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             throws QueryException {
 
         try {
+            final List<com.vividsolutions.jts.geom.Geometry> geoms = Arrays.asList(arg);
 
-            List<com.vividsolutions.jts.geom.Geometry> geoms = Arrays.asList(arg);
-
-            com.vividsolutions.jts.geom.GeometryCollection gc = geoutils.toJTSGeometryCollection(geoms, true);
+            com.vividsolutions.jts.geom.GeometryCollection gc = jtsTransformer.toJTSGeometryCollection(geoms, true);
 
             return gc.union();
-
         } catch (Exception e) {
-            throw new QueryException(e);
+            throw new GmlGeoXException(e);
         }
     }
 
@@ -2434,54 +1901,54 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry union(Value val) throws QueryException {
+    public com.vividsolutions.jts.geom.Geometry union(final Value val) throws QueryException {
 
         try {
 
             // first get all values
-            List<Item> items = new ArrayList<>();
+            final List<Item> items = new ArrayList<>((int) val.size());
 
             for (Item i : val) {
                 items.add(i);
             }
 
             /* Now, create unions from partitions of the list of items. */
-            List<com.vividsolutions.jts.geom.Geometry> unions = new ArrayList<>();
+            final List<com.vividsolutions.jts.geom.Geometry> unions = new ArrayList<>((int) Math.sqrt(items.size()));
 
             int x = (int) (Math.ceil((double) items.size() / 1000) - 1);
 
             for (int groupIndex = 0; groupIndex <= x; groupIndex++) {
 
-                int groupStart = (int) ((x - groupIndex) * 1000);
-                int groupEnd = (int) (((x - groupIndex) + 1) * 1000);
+                final int groupStart = (x - groupIndex) * 1000;
+                int groupEnd = ((x - groupIndex) + 1) * 1000;
 
                 if (groupEnd > items.size()) {
                     groupEnd = items.size();
                 }
 
-                List<Item> itemsSublist = items.subList(groupStart, groupEnd);
+                final List<Item> itemsSublist = items.subList(groupStart, groupEnd);
 
-                List<com.vividsolutions.jts.geom.Geometry> geomsInSublist = new ArrayList<>();
+                final List<com.vividsolutions.jts.geom.Geometry> geomsInSublist = new ArrayList<>(itemsSublist.size());
 
                 for (Item i : itemsSublist) {
-
-                    com.vividsolutions.jts.geom.Geometry geom;
+                    final com.vividsolutions.jts.geom.Geometry geom;
                     if (i instanceof DBNode) {
                         geom = getOrCacheGeometry((DBNode) i);
                     } else {
-                        geom = geoutils.toJTSGeometry(i);
+                        geom = jtsTransformer.toJTSGeometry(i);
                     }
                     geomsInSublist.add(geom);
                 }
 
-                com.vividsolutions.jts.geom.GeometryCollection sublistGc = geoutils.toJTSGeometryCollection(geomsInSublist,
+                com.vividsolutions.jts.geom.GeometryCollection sublistGc = jtsTransformer.toJTSGeometryCollection(
+                        geomsInSublist,
                         true);
 
                 unions.add(sublistGc.union());
             }
 
             /* Finally, create a union from the list of unions. */
-            com.vividsolutions.jts.geom.GeometryCollection unionsGc = geoutils.toJTSGeometryCollection(unions, true);
+            com.vividsolutions.jts.geom.GeometryCollection unionsGc = jtsTransformer.toJTSGeometryCollection(unions, true);
 
             return unionsGc.union();
 
@@ -2502,12 +1969,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     @Deterministic
     public boolean isEmptyGeom(com.vividsolutions.jts.geom.Geometry geom) {
-
-        if (geom == null || geom.isEmpty()) {
-            return true;
-        } else {
-            return false;
-        }
+        return geom == null || geom.isEmpty();
     }
 
     /**
@@ -2522,13 +1984,13 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     public Coordinate checkSecondControlPointInMiddleThirdOfArc(ANode arcStringNode)
             throws QueryException {
 
-        Coordinate[] controlPoints = parseArcStringControlPoints(arcStringNode);
+        final Coordinate[] controlPoints = jtsTransformer.parseArcStringControlPoints(arcStringNode);
 
         for (int i = 2; i < controlPoints.length; i = i + 2) {
 
-            Coordinate c1 = controlPoints[i - 2];
-            Coordinate c2 = controlPoints[i - 1];
-            Coordinate c3 = controlPoints[i];
+            final Coordinate c1 = controlPoints[i - 2];
+            final Coordinate c2 = controlPoints[i - 1];
+            final Coordinate c3 = controlPoints[i];
 
             Circle circle;
             try {
@@ -2536,12 +1998,11 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             } catch (InvalidCircleException e) {
                 return c2;
             }
-            Coordinate center = circle.center();
+            final Coordinate center = circle.center();
+            final double d12 = Angle.angleBetweenOriented(c1, center, c2);
+            final double d13 = Angle.angleBetweenOriented(c1, center, c3);
 
-            double d12 = Angle.angleBetweenOriented(c1, center, c2);
-            double d13 = Angle.angleBetweenOriented(c1, center, c3);
-
-            boolean controlPointsOrientedClockwise;
+            final boolean controlPointsOrientedClockwise;
 
             if (d12 >= 0 && d13 >= 0) {
 
@@ -2569,8 +2030,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 }
             }
 
-            double fullAngle1to2;
-            double fullAngle1to3;
+            final double fullAngle1to2;
+            final double fullAngle1to3;
 
             if (controlPointsOrientedClockwise) {
                 if (d12 >= 0) {
@@ -2596,10 +2057,10 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 }
             }
 
-            double thirdOfFullAngle1to3 = fullAngle1to3 / 3;
+            final double thirdOfFullAngle1to3 = fullAngle1to3 / 3;
 
-            double middleThirdStart = thirdOfFullAngle1to3;
-            double middleThirdEnd = fullAngle1to3 - thirdOfFullAngle1to3;
+            final double middleThirdStart = thirdOfFullAngle1to3;
+            final double middleThirdEnd = fullAngle1to3 - thirdOfFullAngle1to3;
 
             if (middleThirdStart > fullAngle1to2 || middleThirdEnd < fullAngle1to2) {
                 return c2;
@@ -2626,15 +2087,15 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         if (minSeparationInDegree instanceof Number) {
             minSepDeg = ((Number) minSeparationInDegree).doubleValue();
         } else {
-            throw new QueryException("Parameter minSeparationInDegree must be a number.");
+            throw new GmlGeoXException("Parameter minSeparationInDegree must be a number.");
         }
 
         if (minSepDeg < 0 || minSepDeg > 120) {
-            throw new QueryException(
+            throw new GmlGeoXException(
                     "Invalid parameter minSeparationInDegree (must be >= 0 and <= 120).");
         }
 
-        Coordinate[] controlPoints = parseArcStringControlPoints(circleNode);
+        final Coordinate[] controlPoints = jtsTransformer.parseArcStringControlPoints(circleNode);
 
         Coordinate c1 = controlPoints[0];
         Coordinate c2 = controlPoints[1];
@@ -2666,90 +2127,6 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         }
     }
 
-    private Coordinate[] parseArcStringControlPoints(ANode arcStringNode) throws QueryException {
-
-        String srsName = determineSrsNameForGeometryComponent(arcStringNode);
-
-        ICRS crs = CRSManager.get("default").getCRSByCode(CRSCodeType.valueOf(srsName));
-
-        int dimension;
-        if (crs == null) {
-            if (!LOGGED_UNKNOWN_CRS.contains(srsName)) {
-                LOGGED_UNKNOWN_CRS.add(srsName);
-                LOGGER.error(
-                        "parseArcStringControlPoints: could not find SRS '"
-                                + srsName
-                                + "', which should be used to determine the SRS dimension. Using dimension 2 as fallback. Check if the SRS configuration contains the SRS. If not, add the SRS to the configuration.");
-            }
-            dimension = 2;
-        } else {
-            dimension = crs.getDimension();
-        }
-
-        if (dimension != 2 && dimension != 3) {
-            throw new QueryException(
-                    "SRS determined to be "
-                            + srsName
-                            + " with dimension "
-                            + dimension
-                            + ". Expected dimension of 2 or 3.");
-        }
-
-        String positions = null;
-        Iterator<ANode> childIter = arcStringNode.children().iterator();
-        while (childIter.hasNext()) {
-            ANode child = childIter.next();
-            String name = new String(child.name());
-            if (name.endsWith("posList")) {
-                positions = child.toJava().getTextContent();
-                break;
-            }
-        }
-
-        String[] tmp = StringUtils.split(positions);
-
-        if (tmp.length % dimension != 0) {
-            throw new QueryException(
-                    "SRS determined to be "
-                            + srsName
-                            + " with dimension "
-                            + dimension
-                            + ". Number of coordinates does not match. Found "
-                            + tmp.length
-                            + " coordinates in: "
-                            + positions);
-        }
-
-        int numberOfPoints = tmp.length / dimension;
-
-        if (numberOfPoints < 3 || numberOfPoints % 2 != 1) {
-            throw new QueryException(
-                    "Found "
-                            + numberOfPoints
-                            + " points. Expected three or a bigger, uneven number of points.");
-        }
-
-        double[] coordinates = new double[tmp.length];
-        for (int i = 0; i < tmp.length; i++) {
-            coordinates[i] = Double.parseDouble(tmp[i]);
-        }
-
-        Coordinate[] points = new Coordinate[numberOfPoints];
-        for (int i = 0; i < numberOfPoints; i++) {
-            int index = i * dimension;
-            Coordinate coord;
-            if (dimension == 2) {
-                coord = new Coordinate(coordinates[index], coordinates[index + 1]);
-            } else {
-                // dimension == 3
-                coord = new Coordinate(coordinates[index], coordinates[index + 1], coordinates[index + 2]);
-            }
-            points[i] = coord;
-        }
-
-        return points;
-    }
-
     /**
      * Checks if a given geometry is closed. Only LineStrings and MultiLineStrings are checked.
      *
@@ -2765,7 +2142,6 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     @Deterministic
     public boolean isClosedGeom(com.vividsolutions.jts.geom.Geometry geom) throws QueryException {
-
         return isClosedGeom(geom, true);
     }
 
@@ -2803,61 +2179,50 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             com.vividsolutions.jts.geom.Geometry geom, boolean onlyCheckCurveGeometries)
             throws QueryException {
 
-        try {
+        final Collection<com.vividsolutions.jts.geom.Geometry> gc = jtsTransformer.toFlattenedJTSGeometryCollection(geom);
 
-            List<com.vividsolutions.jts.geom.Geometry> gc = geoutils.toFlattenedJTSGeometryCollection(geom);
+        for (com.vividsolutions.jts.geom.Geometry g : gc) {
 
-            for (com.vividsolutions.jts.geom.Geometry g : gc) {
+            if (g instanceof com.vividsolutions.jts.geom.Point
+                    || g instanceof com.vividsolutions.jts.geom.MultiPoint) {
 
-                if (g instanceof com.vividsolutions.jts.geom.Point
-                        || g instanceof com.vividsolutions.jts.geom.MultiPoint) {
+                /* points are closed by definition (they do not have a boundary) */
 
-                    /* points are closed by definition (they do not have a boundary) */
+            } else if (g instanceof com.vividsolutions.jts.geom.Polygon
+                    || g instanceof com.vividsolutions.jts.geom.MultiPolygon) {
 
-                } else if (g instanceof com.vividsolutions.jts.geom.Polygon
-                        || g instanceof com.vividsolutions.jts.geom.MultiPolygon) {
-
-                    /* The JTS FAQ contains the following question and answer:
-                     *
-                     * Question: Does JTS support 3D operations?
-                     *
-                     * Answer: JTS does not provide support for true 3D geometry and operations. However, JTS does allow Coordinates to carry an elevation or Z value. This does not provide true 3D support, but does allow "2.5D" uses which are required in some geospatial applications.
-                     *
-                     * -------
-                     *
-                     * So, JTS does not support true 3D geometry and operations. Therefore, JTS cannot determine if a surface is closed. deegree does not seem to support this, either. In order for a surface to be closed, it must be a sphere or torus, possibly with holes. A surface in 2D can never be closed. Since we lack the ability to compute in 3D we assume that a (Multi)Polygon is not closed. If we do check geometries other than curves, then we return false. */
-                    if (!onlyCheckCurveGeometries) {
-                        return false;
-                    }
-
-                } else if (g instanceof com.vividsolutions.jts.geom.MultiLineString) {
-
-                    com.vividsolutions.jts.geom.MultiLineString mls = (com.vividsolutions.jts.geom.MultiLineString) g;
-                    if (!mls.isClosed()) {
-                        return false;
-                    }
-
-                } else if (g instanceof com.vividsolutions.jts.geom.LineString) {
-
-                    /* NOTE: LinearRing is a subclass of LineString, and closed by definition */
-
-                    com.vividsolutions.jts.geom.LineString ls = (com.vividsolutions.jts.geom.LineString) g;
-                    if (!ls.isClosed()) {
-                        return false;
-                    }
-
-                } else {
-                    // should not happen
-                    throw new Exception("Unexpected geometry type encountered: " + g.getClass().getName());
+                /* The JTS FAQ contains the following question and answer:
+                 *
+                 * Question: Does JTS support 3D operations?
+                 *
+                 * Answer: JTS does not provide support for true 3D geometry and operations. However, JTS does allow Coordinates to carry an elevation or Z value. This does not provide true 3D support, but does allow "2.5D" uses which are required in some geospatial applications.
+                 *
+                 * -------
+                 *
+                 * So, JTS does not support true 3D geometry and operations. Therefore, JTS cannot determine if a surface is closed. deegree does not seem to support this, either. In order for a surface to be closed, it must be a sphere or torus, possibly with holes. A surface in 2D can never be closed. Since we lack the ability to compute in 3D we assume that a (Multi)Polygon is not closed. If we do check geometries other than curves, then we return false. */
+                if (!onlyCheckCurveGeometries) {
+                    return false;
                 }
+            } else if (g instanceof com.vividsolutions.jts.geom.MultiLineString) {
+
+                com.vividsolutions.jts.geom.MultiLineString mls = (com.vividsolutions.jts.geom.MultiLineString) g;
+                if (!mls.isClosed()) {
+                    return false;
+                }
+            } else if (g instanceof com.vividsolutions.jts.geom.LineString) {
+                /* NOTE: LinearRing is a subclass of LineString, and closed by definition */
+                final com.vividsolutions.jts.geom.LineString ls = (com.vividsolutions.jts.geom.LineString) g;
+                if (!ls.isClosed()) {
+                    return false;
+                }
+            } else {
+                // should not happen
+                throw new GmlGeoXException("Unexpected geometry type encountered: " + g.getClass().getName());
             }
-
-            // all relevant geometries are closed
-            return true;
-
-        } catch (Exception e) {
-            throw new QueryException(e);
         }
+
+        // all relevant geometries are closed
+        return true;
     }
 
     /**
@@ -2875,9 +2240,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     @Deterministic
     public boolean isClosed(ANode geomNode, boolean onlyCheckCurveGeometries) throws QueryException {
-
         com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(geomNode);
-
         return isClosedGeom(geom, onlyCheckCurveGeometries);
     }
 
@@ -2910,14 +2273,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
         if (isEmptyGeom(geom)) {
 
-            return geoutils.emptyJTSGeometry();
+            return jtsTransformer.emptyJTSGeometry();
 
         } else {
 
             List<com.vividsolutions.jts.geom.Geometry> holes = computeHoles(geom);
 
             if (holes.isEmpty()) {
-                return geoutils.emptyJTSGeometry();
+                return jtsTransformer.emptyJTSGeometry();
             } else {
                 // create union of holes and return it
                 return CascadedPolygonUnion.union(holes);
@@ -2939,26 +2302,26 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
         if (isEmptyGeom(geom)) {
 
-            return geoutils.emptyJTSGeometry();
+            return jtsTransformer.emptyJTSGeometry();
 
         } else {
 
             List<com.vividsolutions.jts.geom.Geometry> holes = computeHoles(geom);
 
             if (holes.isEmpty()) {
-                return geoutils.emptyJTSGeometry();
+                return jtsTransformer.emptyJTSGeometry();
             } else {
-                return geoutils.toJTSGeometryCollection(holes, true);
+                return jtsTransformer.toJTSGeometryCollection(holes, true);
             }
         }
     }
 
-    protected List<com.vividsolutions.jts.geom.Geometry> computeHoles(
+    private List<com.vividsolutions.jts.geom.Geometry> computeHoles(
             com.vividsolutions.jts.geom.Geometry geom) {
 
-        List<com.vividsolutions.jts.geom.Geometry> holes = new ArrayList<>();
+        final List<com.vividsolutions.jts.geom.Geometry> holes = new ArrayList<>();
 
-        List<com.vividsolutions.jts.geom.Polygon> extractedPolygons = new ArrayList<>();
+        final List<com.vividsolutions.jts.geom.Polygon> extractedPolygons = new ArrayList<>();
 
         GeometryExtracter.extract(geom, com.vividsolutions.jts.geom.Polygon.class, extractedPolygons);
 
@@ -2974,7 +2337,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                     // for each hole, convert it to a polygon
                     for (int i = 0; i < polygon.getNumInteriorRing(); i++) {
                         com.vividsolutions.jts.geom.LineString ls = polygon.getInteriorRingN(i);
-                        com.vividsolutions.jts.geom.Polygon holeAsPolygon = geoutils.toJTSPolygon(ls);
+                        com.vividsolutions.jts.geom.Polygon holeAsPolygon = jtsTransformer.toJTSPolygon(ls);
                         holes.add(holeAsPolygon);
                     }
                 }
@@ -2994,21 +2357,15 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     public boolean isValid(ANode geometryNode) throws QueryException {
-
-        String validationResult = validate(geometryNode);
-
-        if (validationResult.toLowerCase().indexOf('f') > -1) {
-            return false;
-        } else {
-            return true;
-        }
+        final String validationResult = validate(geometryNode);
+        return validationResult.toLowerCase().indexOf('f') <= -1;
     }
 
     /**
      * Tests if the first geometry relates to the second geometry as defined by the given intersection pattern.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param arg1
      *            represents the first geometry, encoded as a GML geometry element
@@ -3021,81 +2378,44 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean relate(ANode arg1, ANode arg2, String intersectionPattern) throws QueryException {
-
+    public boolean relate(final ANode arg1, final ANode arg2, String intersectionPattern) throws QueryException {
         try {
-
             checkIntersectionPattern(intersectionPattern);
             return applyRelate(arg1, arg2, intersectionPattern);
-
         } catch (Exception e) {
             QueryException qe = new QueryException(
                     "Exception while executing relate(Value,Value,String). Message is: "
                             + e.getMessage());
-
             throw qe;
         }
     }
 
-    private boolean applyRelate(Object geom1x, Object geom2x, String intersectionPattern)
+    @Contract("null -> !null")
+    private com.vividsolutions.jts.geom.Geometry getCachedGeometryFromNodeOrTransform(final Object dbNodeOrOther)
             throws QueryException {
-
-        if (geom1x instanceof Empty || geom2x instanceof Empty) {
-            return false;
+        if (dbNodeOrOther instanceof DBNode) {
+            return getOrCacheGeometry((DBNode) dbNodeOrOther);
+        } else {
+            return jtsTransformer.singleObjectToJTSGeometry(dbNodeOrOther);
         }
+    }
 
-        try {
-            DBNode geom1db = null;
-            DBNode geom2db = null;
-
-            com.vividsolutions.jts.geom.Geometry g1 = null;
-            com.vividsolutions.jts.geom.Geometry g2 = null;
-
-            /* Try to get hold of a database node. Otherwise, parse the geometry. */
-            if (geom1x instanceof DBNode) {
-                geom1db = (DBNode) geom1x;
-            } else {
-                g1 = geoutils.singleObjectToJTSGeometry(geom1x);
-            }
-
-            if (geom2x instanceof DBNode) {
-                geom2db = (DBNode) geom2x;
-            } else {
-                g2 = geoutils.singleObjectToJTSGeometry(geom2x);
-            }
-
-            if (g1 == null) {
-                if (geom1db != null) {
-                    g1 = getOrCacheGeometry(geom1db);
-                } else {
-                    g1 = geoutils.singleObjectToJTSGeometry(geom1x);
-                }
-            }
-
-            if (g2 == null) {
-                if (geom2db != null) {
-                    g2 = getOrCacheGeometry(geom2db);
-                } else {
-                    g2 = geoutils.singleObjectToJTSGeometry(geom2x);
-                }
-            }
-
-            return g1.relate(g2, intersectionPattern);
-
-        } catch (Exception e) {
-            throw new QueryException(e);
-        }
+    private boolean applyRelate(Object nodeOrJtsGeometry1, Object nodeOrJtsGeometry2, String intersectionPattern)
+            throws QueryException {
+        final com.vividsolutions.jts.geom.Geometry g1 = getCachedGeometryFromNodeOrTransform(nodeOrJtsGeometry1);
+        final com.vividsolutions.jts.geom.Geometry g2 = getCachedGeometryFromNodeOrTransform(nodeOrJtsGeometry2);
+        return g1.relate(g2, intersectionPattern);
     }
 
     /**
      * Tests if one geometry relates to a list of geometries as defined by the given intersection pattern. Whether a match is required for all or just one of these is controlled via parameter.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
-     * @param arg1
+     * @param value1
      *            represents the first geometry, encoded as a GML geometry element
-     * @param arg2
+     * @param value2
      *            represents a list of geometries, encoded as GML geometry elements
      * @param intersectionPattern
      *            the pattern against which to check the intersection matrix for the geometries (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
@@ -3107,72 +2427,57 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public boolean relate(Value arg1, Value arg2, String intersectionPattern, boolean matchAll)
+    public boolean relate(final Value value1, final Value value2, String intersectionPattern, boolean matchAll)
             throws QueryException {
-
+        if (value1 instanceof Empty || value2 instanceof Empty) {
+            return false;
+        }
         try {
-
             checkIntersectionPattern(intersectionPattern);
-            return applyRelate(arg1, arg2, intersectionPattern, matchAll);
-
+            return relateMatch(value1, value2, intersectionPattern, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing relate(Value,Value,String,boolean). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
-    private boolean applyRelate(
-            Object arg1, Object arg2, String intersectionPattern, boolean matchAll)
+    private boolean relateMatch(Object arg1, Object arg2, String intersectionPattern, boolean matchAll)
             throws QueryException {
-
         try {
+            final Collection<Object> arg1_list = toObjectCollection(arg1);
+            final Collection<Object> arg2_list = toObjectCollection(arg2);
 
-            if (arg1 instanceof Empty || arg2 instanceof Empty) {
+            boolean allMatch = true;
+            outer: for (Object o1 : arg1_list) {
+                for (Object o2 : arg2_list) {
 
-                return false;
-
-            } else {
-
-                List<Object> arg1_list = toObjectList(arg1);
-                List<Object> arg2_list = toObjectList(arg2);
-
-                boolean allMatch = true;
-
-                outer: for (Object o1 : arg1_list) {
-                    for (Object o2 : arg2_list) {
-
-                        if (matchAll) {
-
-                            if (applyRelate(o1, o2, intersectionPattern)) {
-                                /* check the next geometry pair to see if it also satisfies the spatial relationship */
-                            } else {
-                                allMatch = false;
-                                break outer;
-                            }
-
+                    if (matchAll) {
+                        if (applyRelate(o1, o2, intersectionPattern)) {
+                            /* check the next geometry pair to see if it also satisfies the spatial relationship */
                         } else {
+                            allMatch = false;
+                            break outer;
+                        }
 
-                            if (applyRelate(o1, o2, intersectionPattern)) {
-                                return true;
-                            } else {
-                                /* check the next geometry pair to see if it satisfies the spatial relationship */
-                            }
+                    } else {
+
+                        if (applyRelate(o1, o2, intersectionPattern)) {
+                            return true;
+                        } else {
+                            /* check the next geometry pair to see if it satisfies the spatial relationship */
                         }
                     }
                 }
-
-                if (matchAll) {
-                    return allMatch;
-                } else {
-                    return false;
-                }
             }
 
+            if (matchAll) {
+                return allMatch;
+            } else {
+                return false;
+            }
         } catch (Exception e) {
-            throw new QueryException(e);
+            throw new GmlGeoXException(e);
         }
     }
 
@@ -3197,16 +2502,12 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             throws QueryException {
 
         try {
-
             checkIntersectionPattern(intersectionPattern);
             return applyRelate(geom1, geom2, intersectionPattern);
-
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing relateGeomGeom(Geometry,Geometry,String). Message is: "
                             + e.getMessage());
-
-            throw qe;
         }
     }
 
@@ -3233,28 +2534,24 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             String intersectionPattern,
             boolean matchAll)
             throws QueryException {
-
         try {
-
             checkIntersectionPattern(intersectionPattern);
-            return applyRelate(geom1, geom2, intersectionPattern, matchAll);
-
+            return relateMatch(geom1, geom2, intersectionPattern, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing relateGeomGeom(Geometry,Geometry,String,boolean). Message is: "
                             + e.getMessage());
 
-            throw qe;
         }
     }
 
     private void checkIntersectionPattern(String intersectionPattern) throws QueryException {
         if (intersectionPattern == null) {
-            throw new QueryException("intersectionPattern is null.");
+            throw new GmlGeoXException("intersectionPattern is null.");
         } else {
             final Matcher m = INTERSECTIONPATTERN.matcher(intersectionPattern.trim());
             if (!m.matches()) {
-                throw new QueryException(
+                throw new GmlGeoXException(
                         "intersectionPattern does not match the regular expression, which is: [0-2\\\\*TF]{9}");
             }
         }
@@ -3264,7 +2561,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Computes the intersection between the first and the second geometry node.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geometry1
      *            represents the first geometry
@@ -3278,13 +2575,11 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     public com.vividsolutions.jts.geom.Geometry intersection(
             final ANode geometry1, final ANode geometry2) throws QueryException {
         try {
-
             final com.vividsolutions.jts.geom.Geometry geom1 = getOrCacheGeometry(geometry1);
             final com.vividsolutions.jts.geom.Geometry geom2 = getOrCacheGeometry(geometry2);
             return geom1.intersection(geom2);
-
-        } catch (Exception e) {
-            throw new QueryException(e);
+        } catch (final Exception e) {
+            throw new GmlGeoXException(e);
         }
     }
 
@@ -3292,7 +2587,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Computes the intersection between the first and the second geometry.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geometry1
      *            the first geometry
@@ -3307,13 +2602,10 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             final com.vividsolutions.jts.geom.Geometry geometry1,
             final com.vividsolutions.jts.geom.Geometry geometry2)
             throws QueryException {
-
         try {
-
             return geometry1.intersection(geometry2);
-
-        } catch (Exception e) {
-            throw new QueryException(e);
+        } catch (final Exception e) {
+            throw new GmlGeoXException(e);
         }
     }
 
@@ -3321,7 +2613,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Computes the difference between the first and the second geometry node.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geometry1
      *            represents the first geometry
@@ -3335,13 +2627,11 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     public com.vividsolutions.jts.geom.Geometry difference(
             final ANode geometry1, final ANode geometry2) throws QueryException {
         try {
-
             final com.vividsolutions.jts.geom.Geometry geom1 = getOrCacheGeometry(geometry1);
             final com.vividsolutions.jts.geom.Geometry geom2 = getOrCacheGeometry(geometry2);
             return geom1.difference(geom2);
-
-        } catch (Exception e) {
-            throw new QueryException(e);
+        } catch (final Exception e) {
+            throw new GmlGeoXException(e);
         }
     }
 
@@ -3355,7 +2645,6 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Deterministic
     public com.vividsolutions.jts.geom.Geometry boundary(final ANode geometryNode)
             throws QueryException {
-
         return boundaryGeom(getOrCacheGeometry(geometryNode));
     }
 
@@ -3368,18 +2657,16 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry boundaryGeom(
-            final com.vividsolutions.jts.geom.Geometry geometry) throws QueryException {
-
+    public com.vividsolutions.jts.geom.Geometry boundaryGeom(final com.vividsolutions.jts.geom.Geometry geometry)
+            throws QueryException {
         try {
             if (geometry == null) {
-                return geoutils.emptyJTSGeometry();
+                return jtsTransformer.emptyJTSGeometry();
             } else {
                 return geometry.getBoundary();
             }
-
         } catch (Exception e) {
-            throw new QueryException(e);
+            throw new GmlGeoXException(e);
         }
     }
 
@@ -3400,11 +2687,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             final com.vividsolutions.jts.geom.Geometry geometry2)
             throws QueryException {
         try {
-
             return geometry1.difference(geometry2);
-
         } catch (Exception e) {
-            throw new QueryException(e);
+            throw new GmlGeoXException(e);
         }
     }
 
@@ -3412,7 +2697,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Computes the envelope of a geometry.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geometryNode
      *            represents the geometry
@@ -3421,22 +2706,17 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public Object[] envelope(ANode geometryNode) throws QueryException {
-
+    public Object[] envelope(final ANode geometryNode) throws QueryException {
         /* Try lookup in envelope map first. */
-        final DBNodeEntry geometryNodeEntry = new DBNodeEntry((DBNode) geometryNode);
-
-        if (mgr.hasEnvelope(geometryNodeEntry)) {
-
-            Envelope env = mgr.getEnvelope(geometryNodeEntry);
+        final DBNodeRef geometryNodeEntry = this.dbNodeRefFactory.createDBNodeEntry((DBNode) geometryNode);
+        if (geometryCache.hasEnvelope(geometryNodeEntry)) {
+            Envelope env = geometryCache.getEnvelope(geometryNodeEntry);
             final Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()};
             return res;
-
         } else {
-
             /* Get JTS geometry and cache the envelope. */
-            com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(geometryNode);
-            mgr.addEnvelope(geometryNodeEntry, geom.getEnvelopeInternal());
+            com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(geometryNode, geometryNodeEntry);
+            geometryCache.addEnvelope(geometryNodeEntry, geom.getEnvelopeInternal());
             return envelopeGeom(geom);
         }
     }
@@ -3458,40 +2738,8 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             final Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()};
             return res;
         } catch (Exception e) {
-            throw new QueryException(e);
+            throw new GmlGeoXException(e);
         }
-    }
-
-    /**
-     * Retrieve the pre value of the BaseX DBNode that is represented by a given DBNodeEntry.
-     *
-     * @param entry
-     *            - a DBNodeEntry
-     * @return a pre value
-     */
-    @Requires(Permission.NONE)
-    @Deterministic
-    public int pre(Object entry) {
-        if (entry instanceof DBNodeEntry)
-            return ((DBNodeEntry) entry).pre;
-
-        return -1;
-    }
-
-    /**
-     * Retrieve the database name of the BaseX DBNode that is represented by a given DBNodeEntry.
-     *
-     * @param entry
-     *            - a DBNodeEntry
-     * @return a database name
-     */
-    @Requires(Permission.NONE)
-    @Deterministic
-    public String dbname(Object entry) {
-        if (entry instanceof DBNodeEntry)
-            return ((DBNodeEntry) entry).dbname;
-
-        return null;
     }
 
     /**
@@ -3511,7 +2759,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     @Deterministic
     public DBNode[] search(Object minx, Object miny, Object maxx, Object maxy) throws QueryException {
-        return search(null, minx, miny, maxx, maxy);
+        return search(DEFAULT_SPATIAL_INDEX, minx, miny, maxx, maxy);
     }
 
     /**
@@ -3534,49 +2782,29 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Deterministic
     public DBNode[] search(final String indexName, Object minx, Object miny, Object maxx, Object maxy)
             throws QueryException {
-
         try {
-            double x1;
-            double x2;
-            double y1;
-            double y2;
-            if (minx instanceof Number)
-                x1 = ((Number) minx).doubleValue();
-            else
-                x1 = 0.0;
-            if (miny instanceof Number)
-                y1 = ((Number) miny).doubleValue();
-            else
-                y1 = 0.0;
-            if (maxx instanceof Number)
-                x2 = ((Number) maxx).doubleValue();
-            else
-                x2 = 0.0;
-            if (maxy instanceof Number)
-                y2 = ((Number) maxy).doubleValue();
-            else
-                y2 = 0.0;
-
-            return performSearch(indexName, x1, y1, x2, y2);
-
+            return performSearch(indexName,
+                    toDoubleOrZero(minx),
+                    toDoubleOrZero(miny),
+                    toDoubleOrZero(maxx),
+                    toDoubleOrZero(maxy));
         } catch (Exception e) {
-            throw new QueryException(e);
+            throw new GmlGeoXException(e);
         }
     }
 
-    private DBNode[] performSearch(String indexName, double x1, double y1, double x2, double y2)
-            throws QueryException {
-
-        Iterable<DBNodeEntry> iter = mgr.search(indexName, Geometries.rectangle(x1, y1, x2, y2));
-        List<DBNode> nodelist = new ArrayList<DBNode>();
-        if (iter != null) {
-            for (DBNodeEntry entry : iter) {
-                Data d = queryContext.resources.database(entry.dbname, new InputInfo("xpath", 0, 0));
-                DBNode n = new DBNode(d, entry.pre, entry.nodeKind);
-                if (n != null)
-                    nodelist.add(n);
-            }
+    private static double toDoubleOrZero(final Object dbl) {
+        if (dbl instanceof Number) {
+            return ((Number) dbl).doubleValue();
         }
+        return 0.0;
+    }
+
+    @NotNull
+    private DBNode[] performSearch(String indexName, double x1, double y1, double x2, double y2) {
+        final List<DBNode> nodelist = geometryCache.search(
+                indexName, Geometries.rectangle(x1, y1, x2, y2),
+                this.dbNodeRefLookup);
 
         if (debug && ++count % 5000 == 0) {
             String debugIndexName = indexName != null ? indexName : "default";
@@ -3598,8 +2826,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                             + debugIndexName
                             + "')");
         }
-
-        return nodelist.toArray(new DBNode[nodelist.size()]);
+        return nodelist.toArray(new DBNode[0]);
     }
 
     /**
@@ -3612,7 +2839,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     @Deterministic
     public DBNode[] search(ANode geometryNode) throws QueryException {
-        return search(null, geometryNode);
+        return search(DEFAULT_SPATIAL_INDEX, geometryNode);
     }
 
     /**
@@ -3629,26 +2856,19 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     public DBNode[] search(final String indexName, ANode geometryNode) throws QueryException {
 
         /* Try lookup in envelope map first. */
-        final DBNodeEntry entry = new DBNodeEntry((DBNode) geometryNode);
-
-        if (mgr.hasEnvelope(entry)) {
-
-            return search(indexName, mgr.getEnvelope(entry));
-
+        final DBNodeRef entry = dbNodeRefFactory.createDBNodeEntry((DBNode) geometryNode);
+        if (geometryCache.hasEnvelope(entry)) {
+            return search(indexName, geometryCache.getEnvelope(entry));
         } else {
-
             /* Get JTS geometry and cache the envelope. */
-            com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(geometryNode);
-
+            final com.vividsolutions.jts.geom.Geometry geom = getOrCacheGeometry(geometryNode, entry);
             if (geom.isEmpty()) {
-                throw new QueryException(
+                throw new GmlGeoXException(
                         "Geometry determined for the given node is empty "
                                 + "(ensure that the given node is a geometry node that represents a non-empty geometry). "
                                 + "Cannot perform a search based upon an empty geometry.");
             }
-
-            mgr.addEnvelope(entry, geom.getEnvelopeInternal());
-
+            geometryCache.addEnvelope(entry, geom.getEnvelopeInternal());
             return searchGeom(indexName, geom);
         }
     }
@@ -3663,7 +2883,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     @Deterministic
     public DBNode[] searchGeom(com.vividsolutions.jts.geom.Geometry geom) throws QueryException {
-        return searchGeom(null, geom);
+        return searchGeom(DEFAULT_SPATIAL_INDEX, geom);
     }
 
     /**
@@ -3679,29 +2899,19 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Deterministic
     public DBNode[] searchGeom(final String indexName, com.vividsolutions.jts.geom.Geometry geom)
             throws QueryException {
-
         if (geom.isEmpty()) {
-            throw new QueryException(
+            throw new GmlGeoXException(
                     "Geometry is empty. Cannot perform a search based upon an empty geometry.");
         }
-
         return search(indexName, geom.getEnvelopeInternal());
     }
 
-    private DBNode[] search(String indexName, Envelope env) throws QueryException {
-
-        try {
-
-            double x1 = env.getMinX();
-            double x2 = env.getMaxX();
-            double y1 = env.getMinY();
-            double y2 = env.getMaxY();
-
-            return performSearch(indexName, x1, y1, x2, y2);
-
-        } catch (Exception e) {
-            throw new QueryException(e);
-        }
+    private DBNode[] search(final String indexName, final Envelope env) throws QueryException {
+        double x1 = env.getMinX();
+        double x2 = env.getMaxX();
+        double y1 = env.getMinY();
+        double y2 = env.getMaxY();
+        return performSearch(indexName, x1, y1, x2, y2);
     }
 
     /**
@@ -3710,8 +2920,10 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * @return the node set of all items in the index
      * @throws QueryException
      */
+    @Requires(Permission.NONE)
     public DBNode[] search() throws QueryException {
-        return searchInIndex(null);
+        // Do we really search here???
+        return searchInIndex(DEFAULT_SPATIAL_INDEX);
     }
 
     /**
@@ -3722,22 +2934,12 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * @return the node set of all items in the index
      * @throws QueryException
      */
+    @Requires(Permission.NONE)
     public DBNode[] searchInIndex(final String indexName) throws QueryException {
-
+        // Do we really search here???
         try {
             logMemUsage("GmlGeoX#search.start " + count + ".");
-
-            Iterable<DBNodeEntry> iter = mgr.search(indexName);
-            List<DBNode> nodelist = new ArrayList<DBNode>();
-            if (iter != null) {
-                for (DBNodeEntry entry : iter) {
-                    Data d = queryContext.resources.database(entry.dbname, new InputInfo("xpath", 0, 0));
-                    DBNode n = new DBNode(d, entry.pre, entry.nodeKind);
-                    if (n != null)
-                        nodelist.add(n);
-                }
-            }
-
+            final List<DBNode> nodelist = geometryCache.getAll(indexName, this.dbNodeRefLookup);
             String debugIndexName = indexName != null ? indexName : "default";
             logMemUsage(
                     "GmlGeoX#search "
@@ -3748,10 +2950,9 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                             + debugIndexName
                             + "')");
 
-            return nodelist.toArray(new DBNode[nodelist.size()]);
-
+            return nodelist.toArray(new DBNode[0]);
         } catch (Exception e) {
-            throw new QueryException(e);
+            throw new GmlGeoXException(e);
         }
     }
 
@@ -3765,7 +2966,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
         if (debug) {
             final MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
             memory.gc();
-            LOGGER.debug(
+            logger.debug(
                     progress
                             + ". Memory: "
                             + Math.round(memory.getHeapMemoryUsage().getUsed() / 1048576)
@@ -3783,37 +2984,33 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * @throws QueryException
      */
     @Requires(Permission.NONE)
-    public void cacheSize(Object size) throws QueryException {
-
-        int newSize = 0;
-
+    public void cacheSize(final Object size) throws QueryException {
+        final int newSize;
         if (size instanceof BigInteger) {
             newSize = ((BigInteger) size).intValue();
         } else if (size instanceof Integer) {
-            newSize = ((Integer) size).intValue();
+            newSize = (Integer) size;
         } else {
-            throw new QueryException("Unsupported parameter type: " + size.getClass().getName());
+            throw new GmlGeoXException("Unsupported parameter type: " + size.getClass().getName());
         }
-
-        mgr.resetCache(newSize);
+        geometryCache.resetCache(newSize);
     }
 
     /**
      * Get the current size of the geometry cache.
      *
      * @return the size of the geometry cache
-     * @throws QueryException
      */
     @Requires(Permission.NONE)
-    public int getCacheSize() throws QueryException {
-        return mgr.getCacheSize();
+    public int getCacheSize() {
+        return geometryCache.getCacheSize();
     }
 
     /**
      * Indexes a feature geometry, using the default index.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param node
      *            represents the indexed item node (can be the gml:id of a GML feature element, or the element itself)
@@ -3823,7 +3020,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     public void index(final ANode node, final ANode geometry) throws QueryException {
-        index(null, node, geometry);
+        index(DEFAULT_SPATIAL_INDEX, node, geometry);
     }
 
     /**
@@ -3835,7 +3032,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     public void removeIndex(final String indexName) throws QueryException {
-        mgr.removeIndex(indexName);
+        geometryCache.removeIndex(indexName);
         /* NOTE: We do not remove a possibly existing entry in geometryIndexEntriesByIndexName, for a case in which the spatial index exists (e.g. from previous tests), but the query developer prepares the spatial index with new entries before removing the 'old' index. The typical sequence, however, should be to remove the old index first, then prepare and build the index with the new entries. */
     }
 
@@ -3843,7 +3040,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Indexes a feature geometry, using the named spatial index.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param indexName
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
@@ -3858,60 +3055,38 @@ public class GmlGeoX extends QueryModule implements Externalizable {
             throws QueryException {
 
         if (node instanceof DBNode && geometry instanceof DBNode) {
-
             try {
-
                 final com.vividsolutions.jts.geom.Geometry _geom = getOrCacheGeometry(geometry);
                 final Envelope env = _geom.getEnvelopeInternal();
 
                 if (!env.isNull()) {
-
-                    final DBNodeEntry nodeEntry = new DBNodeEntry((DBNode) node);
+                    final DBNodeRef nodeEntry = this.dbNodeRefFactory.createDBNodeEntry((DBNode) node);
                     if (env.getHeight() == 0.0 && env.getWidth() == 0.0) {
-                        mgr.index(indexName, nodeEntry, Geometries.point(env.getMinX(), env.getMinY()));
+                        geometryCache.index(indexName, nodeEntry, Geometries.point(env.getMinX(), env.getMinY()));
                     } else {
-                        mgr.index(
+                        geometryCache.index(
                                 indexName,
                                 nodeEntry,
                                 Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()));
                     }
 
                     // also cache the envelope
-                    final DBNodeEntry geomNodeEntry = new DBNodeEntry((DBNode) geometry);
-                    mgr.addEnvelope(geomNodeEntry, env);
+                    final DBNodeRef geomNodeEntry = this.dbNodeRefFactory.createDBNodeEntry((DBNode) geometry);
+                    geometryCache.addEnvelope(geomNodeEntry, env);
                 }
 
-                if (debug && mgr.indexSize(indexName) % 5000 == 0) {
+                if (debug && geometryCache.indexSize(indexName) % 5000 == 0) {
                     String debugIndexName = indexName != null ? indexName : "default";
                     logMemUsage(
                             "GmlGeoX#index progress (for index '"
                                     + debugIndexName
                                     + "'): "
-                                    + mgr.indexSize(indexName));
+                                    + geometryCache.indexSize(indexName));
                 }
-
-            } catch (final Exception e) {
-                if (e instanceof XMLParsingException) {
-                    // otherwise the stacktrace "<< is empty >>" is included
-                    throw new QueryException(prepareXMLParsingException((XMLParsingException) e));
-                }
-                throw new QueryException(e);
+            } catch (final XMLParsingException parsingException) {
+                throw new GmlGeoXException(parsingException);
             }
         }
-    }
-
-    /**
-     * Remove character offset information from the exception message, because in UnitTests on different machines different offsets were reported.
-     *
-     * @param e
-     * @return
-     */
-    private String prepareXMLParsingException(XMLParsingException e) {
-
-        String message = e.getMessage();
-        message = message.replaceAll(", character offset: \\d+", "");
-
-        return message;
     }
 
     /**
@@ -3922,24 +3097,18 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * @param geometry
      *            The geometry whose points are checked to see if one of them has coordinates equal to that of {@code point}
      * @return <code>true</code> if the coordinates of the given {@code point} are equal to the coordinates of one of the points that define {@code geometry}, else <code>false</code>
-     * @throws QueryException
      */
     @Requires(Permission.NONE)
     @Deterministic
     public boolean pointCoordInGeometryCoords(
-            com.vividsolutions.jts.geom.Point point, com.vividsolutions.jts.geom.Geometry geometry)
-            throws QueryException {
-
-        Coordinate pointCoord = point.getCoordinate();
-
-        Coordinate[] geomCoords = geometry.getCoordinates();
-
+            com.vividsolutions.jts.geom.Point point, com.vividsolutions.jts.geom.Geometry geometry) {
+        final Coordinate pointCoord = point.getCoordinate();
+        final Coordinate[] geomCoords = geometry.getCoordinates();
         for (Coordinate geomCoord : geomCoords) {
             if (pointCoord.equals3D(geomCoord)) {
                 return true;
             }
         }
-
         return false;
     }
 
@@ -3960,47 +3129,36 @@ public class GmlGeoX extends QueryModule implements Externalizable {
 
         try {
 
-            /* Determine if the two geometries intersect at all. Only if they do, a more detailed computation is necessary. */
+            // Determine if the two geometries intersect at all. Only if they do, a more detailed computation is necessary.
 
             Geometry g1 = null;
             Geometry g2 = null;
 
-            com.vividsolutions.jts.geom.Geometry jtsg1 = null;
-            com.vividsolutions.jts.geom.Geometry jtsg2 = null;
+            final ICRS geomNode1Srs = srsLookup.getSrs(geomNode1);
+            final ICRS geomNode2Srs = srsLookup.getSrs(geomNode2);
 
             // try to get JTS geometry for first geometry node from cache
+            com.vividsolutions.jts.geom.Geometry jtsg1 = null;
             if (geomNode1 instanceof DBNode) {
-                String geomId = getDBNodeID((DBNode) geomNode1);
-                try {
-                    jtsg1 = mgr.get(geomId);
-                } catch (Exception e1) {
-                    throw new QueryException(
-                            "Exception occurred while getting JTS geometry from GeometryManager. Exception message is: "
-                                    + e1.getMessage());
-                }
+                jtsg1 = geometryCache.getGeometry(this.dbNodeRefFactory.createDBNodeEntry((DBNode) geomNode1));
             }
             if (jtsg1 == null) {
-                g1 = geoutils.parseGeometry(geomNode1);
-                jtsg1 = geoutils.toJTSGeometry(g1);
+                g1 = deegreeTransformer.parseGeometry(geomNode1Srs, geomNode1);
+                jtsg1 = jtsTransformer.toJTSGeometry(g1);
             }
 
             // now the same for the second geometry node
+            com.vividsolutions.jts.geom.Geometry jtsg2 = null;
             if (geomNode2 instanceof DBNode) {
-                String geomId = getDBNodeID((DBNode) geomNode2);
-                try {
-                    jtsg2 = mgr.get(geomId);
-                } catch (Exception e1) {
-                    throw new QueryException(
-                            "Exception occurred while getting JTS geometry from GeometryManager. Exception message is: "
-                                    + e1.getMessage());
-                }
+                final DBNodeRef geomNode = this.dbNodeRefFactory.createDBNodeEntry((DBNode) geomNode2);
+                jtsg2 = geometryCache.getGeometry(this.dbNodeRefFactory.createDBNodeEntry((DBNode) geomNode2));
             }
             if (jtsg2 == null) {
-                g2 = geoutils.parseGeometry(geomNode2);
-                jtsg2 = geoutils.toJTSGeometry(g2);
+                g2 = deegreeTransformer.parseGeometry(geomNode2Srs, geomNode2);
+                jtsg2 = jtsTransformer.toJTSGeometry(g2);
             }
 
-            /* If both geometries are points or multi-points, there cannot be a relevant intersection. */
+            // If both geometries are points or multi-points, there cannot be a relevant intersection.
             boolean g1IsPointGeom = jtsg1 instanceof com.vividsolutions.jts.geom.Point
                     || jtsg1 instanceof com.vividsolutions.jts.geom.MultiPoint;
             boolean g2IsPointGeom = jtsg2 instanceof com.vividsolutions.jts.geom.Point
@@ -4009,72 +3167,74 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 return null;
             }
 
-            /* Check if the two geometries intersect at all. If not, we are done. Otherwise, we need to check in more detail. */
+            // Check if the two geometries intersect at all. If not, we are done. Otherwise, we need to check in more detail.
             if (!jtsg1.intersects(jtsg2)) {
                 return null;
             }
 
-            /* deegree geometries may not exist yet, if JTS geometries have been retrieved from the geometry cache. Ensure that deegree geometries are available. */
-            if (g1 == null) {
-                g1 = geoutils.parseGeometry(geomNode1);
-            }
-            if (g2 == null) {
-                g2 = geoutils.parseGeometry(geomNode2);
-            }
-
-            /* Determine JTS geometries for relevant geometry components */
-
-            List<com.vividsolutions.jts.geom.Geometry> g1Components = new ArrayList<>();
+            // Determine JTS geometries for relevant geometry components
+            Collection<com.vividsolutions.jts.geom.Geometry> g1Components;
             if (jtsg1 instanceof com.vividsolutions.jts.geom.Point) {
-                g1Components.add(jtsg1);
+                g1Components = Collections.singleton(jtsg1);
             } else if (jtsg1 instanceof com.vividsolutions.jts.geom.MultiPoint) {
                 com.vividsolutions.jts.geom.MultiPoint mp = (com.vividsolutions.jts.geom.MultiPoint) jtsg1;
-                g1Components.addAll(Arrays.asList(flattenAllGeometryCollections(mp)));
+                g1Components = Arrays.asList(flattenAllGeometryCollections(mp));
             } else {
-                for (Curve c : geoutils.getCurveComponents(g1)) {
-                    g1Components.add(geoutils.toJTSGeometry(c));
+                if (g1 == null) {
+                    g1 = deegreeTransformer.parseGeometry(geomNode1Srs, geomNode1);
+                }
+                final Collection<Curve> curves = jtsTransformer.getCurveComponents(g1);
+                g1Components = new ArrayList<>(curves.size());
+                for (final Curve c : curves) {
+                    g1Components.add(jtsTransformer.toJTSGeometry(c));
                 }
             }
 
-            List<com.vividsolutions.jts.geom.Geometry> g2Components = new ArrayList<>();
+            Collection<com.vividsolutions.jts.geom.Geometry> g2Components;
             if (jtsg2 instanceof com.vividsolutions.jts.geom.Point) {
-                g2Components.add(jtsg2);
+                g2Components = Collections.singleton(jtsg2);
             } else if (jtsg2 instanceof com.vividsolutions.jts.geom.MultiPoint) {
                 com.vividsolutions.jts.geom.MultiPoint mp = (com.vividsolutions.jts.geom.MultiPoint) jtsg2;
-                g2Components.addAll(Arrays.asList(flattenAllGeometryCollections(mp)));
+                g2Components = Arrays.asList(flattenAllGeometryCollections(mp));
             } else {
-                for (Curve c : geoutils.getCurveComponents(g2)) {
-                    g2Components.add(geoutils.toJTSGeometry(c));
+                if (g2 == null) {
+                    g2 = deegreeTransformer.parseGeometry(geomNode2Srs, geomNode2);
+                }
+                final Collection<Curve> curves = jtsTransformer.getCurveComponents(g2);
+                g2Components = new ArrayList<>(curves.size());
+                for (final Curve c : curves) {
+                    g2Components.add(jtsTransformer.toJTSGeometry(c));
                 }
             }
 
-            /* Switch order of geometry arrays, if the second geometry is point based. We want to create a spatial index only for curve components. */
+            // Switch order of geometry arrays, if the second geometry is point based. We want to create a
+            // spatial index only for curve components.
             if (g2IsPointGeom) {
-                List<com.vividsolutions.jts.geom.Geometry> tmp = g1Components;
+                final Collection<com.vividsolutions.jts.geom.Geometry> tmp = g1Components;
                 g1Components = g2Components;
                 g2Components = tmp;
-                tmp = null;
             }
 
-            /* Create spatial index for curve components. */
-            STRtree g2ComponentIndex = new STRtree();
+            // Create spatial index for curve components.
+            final STRtree g2ComponentIndex = new STRtree();
             for (com.vividsolutions.jts.geom.Geometry g2CompGeom : g2Components) {
                 g2ComponentIndex.insert(g2CompGeom.getEnvelopeInternal(), g2CompGeom);
             }
 
-            /* Now check for invalid interior intersections of components from the two geometries. */
+            // Now check for invalid interior intersections of components from the two geometries.
             for (com.vividsolutions.jts.geom.Geometry g1CompGeom : g1Components) {
 
                 // get g2 components from spatial index to compare
                 @SuppressWarnings("rawtypes")
-                List g2Results = g2ComponentIndex.query(g1CompGeom.getEnvelopeInternal());
+                final List g2Results = g2ComponentIndex.query(g1CompGeom.getEnvelopeInternal());
 
                 for (Object o : g2Results) {
-                    com.vividsolutions.jts.geom.Geometry g2CompGeom = (com.vividsolutions.jts.geom.Geometry) o;
+                    final com.vividsolutions.jts.geom.Geometry g2CompGeom = (com.vividsolutions.jts.geom.Geometry) o;
                     if (g1CompGeom.intersects(g2CompGeom)) {
-                        /* It is allowed that two curves are spatially equal. So only check for an interior intersection in case that the two geometry components are not spatially equal.
-                         *
-                         * The intersection matrix must be computed in any case (to determine that the two components are not equal). So we compute it once, and re-use it for tests on interior intersection. */
+                        // It is allowed that two curves are spatially equal. So only check for an interior intersection
+                        // in case that the two geometry components are not spatially equal.
+                        // The intersection matrix must be computed in any case (to determine that the two components
+                        // are not equal). So we compute it once, and re-use it for tests on interior intersection.
                         IntersectionMatrix im = g1CompGeom.relate(g2CompGeom);
                         if (!im.isEquals(g1CompGeom.getDimension(), g2CompGeom.getDimension())
                                 && (im.matches("T********")
@@ -4087,11 +3247,11 @@ public class GmlGeoX extends QueryModule implements Externalizable {
                 }
             }
 
-            /* No invalid intersection found. */
+            // No invalid intersection found.
             return null;
 
         } catch (Exception e) {
-            throw new QueryException(e);
+            throw new GmlGeoXException(e);
         }
     }
 
@@ -4099,7 +3259,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * Retrieve the geometry represented by a given node as a JTS geometry. First try the cache and if it is not in the cache construct it from the XML.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param geomNode
      *            the node that represents the geometry
@@ -4108,60 +3268,51 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public com.vividsolutions.jts.geom.Geometry getOrCacheGeometry(ANode geomNode)
-            throws QueryException {
-
+    @NotNull
+    public com.vividsolutions.jts.geom.Geometry getOrCacheGeometry(final ANode geomNode) throws QueryException {
         if (debug && ++count2 % 5000 == 0) {
             logMemUsage("GmlGeoX#getGeometry.start " + count2);
         }
-
         com.vividsolutions.jts.geom.Geometry geom;
-
         if (geomNode instanceof DBNode) {
-
-            String geomId = getDBNodeID((DBNode) geomNode);
-
-            try {
-                geom = mgr.get(geomId);
-            } catch (Exception e1) {
-                throw new QueryException(
-                        "Exception occurred while getting JTS geometry from GeometryManager. Exception message is: "
-                                + e1.getMessage());
-            }
-
+            final DBNodeRef geomNodeRef = dbNodeRefFactory.createDBNodeEntry((DBNode) geomNode);
+            geom = geometryCache.getGeometry(geomNodeRef);
             if (geom == null) {
-
-                try {
-
-                    geom = geoutils.singleObjectToJTSGeometry(geomNode);
-
-                    if (geom != null) {
-                        mgr.put(geomId, geom);
-                    }
-
-                } catch (Exception e) {
-                    throw new QueryException(e);
-                }
-
-                if (debug && mgr.getMissCount() % 10000 == 0) {
-                    LOGGER.debug("Cache misses: " + mgr.getMissCount() + " of " + mgr.getCount());
+                geom = jtsTransformer.singleObjectToJTSGeometry(geomNode);
+                geometryCache.cacheGeometry(geomNodeRef, geom);
+                if (debug && geometryCache.getMissCount() % 10000 == 0) {
+                    logger.debug("Cache misses: " + geometryCache.getMissCount() + " of " + geometryCache.getCount());
                 }
             }
-
         } else {
+            geom = jtsTransformer.singleObjectToJTSGeometry(geomNode);
+        }
+        if (debug && count2 % 5000 == 0) {
+            logMemUsage("GmlGeoX#getGeometry.end " + count2);
+        }
 
-            try {
-                geom = geoutils.singleObjectToJTSGeometry(geomNode);
+        return geom;
+    }
 
-            } catch (Exception e) {
-                throw new QueryException(e);
+    private com.vividsolutions.jts.geom.Geometry getOrCacheGeometry(final ANode geomNode, final DBNodeRef geomNodeRef)
+            throws QueryException {
+        if (debug && ++count2 % 5000 == 0) {
+            logMemUsage("GmlGeoX#getGeometry.start " + count2);
+        }
+        com.vividsolutions.jts.geom.Geometry geom = geometryCache.getGeometry(geomNodeRef);
+        if (geom == null) {
+            geom = jtsTransformer.singleObjectToJTSGeometry(geomNode);
+            if (geom != null) {
+                // geom.setUserData(geomNodeRef);
+                geometryCache.cacheGeometry(geomNodeRef, geom);
+            }
+            if (debug && geometryCache.getMissCount() % 10000 == 0) {
+                logger.debug("Cache misses: " + geometryCache.getMissCount() + " of " + geometryCache.getCount());
             }
         }
-
         if (geom == null) {
-            geom = geoutils.emptyJTSGeometry();
+            geom = jtsTransformer.emptyJTSGeometry();
         }
-
         if (debug && count2 % 5000 == 0) {
             logMemUsage("GmlGeoX#getGeometry.end " + count2);
         }
@@ -4170,27 +3321,10 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * @param dbn
-     * @return pre + database name
-     */
-    private String getDBNodeID(DBNode dbn) {
-
-        int pre = dbn.pre();
-        String dbname = "";
-
-        Data data = dbn.data();
-
-        if (data != null && data.meta != null && data.meta.name != null) {
-            dbname = data.meta.name;
-        }
-        return pre + dbname;
-    }
-
-    /**
      * Prepares spatial indexing of a feature geometry, for the default spatial index.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param node
      *            represents the node of the feature to be indexed
@@ -4200,15 +3334,14 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     public void prepareSpatialIndex(final ANode node, final ANode geometry) throws QueryException {
-
-        prepareSpatialIndex(null, node, geometry);
+        prepareSpatialIndex(DEFAULT_SPATIAL_INDEX, node, geometry);
     }
 
     /**
      * Prepares spatial indexing of a feature geometry, for the named spatial index.
      *
      * <p>
-     * See {@link GmlGeoXUtils#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param indexName
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
@@ -4219,50 +3352,78 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      * @throws QueryException
      */
     @Requires(Permission.NONE)
-    public void prepareSpatialIndex(final String indexName, final ANode node, final ANode geometry)
-            throws QueryException {
-
+    public void prepareSpatialIndex(final String indexName, final ANode node, final ANode geometry) throws QueryException {
         if (node instanceof DBNode && geometry instanceof DBNode) {
-
-            try {
-
-                final com.vividsolutions.jts.geom.Geometry _geom = getOrCacheGeometry(geometry);
-
-                final Envelope env = _geom.getEnvelopeInternal();
-
-                if (!env.isNull()) {
-
-                    // cache the index entry
-                    final DBNodeEntry nodeEntry = new DBNodeEntry((DBNode) node);
-
-                    com.github.davidmoten.rtree.geometry.Geometry treeGeom;
-
-                    if (env.getHeight() == 0.0 && env.getWidth() == 0.0) {
-                        treeGeom = Geometries.point(env.getMinX(), env.getMinY());
-                    } else {
-                        treeGeom = Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY());
-                    }
-                    mgr.prepareSpatialIndex(indexName, nodeEntry, treeGeom);
-
-                    // also cache the envelope
-                    final DBNodeEntry geomNodeEntry = new DBNodeEntry((DBNode) geometry);
-                    mgr.addEnvelope(geomNodeEntry, env);
+            final com.vividsolutions.jts.geom.Geometry _geom = getOrCacheGeometry(geometry);
+            final Envelope env = _geom.getEnvelopeInternal();
+            if (!env.isNull()) {
+                // cache the index entry
+                final DBNodeRef geometryNodeEntry;
+                if (_geom.getUserData() != null) {
+                    geometryNodeEntry = (DBNodeRef) _geom.getUserData();
+                } else {
+                    geometryNodeEntry = this.dbNodeRefFactory.createDBNodeEntry((DBNode) node);
                 }
+                final com.github.davidmoten.rtree.geometry.Geometry treeGeom;
+                if (env.getHeight() == 0.0 && env.getWidth() == 0.0) {
+                    treeGeom = Geometries.point(env.getMinX(), env.getMinY());
+                } else {
+                    treeGeom = Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY());
+                }
+                geometryCache.prepareSpatialIndex(indexName, geometryNodeEntry, treeGeom);
+                // also cache the envelope
+                geometryCache.addEnvelope(geometryNodeEntry, env);
+            }
 
-                if (debug && mgr.indexSize(indexName) % 5000 == 0) {
-                    String debugIndexName = indexName != null ? indexName : "default";
-                    logMemUsage(
-                            "GmlGeoX#index progress (for index '"
-                                    + debugIndexName
-                                    + "'): "
-                                    + mgr.indexSize(indexName));
+            if (debug && geometryCache.indexSize(indexName) % 5000 == 0) {
+                String debugIndexName = indexName != null ? indexName : "default";
+                logMemUsage(
+                        "GmlGeoX#index progress (for index '"
+                                + debugIndexName
+                                + "'): "
+                                + geometryCache.indexSize(indexName));
+            }
+        }
+    }
+
+    /**
+     * Prepares spatial indexing of a feature geometry, for the default and a named spatial index.
+     *
+     * <p>
+     * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
+     *
+     * @param indexName
+     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     * @param node
+     *            represents the node of the feature to be indexed
+     * @param geometry
+     *            represents the GML geometry to index
+     * @throws QueryException
+     */
+    @Requires(Permission.NONE)
+    public void prepareDefaultAndSpecificSpatialIndex(final String indexName, final ANode node, final ANode geometry)
+            throws QueryException {
+        if (node instanceof DBNode && geometry instanceof DBNode) {
+            final com.vividsolutions.jts.geom.Geometry _geom = getOrCacheGeometry(geometry);
+            final Envelope env = _geom.getEnvelopeInternal();
+            if (!env.isNull()) {
+                // cache the index entry
+                final DBNodeRef geometryNodeEntry;
+                if (_geom.getUserData() != null) {
+                    geometryNodeEntry = (DBNodeRef) _geom.getUserData();
+                } else {
+                    geometryNodeEntry = this.dbNodeRefFactory.createDBNodeEntry((DBNode) node);
                 }
-            } catch (final Exception e) {
-                if (e instanceof XMLParsingException) {
-                    // otherwise the stacktrace "<< is empty >>" is included
-                    throw new QueryException(prepareXMLParsingException((XMLParsingException) e));
+                final com.github.davidmoten.rtree.geometry.Geometry treeGeom;
+                if (env.getHeight() == 0.0 && env.getWidth() == 0.0) {
+                    treeGeom = Geometries.point(env.getMinX(), env.getMinY());
+                } else {
+                    treeGeom = Geometries.rectangle(env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY());
                 }
-                throw new QueryException(e);
+                geometryCache.prepareSpatialIndex(indexName, geometryNodeEntry, treeGeom);
+                geometryCache.prepareSpatialIndex(DEFAULT_SPATIAL_INDEX, geometryNodeEntry, treeGeom);
+                // also cache the envelope
+                geometryCache.addEnvelope(geometryNodeEntry, env);
             }
         }
     }
@@ -4277,8 +3438,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     public void buildSpatialIndex() throws QueryException {
-
-        buildSpatialIndex(null);
+        buildSpatialIndex(DEFAULT_SPATIAL_INDEX);
     }
 
     /**
@@ -4294,8 +3454,7 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     public void buildSpatialIndex(final String indexName) throws QueryException {
-
-        mgr.buildIndexUsingBulkLoading(indexName);
+        geometryCache.buildIndexUsingBulkLoading(indexName);
     }
 
     /**
@@ -4303,11 +3462,10 @@ public class GmlGeoX extends QueryModule implements Externalizable {
      *
      * @param geom
      * @return an empty array if the geometry is null or empty, otherwise an array with the x and y from the first coordinate of the geometry
-     * @throws QueryException
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public String[] georefFromGeom(com.vividsolutions.jts.geom.Geometry geom) throws QueryException {
+    public String[] georefFromGeom(com.vividsolutions.jts.geom.Geometry geom) {
 
         if (geom == null || geom.isEmpty()) {
             return new String[]{};
@@ -4328,35 +3486,53 @@ public class GmlGeoX extends QueryModule implements Externalizable {
     @Deterministic
     public String[] georefFromCoord(com.vividsolutions.jts.geom.Coordinate coord)
             throws QueryException {
-
         return new String[]{"" + coord.x, "" + coord.y};
     }
 
-    @Requires(Permission.NONE)
+    @Requires(Permission.READ)
+    @Deterministic
+    public String detailedVersion() {
+        try {
+            final URLClassLoader cl = (URLClassLoader) getClass().getClassLoader();
+            final URL url = cl.findResource("META-INF/MANIFEST.MF");
+            final Manifest manifest = new Manifest(url.openStream());
+            final String version = manifest.getMainAttributes().getValue("Implementation-Version");
+            final String buildTime = manifest.getMainAttributes().getValue("Build-Date").substring(2);
+            return version + "-b" + buildTime;
+        } catch (Exception E) {
+            return "unknown";
+        }
+    }
+
+    @Requires(Permission.ADMIN)
     public GmlGeoX getModuleInstance() {
         return this;
     }
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
+        final String setStandardSRS = this.srsLookup.getStandardSRS();
+        out.writeUTF(setStandardSRS != null ? setStandardSRS : "");
         out.writeObject(this.geometryFactory);
-        out.writeObject(this.gmlGeometries);
-        out.writeObject(standardSRS);
-        out.writeObject(this.mgr);
-        out.writeInt(count);
-        out.writeInt(count2);
+        out.writeUTF(this.dbNodeRefFactory.getDbNamePrefix());
+        out.writeUTF(this.geometryValidator.registeredGmlGeometries());
+        out.writeObject(this.geometryCache);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-
+        // Todo read from meta
+        final BxNamespaceHolder bxNamespaceHolder = BxNamespaceHolder.init(queryContext);
+        this.srsLookup = new SrsLookup(in.readUTF());
         this.geometryFactory = (IIGeometryFactory) in.readObject();
-        this.geoutils = new GmlGeoXUtils(this, this.geometryFactory, this.jtsFactory);
-        this.gmlGeometries = (TreeSet<String>) in.readObject();
-        this.standardSRS = (String) in.readObject();
-        this.mgr = (GeometryManager) in.readObject();
-        this.count = in.readInt();
-        this.count2 = in.readInt();
+        this.deegreeTransformer = new DeegreeTransformer(this.geometryFactory, bxNamespaceHolder);
+        this.jtsTransformer = new JtsTransformer(this.deegreeTransformer, this.jtsFactory, srsLookup);
+        this.dbNodeRefFactory = DBNodeRefFactory.create(in.readUTF() + "000");
+        this.dbNodeRefLookup = new DBNodeRefLookup(this.queryContext, this.dbNodeRefFactory);
+        this.geometryValidator = new GeometryValidator(srsLookup, jtsTransformer, deegreeTransformer, bxNamespaceHolder);
+        this.geometryValidator.unregisterAllGmlGeometries();
+        final String gmlGeometries = in.readUTF();
+        Stream.of(gmlGeometries.split(",")).map(e -> e.trim()).forEach(e -> this.geometryValidator.registerGmlGeometry(e));
+        this.geometryCache = (GeometryCache) in.readObject();
     }
 }

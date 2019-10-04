@@ -15,17 +15,9 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -39,8 +31,13 @@ import org.basex.core.Context;
 import org.basex.core.cmd.CreateDB;
 import org.basex.core.cmd.DropDB;
 import org.basex.core.cmd.XQuery;
-import org.custommonkey.xmlunit.Diff;
 import org.junit.Test;
+import org.xmlunit.builder.DiffBuilder;
+import org.xmlunit.builder.Input;
+import org.xmlunit.diff.Diff;
+import org.xmlunit.diff.Difference;
+
+import de.interactive_instruments.IFile;
 
 /**
  * @author Johannes Echterhoff (echterhoff <at> interactive-instruments <dot> de)
@@ -49,6 +46,7 @@ import org.junit.Test;
 public class BasicXQueryTest {
 
     private static Context context = new Context();
+    private final XmlUnitDetailFormatter formatter = new XmlUnitDetailFormatter();
 
     public static final String queryDir = "src/test/resources/queries/";
     public static final String xmlDir = "src/test/resources/xml/";
@@ -60,116 +58,124 @@ public class BasicXQueryTest {
     public static final String referenceDir = "src/test/resources/reference/";
 
     @Test
-    public void test_validation() {
-        xmlTest("test_geometry_validation.xq", "geometryRelationship/GeometryRelationshipTest.xml");
+    public void test_validation() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/geometryRelationship/GeometryRelationshipTest.xml")
+                .execute(context);
+        xmlTest("test_geometry_validation.xq");
     }
 
     @Test
     public void test_basic_tests() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/geometryRelationship/GeometryRelationshipTest.xml")
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/geometryRelationship/GeometryRelationshipTest.xml")
                 .execute(context);
         xmlTest("test_basic_tests.xq");
     }
 
     @Test
-    public void test_isClosed() {
-        xmlTest("test_geometry_isClosed.xq", "GeometryIsClosedTest.xml");
+    public void test_isClosed() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/GeometryIsClosedTest.xml")
+                .execute(context);
+        xmlTest("test_geometry_isClosed.xq");
     }
 
     @Test
     public void test_3d() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_geometry_3d.xml").execute(context);
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_geometry_3d.xml").execute(context);
         xmlTest("test_geometry_3d.xq");
     }
 
     @Test
     public void test_3d_indexed() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/3DCoodinates.xml").execute(context);
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/3DCoodinates.xml").execute(context);
         xmlTest("test_geometry_3d_indexed.xq");
     }
 
     @Test
     public void test_SRS_configByGmlGeoX() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_geometry_SRS_configByGmlGeoX.xml")
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_geometry_SRS_configByGmlGeoX.xml")
                 .execute(context);
         xmlTest("test_geometry_SRS_configByGmlGeoX.xq");
     }
 
     @Test
     public void test_union() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_geometry_union.xml").execute(context);
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_geometry_union.xml").execute(context);
         xmlTest("test_geometry_union.xq");
     }
 
     @Test
     public void test_arc_interpolation() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_arc_interpolation.xml").execute(context);
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_arc_interpolation.xml").execute(context);
         xmlTest("test_arc_interpolation.xq");
     }
 
     @Test
     public void test_arc_interpolation_orientableCurve() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_arc_interpolation_orientableCurve.xml").execute(context);
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_arc_interpolation_orientableCurve.xml")
+                .execute(context);
         xmlTest("test_arc_interpolation_orientableCurve.xq");
     }
 
     @Test
     public void test_arc_interpolation_compositeSurface() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_arc_interpolation_compositeSurface.xml")
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_arc_interpolation_compositeSurface.xml")
                 .execute(context);
         xmlTest("test_arc_interpolation_compositeSurface.xq");
     }
 
     @Test
     public void test_arc_interpolation_compositeCurve() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_arc_interpolation_compositeCurve.xml").execute(context);
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_arc_interpolation_compositeCurve.xml")
+                .execute(context);
         xmlTest("test_arc_interpolation_compositeCurve.xq");
     }
 
     @Test
     public void test_arc_interpolation_self_intersection() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_arc_interpolation_self_intersection.xml")
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_arc_interpolation_self_intersection.xml")
                 .execute(context);
         xmlTest("test_arc_interpolation_self_intersection.xq");
     }
 
     @Test
     public void test_envelope() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_envelope.xml").execute(context);
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_envelope.xml").execute(context);
         xmlTest("test_envelope.xq");
     }
 
     @Test
     public void test_checkSecondControlPointInMiddleThirdOfArc() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_checkSecondControlPointInMiddleThirdOfArc.xml")
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_checkSecondControlPointInMiddleThirdOfArc.xml")
                 .execute(context);
         xmlTest("test_checkSecondControlPointInMiddleThirdOfArc.xq");
     }
 
     @Test
     public void test_checkMinimumSeparationOfCircleControlPoints() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_checkMinimumSeparationOfCircleControlPoints.xml")
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_checkMinimumSeparationOfCircleControlPoints.xml")
                 .execute(context);
         xmlTest("test_checkMinimumSeparationOfCircleControlPoints.xq");
     }
 
     @Test
     public void test_determineInteriorIntersectionOfCurveComponents() throws BaseXException {
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_determineInteriorIntersectionOfCurveComponents.xml")
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_determineInteriorIntersectionOfCurveComponents.xml")
                 .execute(context);
         xmlTest("test_determineInteriorIntersectionOfCurveComponents.xq");
     }
@@ -177,8 +183,8 @@ public class BasicXQueryTest {
     @Test
     public void test_moduleStorage() throws BaseXException {
 
-        new DropDB("GmlGeoXUnitTestDB").execute(context);
-        new CreateDB("GmlGeoXUnitTestDB", "src/test/resources/xml/test_moduleStorage.xml")
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_moduleStorage.xml")
                 .execute(context);
 
         xmlTest("test_moduleStorage_store.xq");
@@ -190,10 +196,6 @@ public class BasicXQueryTest {
 
     private void xmlTest(String xquery) {
         xmlTest(xquery, null, null);
-    }
-
-    private void xmlTest(String xquery, String doc) {
-        xmlTest(xquery, doc, null);
     }
 
     private void xmlTest(String xquery, Map<String, String> externalVariables) {
@@ -233,48 +235,40 @@ public class BasicXQueryTest {
             similar(result, reference);
 
         } catch (Exception e) {
+            e.printStackTrace(System.err);
             fail("Exception occurred while executing test with xquery '" + xquery + "': " + e.getMessage());
         }
     }
 
-    private void similar(String xmlFileName, String referenceXmlFileName) {
-        String myControlXML = null;
-        String myTestXML = null;
+    private void similar(final String xmlFileName, final String referenceXmlFileName) {
+        final IFile controlXmlFile = new IFile(referenceXmlFileName);
+        final IFile testXmlFile = new IFile(xmlFileName);
         try {
-            myControlXML = readFile(referenceXmlFileName);
-        } catch (Exception e) {
+            controlXmlFile.expectFileIsReadable();
+            testXmlFile.expectFileIsReadable();
+        } catch (final IOException e) {
             fail("Could not read " + referenceXmlFileName);
         }
         try {
-            myTestXML = readFile(xmlFileName);
+            final Diff diff = DiffBuilder.compare(controlXmlFile.readContent("UTF-8").toString())
+                    .withTest(Input.fromString(testXmlFile.readContent("UTF-8").toString()))
+                    .checkForSimilar().checkForIdentical()
+                    .ignoreComments()
+                    .ignoreWhitespace()
+                    .normalizeWhitespace()
+                    .ignoreElementContentWhitespace()
+                    .build();
+
+            if (diff.hasDifferences()) {
+                System.err.println("Test file: " + testXmlFile.getAbsolutePath());
+                System.err.println("Expected file: " + controlXmlFile.getAbsolutePath());
+                final Difference difference = diff.getDifferences().iterator().next();
+                assertEquals(formatter.getControlDetailDescription(difference.getComparison()),
+                        formatter.getTestDetailDescription(difference.getComparison()));
+            }
         } catch (Exception e) {
-            fail("Could not read " + xmlFileName);
-        }
-        try {
-            Diff myDiff = new Diff(myControlXML, myTestXML);
-            assertTrue("XML: " + xmlFileName + " similar to " + referenceXmlFileName + " - " + myDiff.toString(),
-                    myDiff.similar());
-        } catch (Exception e) {
+            e.printStackTrace(System.err);
             fail("Could not compare " + xmlFileName + " and " + referenceXmlFileName);
         }
-    }
-
-    private String readFile(String fileName) throws Exception {
-        InputStream stream = new FileInputStream(new File(fileName));
-
-        Writer writer = new StringWriter();
-        char[] buffer = new char[1024];
-        Reader reader = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
-            int n;
-            while ((n = reader.read(buffer)) != -1) {
-                writer.write(buffer, 0, n);
-            }
-        } finally {
-            if (reader != null)
-                reader.close();
-        }
-        return writer.toString();
     }
 }

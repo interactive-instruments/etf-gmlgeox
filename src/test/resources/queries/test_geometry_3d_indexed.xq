@@ -3,7 +3,9 @@ import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';
 declare namespace gml = 'http://www.opengis.net/gml/3.2';
 declare namespace ii = 'http://www.interactive-instruments.de/test';
 
-let $members := db:open("GmlGeoXUnitTestDB")//ii:member
+let $members := db:open("GmlGeoXUnitTestDB-000")//ii:member
+let $init := ggeo:init('GmlGeoXUnitTestDB-000')
+
 let $geometries := $members/*
 return
  <test_3d>
@@ -17,9 +19,8 @@ return
        if (xs:boolean($vr/ggeo:isValid)) then
         ()
        else
-        for $message in $vr/ggeo:message[@type = 'ERROR']
-        return
-         $message/text()
+        for $message in $vr/ggeo:errors/*:message/*:argument[@token='original']
+        return $message/text()
      } catch * {
       $err:description
      }

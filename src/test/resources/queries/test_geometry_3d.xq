@@ -3,7 +3,8 @@ import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';
 declare namespace gml = 'http://www.opengis.net/gml/3.2';
 declare namespace ii = 'http://www.interactive-instruments.de/test';
 
-let $members := db:open("GmlGeoXUnitTestDB")//ii:member
+let $members := db:open("GmlGeoXUnitTestDB-000")//ii:member
+let $init := ggeo:init('GmlGeoXUnitTestDB-000')
 
 let $geometries := $members/*
 return
@@ -15,27 +16,19 @@ return
     return
      <test
       id='{$geom/@gml:id}'>
-      <isValid>{
-        if (xs:boolean($vr/ggeo:isValid)) then
+      <valid>{
+        if (xs:boolean($vr/ggeo:valid)) then
          'true'
         else
          'false'
-       }</isValid>
+       }</valid>
       <result>{
         $vr/ggeo:result/text()
        }</result>
       <messages>
        {
-        for $msg in $vr/ggeo:message
-        return
-         <message>
-          <type>{
-            $msg/data(@type)
-           }</type>
-          <text>{
-            $msg/text()
-           }</text>
-         </message>
+               for $message in $vr/ggeo:errors/*:message/*:argument[@token='original']
+               return $message/text()
        }
       </messages>
      </test>

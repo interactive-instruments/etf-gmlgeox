@@ -1,0 +1,62 @@
+/**
+ * Copyright 2010-2019 interactive instruments GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package de.interactive_instruments.etf.bsxm.geometry;
+
+import org.deegree.geometry.points.Points;
+import org.deegree.geometry.primitive.Point;
+import org.deegree.geometry.primitive.segments.ArcString;
+
+/**
+ * @author Jon Herrmann ( herrmann aT interactive-instruments doT de )
+ */
+public class ArcStringRevWrapper implements ArcString {
+
+    private final ArcString wrapper;
+
+    public ArcStringRevWrapper(final ArcString segment) {
+        this.wrapper = segment;
+    }
+
+    @Override
+    public int getNumArcs() {
+        return wrapper.getNumArcs();
+    }
+
+    @Override
+    public Points getControlPoints() {
+        return new PointsRevWrapper(wrapper.getControlPoints());
+    }
+
+    @Override
+    public CurveSegmentType getSegmentType() {
+        return wrapper.getSegmentType();
+    }
+
+    @Override
+    public int getCoordinateDimension() {
+        return wrapper.getCoordinateDimension();
+    }
+
+    @Override
+    public Point getStartPoint() {
+        return wrapper.getEndPoint();
+    }
+
+    @Override
+    public Point getEndPoint() {
+        return wrapper.getStartPoint();
+    }
+}
