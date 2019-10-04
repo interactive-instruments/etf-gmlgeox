@@ -59,11 +59,11 @@ public final class DegreeArcTest {
         final Curve lsCurve = geomFactory.createCurve("LS", crs,
                 geomFactory.createLineStringSegment(geomFactory.createPoints(lsPointList)));
 
-        final JTSGeometryPair jtsGeoms = JTSGeometryPair.createCompatiblePair((AbstractDefaultGeometry) arcCurve,
-                lsCurve);
+        // final JTSGeometryPair jtsGeoms = JTSGeometryPair.createCompatiblePair((AbstractDefaultGeometry) arcCurve,
+        // lsCurve);
 
-        System.out.println(jtsGeoms.first);
-        System.out.println(jtsGeoms.second);
+        // System.out.println(jtsGeoms.first);
+        // System.out.println(jtsGeoms.second);
 
         assertTrue(arcCurve.intersects(lsCurve));
     }
