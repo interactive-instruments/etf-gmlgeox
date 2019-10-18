@@ -37,10 +37,10 @@ final public class SrsLookup {
     private static final byte[] srsNameB = "srsName".getBytes();
     private static final byte[] boundedByB = "boundedBy".getBytes();
     private static final byte[] envelopeB = "Envelope".getBytes();
-    private final String standardSRS;
-    private final ICRS standardDeegreeSRS;
+    private String standardSRS = null;
+    private ICRS standardDeegreeSRS = null;
 
-    SrsLookup(final String standardSRS) {
+    public void setStandardSRS(final String standardSRS) {
         if (SUtils.isNullOrEmpty(standardSRS)) {
             this.standardSRS = null;
             this.standardDeegreeSRS = null;
@@ -71,6 +71,7 @@ final public class SrsLookup {
 
     @Nullable
     String determineSrsName(@NotNull final ANode geometryNode) {
+
         final byte[] srsDirect = geometryNode.attribute(srsNameB);
         if (srsDirect != null) {
             return Token.string(srsDirect);
@@ -90,7 +91,8 @@ final public class SrsLookup {
                     return Token.string(values.key(1));
                 }
             }
-            // Traverse the ancestor nodes. The following time-consuming steps should be avoided
+            // Traverse the ancestor nodes. The following time-consuming steps should be
+            // avoided
             // by setting the default srs.
             for (final ANode ancestor : geometryNode.ancestor()) {
                 final byte[] srs = ancestor.attribute(srsNameB);
