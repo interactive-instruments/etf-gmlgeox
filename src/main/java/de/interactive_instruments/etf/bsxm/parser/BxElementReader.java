@@ -127,9 +127,11 @@ public class BxElementReader implements BxReader {
                     parentSibling = getNextSiblingdElement(parent);
                     fireEnd();
                 }
-                currentNode = parentSibling;
-                if (currentNode != null) {
+                if(depth > 0) {
+                    currentNode = parentSibling;
                     fireStart(createPreparedElementFromCurrent());
+                }else{
+                    currentNode = rootNode;
                 }
             } else {
                 fireEnd();

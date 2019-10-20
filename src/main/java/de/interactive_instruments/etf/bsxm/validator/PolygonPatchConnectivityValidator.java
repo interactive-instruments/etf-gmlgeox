@@ -62,7 +62,6 @@ public class PolygonPatchConnectivityValidator implements Validator {
      * Does NOT check the surfaces within solids!
      *
      * @return <code>true</code> if the given geometry is a connected surface, a point, a curve, multi- or composite geometry that only consists of these geometry types, else <code>false</code>. Thus, <code>false</code> will be returned whenever a solid is encountered and if a surface is not connected.
-     * @throws Exception
      */
     private boolean checkConnectivityOfPolygonPatches(final ElementContext elementContext, final ValidationResult result,
             final Geometry deegreeGeometry, final com.vividsolutions.jts.geom.Geometry jtsGeometry) {
