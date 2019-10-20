@@ -181,6 +181,24 @@ public class BasicXQueryTest {
     }
 
     @Test
+    public void test_curveUnmatchedByIdenticalCurvesMin() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000",
+                "src/test/resources/xml/test_curveUnmatchedByIdenticalCurvesMin.xml")
+                        .execute(context);
+        xmlTest("test_curveUnmatchedByIdenticalCurvesMin.xq");
+    }
+
+    @Test
+    public void test_curveUnmatchedByIdenticalCurvesMax() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000",
+                "src/test/resources/xml/test_curveUnmatchedByIdenticalCurvesMax.xml")
+                        .execute(context);
+        xmlTest("test_curveUnmatchedByIdenticalCurvesMax.xq");
+    }
+
+    @Test
     public void test_moduleStorage() throws BaseXException {
 
         new DropDB("GmlGeoXUnitTestDB-000").execute(context);

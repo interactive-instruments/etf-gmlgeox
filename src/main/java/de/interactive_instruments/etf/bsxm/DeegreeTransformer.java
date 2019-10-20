@@ -59,9 +59,8 @@ public final class DeegreeTransformer {
         final ClassLoader cl = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-            if (CRSManager.get("default") == null
-                    || CRSManager.get("default")
-                            .getCRSByCode(CRSCodeType.valueOf("http://www.opengis.net/def/crs/EPSG/0/5555")) == null) {
+            if (CRSManager.get("default") == null || CRSManager.get("default")
+                    .getCRSByCode(CRSCodeType.valueOf("http://www.opengis.net/def/crs/EPSG/0/5555")) == null) {
                 loadGmlGeoXSrsConfiguration();
             }
         } finally {
@@ -82,11 +81,8 @@ public final class DeegreeTransformer {
             } catch (Exception e) {
                 throw new IllegalStateException(
                         "Could not load SRS configuration files from directory referenced from GmlGeoX property '"
-                                + ETF_GMLGEOX_SRSCONFIG_DIR
-                                + "'. Reference is: "
-                                + srsConfigDirPath
-                                + " Exception message is: "
-                                + e.getMessage(),
+                                + ETF_GMLGEOX_SRSCONFIG_DIR + "'. Reference is: " + srsConfigDirPath
+                                + " Exception message is: " + e.getMessage(),
                         e);
             }
         } else {
@@ -100,47 +96,29 @@ public final class DeegreeTransformer {
                 }
                 tempDir.mkdirs();
 
-                IoUtils.copyResourceToFile(
-                        this, "/srsconfig/default.xml", new IFile(tempDir, "default.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/ntv2/beta2007.gsb",
+                IoUtils.copyResourceToFile(this, "/srsconfig/default.xml", new IFile(tempDir, "default.xml"));
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/ntv2/beta2007.gsb",
                         new IFile(tempDir, "deegree/d3/config/ntv2/beta2007.gsb"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/parser-files.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/parser-files.xml",
                         new IFile(tempDir, "deegree/d3/parser-files.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/crs-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/crs-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/crs-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/datum-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/datum-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/datum-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/ellipsoid-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/ellipsoid-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/ellipsoid-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/pm-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/pm-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/pm-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/projection-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/projection-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/projection-definitions.xml"));
-                IoUtils.copyResourceToFile(
-                        this,
-                        "/srsconfig/deegree/d3/config/transformation-definitions.xml",
+                IoUtils.copyResourceToFile(this, "/srsconfig/deegree/d3/config/transformation-definitions.xml",
                         new IFile(tempDir, "deegree/d3/config/transformation-definitions.xml"));
 
                 crsMgr.init(tempDir);
             } catch (IOException e) {
                 throw new IllegalStateException(
                         "Exception occurred while extracting the SRS configuration files provided by GmlGeoX to a temporary "
-                                + "directory and loading them from there. Exception message is: "
-                                + e.getMessage(),
+                                + "directory and loading them from there. Exception message is: " + e.getMessage(),
                         e);
             }
         }
@@ -149,6 +127,7 @@ public final class DeegreeTransformer {
     /**
      * Reads a geometry from the given nod.
      *
+     * @param crs
      * @param aNode
      *            represents a GML geometry element
      * @return the geometry represented by the node
@@ -158,8 +137,8 @@ public final class DeegreeTransformer {
 
         final String namespaceURI = new String(aNode.qname().uri());
 
-        if (namespaceURI == null || (!IIGmlConstants.isGML32Namespace(namespaceURI)
-                && !IIGmlConstants.isGML31Namespace(namespaceURI))) {
+        if (namespaceURI == null
+                || (!IIGmlConstants.isGML32Namespace(namespaceURI) && !IIGmlConstants.isGML31Namespace(namespaceURI))) {
 
             throw new GmlGeoXException("Cannot identify GML version from namespace '"
                     + (namespaceURI == null ? "<null>" : namespaceURI) + "'.");
@@ -177,8 +156,7 @@ public final class DeegreeTransformer {
 
         final XMLStreamReader xmlStream = nodeToStreamReader(aNode);
         try {
-            final GMLStreamReader gmlStream = GMLInputFactory.createGMLStreamReader(
-                    gmlVersion, xmlStream);
+            final GMLStreamReader gmlStream = GMLInputFactory.createGMLStreamReader(gmlVersion, xmlStream);
             gmlStream.setGeometryFactory(geometryFactory);
             gmlStream.setDefaultCRS(crs);
             return gmlStream.readGeometry();
