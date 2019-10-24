@@ -27,7 +27,10 @@ let $featuresWithErrors_map :=
       let $result := $validationResult/*:result/text()
       let $messages :=
         for $error in $validationResult/*:errors/*:message
-            return ' ID ' || $error/*:argument[@token='ID']/text() || ', context element ' || $error/*:argument[@token='context'] || " : " || $error/*:argument[@token='original'] || " Coordinates (" ||  $error/*:argument[@token='coordinates'] || ')'
+            return ' ID ' || $error/*:argument[@*:token='ID']/text() || 
+            ', context element ' || $error/*:argument[@*:token='context'] || 
+            " : " || $error/*:argument[@*:token='original'] || 
+            " Coordinates (" ||  $error/*:argument[@*:token='coordinates'] || ')'
       let $errDescription := string-join(($result, $messages),' ')
       return
         map:entry(string($candidate/@gml:id), ($candidate,$errDescription))

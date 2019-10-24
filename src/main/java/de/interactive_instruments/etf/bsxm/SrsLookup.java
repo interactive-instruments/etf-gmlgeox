@@ -40,7 +40,7 @@ final public class SrsLookup {
     private String standardSRS = null;
     private ICRS standardDeegreeSRS = null;
 
-    public void setStandardSRS(final String standardSRS) {
+    void setStandardSRS(final String standardSRS) {
         if (SUtils.isNullOrEmpty(standardSRS)) {
             this.standardSRS = null;
             this.standardDeegreeSRS = null;
@@ -94,16 +94,16 @@ final public class SrsLookup {
             // Traverse the ancestor nodes. The following time-consuming steps should be
             // avoided
             // by setting the default srs.
-            for (final ANode ancestor : geometryNode.ancestor()) {
+            for (final ANode ancestor : geometryNode.ancestorIter()) {
                 final byte[] srs = ancestor.attribute(srsNameB);
                 if (srs != null) {
                     return Token.string(srs);
                 }
             }
-            for (final ANode ancestor : geometryNode.ancestor()) {
-                for (final ANode ancestorChild : ancestor.children()) {
+            for (final ANode ancestor : geometryNode.ancestorIter()) {
+                for (final ANode ancestorChild : ancestor.childIter()) {
                     if (Token.eq(boundedByB, Token.local(ancestorChild.name()))) {
-                        for (final ANode boundedByChild : ancestorChild.children()) {
+                        for (final ANode boundedByChild : ancestorChild.childIter()) {
                             if (Token.eq(envelopeB, Token.local(boundedByChild.name()))) {
                                 final byte[] srs = boundedByChild.attribute(srsNameB);
                                 if (srs != null) {

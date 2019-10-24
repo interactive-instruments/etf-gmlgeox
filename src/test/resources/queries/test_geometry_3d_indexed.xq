@@ -19,7 +19,7 @@ return
        if (xs:boolean($vr/ggeo:isValid)) then
         ()
        else
-        for $message in $vr/ggeo:errors/*:message/*:argument[@token='original']
+        for $message in $vr/ggeo:errors/*:message/*:argument[@*:token='original']
         return $message/text()
      } catch * {
       $err:description

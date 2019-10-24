@@ -66,35 +66,19 @@ import org.basex.query.value.node.DBNode;
 import org.basex.query.value.node.FElem;
 import org.basex.query.value.seq.Empty;
 import org.deegree.commons.xml.XMLParsingException;
-import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Geometry;
 import org.deegree.geometry.points.Points;
 import org.deegree.geometry.primitive.Curve;
-import org.deegree.geometry.primitive.segments.CurveSegment;
-import org.deegree.geometry.standard.curvesegments.DefaultArc;
-import org.deegree.geometry.standard.curvesegments.DefaultArcByBulge;
-import org.deegree.geometry.standard.curvesegments.DefaultArcString;
-import org.deegree.geometry.standard.curvesegments.DefaultArcStringByBulge;
-import org.deegree.geometry.standard.curvesegments.DefaultBSpline;
-import org.deegree.geometry.standard.curvesegments.DefaultBezier;
-import org.deegree.geometry.standard.curvesegments.DefaultCubicSpline;
-import org.deegree.geometry.standard.curvesegments.DefaultGeodesic;
-import org.deegree.geometry.standard.curvesegments.DefaultGeodesicString;
-import org.deegree.geometry.standard.curvesegments.DefaultLineStringSegment;
-import org.deegree.geometry.standard.points.PointsPoints;
-import org.deegree.geometry.standard.points.PointsSubsequence;
+import org.deegree.geometry.primitive.Point;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.interactive_instruments.etf.bsxm.geometry.ArcRevWrapper;
-import de.interactive_instruments.etf.bsxm.geometry.ArcStringRevWrapper;
 import de.interactive_instruments.etf.bsxm.geometry.Circle;
 import de.interactive_instruments.etf.bsxm.geometry.IIGeometryFactory;
 import de.interactive_instruments.etf.bsxm.geometry.InvalidCircleException;
-import de.interactive_instruments.etf.bsxm.geometry.LineStringRevWrapper;
 import de.interactive_instruments.etf.bsxm.index.GeometryCache;
 import de.interactive_instruments.etf.bsxm.node.DBNodeRef;
 import de.interactive_instruments.etf.bsxm.node.DBNodeRefFactory;
@@ -140,7 +124,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         this.srsLookup = new SrsLookup();
         this.geometryFactory = new IIGeometryFactory();
         this.geometryCache = new GeometryCache();
-        this.deegreeTransformer = new DeegreeTransformer(this.geometryFactory, bxNamespaceHolder);
+        this.deegreeTransformer = new DeegreeTransformer(this.geometryFactory, bxNamespaceHolder, this.srsLookup);
         this.jtsTransformer = new JtsTransformer(this.deegreeTransformer, this.jtsFactory, this.srsLookup);
         this.dbNodeRefFactory = DBNodeRefFactory.create(databaseName);
         this.dbNodeRefLookup = new DBNodeRefLookup(this.queryContext, this.dbNodeRefFactory);
@@ -204,7 +188,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    public static com.vividsolutions.jts.geom.Geometry[] flattenAllGeometryCollections(
+    public com.vividsolutions.jts.geom.Geometry[] flattenAllGeometryCollections(
             com.vividsolutions.jts.geom.Geometry geom) {
 
         if (geom == null) {
@@ -676,10 +660,16 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * "de.interactive_instruments.etf.bsxm.GmlGeoX">
      *           <ggeo:valid>false</ggeo:valid>
      *           <ggeo:result>VFV</ggeo:result>
-     *           <ggeo:message type=
-     * "NOTICE">Detected GML standard version: GML3.2.</ggeo:message>
-     *           <ggeo:message type=
-     * "ERROR">Invalid surface (gml:id: s14). The patches of the surface are not connected.</ggeo:message>
+     *           <ggeo:errors>
+     *             <etf:message
+     *               xmlns:etf="http://www.interactive-instruments.de/etf/2.0"
+     *               ref="TR.gmlgeox.validation.geometry.jts.5">
+     *               <etf:argument token="original">Invalid polygon. Two rings of the polygonal geometry intersect.</etf:argument>
+     *               <etf:argument token="ID">DETHL56P0000F1TJ</etf:argument>
+     *               <etf:argument token="context">Surface</etf:argument>
+     *               <etf:argument token="coordinates">666424.2393405803,5614560.422015165</etf:argument>
+     *             </etf:message>
+     *           </ggeo:errors>
      *         </ggeo:ValidationResult>
      * }
      *         </pre>
@@ -722,7 +712,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CONTAINS);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing contains(Value,Value). Message is: " + e.getMessage());
+                    "Exception while executing contains(Value,Value). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -750,7 +740,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.CONTAINS, matchAll);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing contains(Value,Value,boolean). Message is: " + e.getMessage());
+                    "Exception while executing contains(Value,Value,boolean). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -774,7 +764,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CONTAINS);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing containsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
+                    "Exception while executing containsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -801,7 +791,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         } catch (Exception e) {
             throw new GmlGeoXException(
                     "Exception while executing containsGeomGeom(Geometry,Geometry,boolean). Message is: "
-                            + e.getMessage());
+                            + e.getMessage(),
+                    e);
         }
     }
 
@@ -824,7 +815,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CROSSES);
         } catch (Exception e) {
-            throw new GmlGeoXException("Exception while executing crosses(Value,Value). Message is: " + e.getMessage());
+            throw new GmlGeoXException("Exception while executing crosses(Value,Value). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -852,7 +843,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.CROSSES, matchAll);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing crosses(Value,Value,boolean). Message is: " + e.getMessage());
+                    "Exception while executing crosses(Value,Value,boolean). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -875,7 +866,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CROSSES);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing crossesGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
+                    "Exception while executing crossesGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -902,7 +893,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         } catch (Exception e) {
             throw new GmlGeoXException(
                     "Exception while executing crossesGeomGeom(Geometry,Geometry,boolean). Message is: "
-                            + e.getMessage());
+                            + e.getMessage(),
+                    e);
         }
     }
 
@@ -925,7 +917,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.EQUALS);
         } catch (Exception e) {
-            throw new GmlGeoXException("Exception while executing equals(Value,Value). Message is: " + e.getMessage());
+            throw new GmlGeoXException("Exception while executing equals(Value,Value). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -953,7 +945,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.EQUALS, matchAll);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing equals(Value,Value,boolean). Message is: " + e.getMessage());
+                    "Exception while executing equals(Value,Value,boolean). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -976,7 +968,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.EQUALS);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing equalsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
+                    "Exception while executing equalsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1003,7 +995,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         } catch (Exception e) {
             throw new GmlGeoXException(
                     "Exception while executing equalsGeomGeom(Geometry,Geometry,boolean). Message is: "
-                            + e.getMessage());
+                            + e.getMessage(),
+                    e);
         }
     }
 
@@ -1028,7 +1021,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.INTERSECTS);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing intersects(Value,Value). Message is: " + e.getMessage());
+                    "Exception while executing intersects(Value,Value). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1055,10 +1048,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.INTERSECTS, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing intersects(Value,Value,boolean). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing intersects(Value,Value,boolean). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1081,10 +1072,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.INTERSECTS);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing intersectsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing intersectsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1109,11 +1098,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.INTERSECTS, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing intersectsGeomGeom(Geometry,Geometry,boolean). Message is: "
-                            + e.getMessage());
-
-            throw qe;
+                            + e.getMessage(),
+                    e);
         }
     }
 
@@ -1266,7 +1254,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         } catch (Exception e) {
             throw new GmlGeoXException(
                     "Exception occurred while applying spatial relationship operation (with multiple geometries to compare). Message is: "
-                            + e.getMessage());
+                            + e.getMessage(),
+                    e);
         }
     }
 
@@ -1275,7 +1264,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            A Value, an Object[], a JTS geometry (also a geometry collection) or anything else
      * @return a list of single objects (Value of size > 1 is flattened to a list of Items, a JTS geometry collection is flattened as well)
      */
-    private static Collection toObjectCollection(final @NotNull Object o) {
+    static Collection toObjectCollection(final @NotNull Object o) {
         if (o instanceof Value) {
             final Value v = (Value) o;
             if (v.size() > 1) {
@@ -1325,10 +1314,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISDISJOINT);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing isDisjoint(Value,Value). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing isDisjoint(Value,Value). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1355,7 +1342,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.ISDISJOINT, matchAll);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing isDisjoint(Value,Value,boolean). Message is: " + e.getMessage());
+                    "Exception while executing isDisjoint(Value,Value,boolean). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1378,10 +1365,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISDISJOINT);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing isDisjointGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing isDisjointGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1406,11 +1391,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISDISJOINT, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing isDisjointGeomGeom(Geometry,Geometry,boolean). Message is: "
-                            + e.getMessage());
-
-            throw qe;
+                            + e.getMessage(),
+                    e);
         }
     }
 
@@ -1434,10 +1418,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISWITHIN);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing isWithin(Value,Value). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing isWithin(Value,Value). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1464,10 +1446,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.ISWITHIN, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing isWithin(Value,Value,boolean). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing isWithin(Value,Value,boolean). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1490,10 +1470,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISWITHIN);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing isWithinGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing isWithinGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1518,11 +1496,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISWITHIN, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing isWithinGeomGeom(Geometry,Geometry,boolean). Message is: "
-                            + e.getMessage());
-
-            throw qe;
+                            + e.getMessage(),
+                    e);
         }
     }
 
@@ -1546,10 +1523,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.OVERLAPS);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing overlaps(Value,Value). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing overlaps(Value,Value). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1576,10 +1551,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.OVERLAPS, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing overlaps(Value,Value,boolean). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing overlaps(Value,Value,boolean). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1602,10 +1575,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.OVERLAPS);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing overlapsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing overlapsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1630,11 +1601,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.OVERLAPS, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing overlapsGeomGeom(Geometry,Geometry,boolean). Message is: "
-                            + e.getMessage());
-
-            throw qe;
+                            + e.getMessage(),
+                    e);
         }
     }
 
@@ -1657,10 +1627,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.TOUCHES);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing touches(Value,Value). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing touches(Value,Value). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1687,10 +1655,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(arg1, arg2, SpatialRelOp.TOUCHES, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing touches(Value,Value,boolean). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing touches(Value,Value,boolean). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1713,10 +1679,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.TOUCHES);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing touchesGeomGeom(Geometry,Geometry). Message is: " + e.getMessage());
-
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing touchesGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -1741,11 +1705,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.TOUCHES, matchAll);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
+            throw new GmlGeoXException(
                     "Exception while executing touchesGeomGeom(Geometry,Geometry,boolean). Message is: "
-                            + e.getMessage());
-
-            throw qe;
+                            + e.getMessage(),
+                    e);
         }
     }
 
@@ -1920,9 +1883,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return unionsGc.union();
 
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception occurred while applying unionNodes(..)). Message is: " + e.getMessage());
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception occurred while applying union(Value)). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -2345,9 +2307,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             checkIntersectionPattern(intersectionPattern);
             return applyRelate(arg1, arg2, intersectionPattern);
         } catch (Exception e) {
-            QueryException qe = new QueryException(
-                    "Exception while executing relate(Value,Value,String). Message is: " + e.getMessage());
-            throw qe;
+            throw new GmlGeoXException(
+                    "Exception while executing relate(Value,Value,String). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -2398,7 +2359,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return relateMatch(value1, value2, intersectionPattern, matchAll);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing relate(Value,Value,String,boolean). Message is: " + e.getMessage());
+                    "Exception while executing relate(Value,Value,String,boolean). Message is: " + e.getMessage(), e);
         }
     }
 
@@ -2464,7 +2425,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         } catch (Exception e) {
             throw new GmlGeoXException(
                     "Exception while executing relateGeomGeom(Geometry,Geometry,String). Message is: "
-                            + e.getMessage());
+                            + e.getMessage(),
+                    e);
         }
     }
 
@@ -2494,7 +2456,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         } catch (Exception e) {
             throw new GmlGeoXException(
                     "Exception while executing relateGeomGeom(Geometry,Geometry,String,boolean). Message is: "
-                            + e.getMessage());
+                            + e.getMessage(),
+                    e);
 
         }
     }
@@ -2601,7 +2564,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Returns the boundary, or an empty geometry of appropriate dimension if the given geometry is empty.(In the case of zero-dimensional geometries, 'an empty GeometryCollection is returned.) For a discussion of this function, see the OpenGIS SimpleFeatures Specification. As stated in SFS Section 2.1.13.1, "the boundary of a Geometry is a set of Geometries of the next lower dimension."
+     * Returns the boundary, or an empty geometry of appropriate dimension if the given geometry is empty or has no boundary (e.g. a curve whose end points are equal). (In the case of zero-dimensional geometries, an empty GeometryCollection is returned.) For a discussion of this function, see the OpenGIS SimpleFeatures Specification. As stated in SFS Section 2.1.13.1, "the boundary of a Geometry is a set of Geometries of the next lower dimension."
      *
      * @param geometry
      * @return the closure of the combinatorial boundary of this Geometry
@@ -2686,6 +2649,40 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             final Envelope env = geometry.getEnvelopeInternal();
             final Object[] res = {env.getMinX(), env.getMinY(), env.getMaxX(), env.getMaxY()};
             return res;
+        } catch (Exception e) {
+            throw new GmlGeoXException(e);
+        }
+    }
+
+    /**
+     * Retrieves the end points of the curve represented by the geometry node.
+     * <p>
+     * NOTE: This is different to computing the boundary of a curve in case that the curve end points are equal (in that case, the curve does not have a boundary).
+     *
+     * @param geomNode
+     * @return An array with the two end points of the curve geometry (node); can be empty if the given geometry nodes does not represent a single curve.
+     * @throws QueryException
+     */
+    @Requires(Permission.NONE)
+    @Deterministic
+    public com.vividsolutions.jts.geom.Point[] curveEndPoints(ANode geomNode) throws QueryException {
+
+        try {
+
+            final Geometry geom = deegreeTransformer.parseGeometry(geomNode);
+            final List<com.vividsolutions.jts.geom.Point> res = new ArrayList<>();
+
+            if (geom instanceof Curve) {
+                final Curve curve = (Curve) geom;
+                final Points curveControlPoints = deegreeTransformer.getCurveControlPoints(curve);
+                final Point pStart = curveControlPoints.get(0);
+                final Point pEnd = curveControlPoints.get(curveControlPoints.size() - 1);
+                res.add((com.vividsolutions.jts.geom.Point) jtsTransformer.toJTSGeometry(pStart));
+                res.add((com.vividsolutions.jts.geom.Point) jtsTransformer.toJTSGeometry(pEnd));
+            }
+
+            return res.toArray(new com.vividsolutions.jts.geom.Point[res.size()]);
+
         } catch (Exception e) {
             throw new GmlGeoXException(e);
         }
@@ -2994,8 +2991,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                     logMemUsage("GmlGeoX#index progress (for index '" + debugIndexName + "'): "
                             + geometryCache.indexSize(indexName));
                 }
-            } catch (final XMLParsingException parsingException) {
-                throw new GmlGeoXException(parsingException);
+            } catch (final XMLParsingException e) {
+                throw new GmlGeoXException(e);
             }
         }
     }
@@ -3024,23 +3021,6 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Retrieves all basic curve components from the given geometry. Composite geometries - including curves - will be broken up into their parts. Point based geometries will be ignored.
-     *
-     * @param geomNode
-     *            GML geometry node
-     * @return An array with the curves of the geometry (parsed from the geometry node). Can be empty but not null.
-     * @throws QueryException
-     */
-    private Curve[] curves(ANode geomNode) throws QueryException {
-
-        final ICRS geomSrs = srsLookup.getSrs(geomNode);
-        final Geometry geom_deegree = deegreeTransformer.parseGeometry(geomSrs, geomNode);
-        final Collection<Curve> geomCurves = jtsTransformer.getCurveComponents(geom_deegree);
-
-        return geomCurves.toArray(new Curve[geomCurves.size()]);
-    }
-
-    /**
      * Checks if for each curve of the given geomNode a minimum (defined by parameter minMatchesPerCurve) number of identical curves (same control points - ignoring curve orientation) from the otherGeomsNodes exists.
      *
      * @param geomNode
@@ -3057,22 +3037,11 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     public com.vividsolutions.jts.geom.Geometry curveUnmatchedByIdenticalCurvesMin(ANode geomNode,
             Value otherGeomsNodes, int minMatchesPerCurve) throws QueryException {
 
-        final Curve[] curvesToMatch = curves(geomNode);
-        List<Curve> otherCurves = new ArrayList<>();
-
-        @SuppressWarnings("rawtypes")
-        final Collection otherGeomNodesObjectList = toObjectCollection(otherGeomsNodes);
-        for (Object o : otherGeomNodesObjectList) {
-            if (!(o instanceof ANode)) {
-                throw new IllegalArgumentException(
-                        "Calling this function with an item in the second parameter that is not an ANode is illegal.");
-            } else {
-                otherCurves.addAll(Arrays.asList(curves((ANode) o)));
-            }
-        }
+        final Collection<Curve> curvesToMatch = deegreeTransformer.getCurveComponents(geomNode);
+        final List<Curve> otherCurves = deegreeTransformer.getCurveComponents(otherGeomsNodes);
 
         if (minMatchesPerCurve <= 0) {
-            throw new QueryException("Parameter minMatchesPerCurve must be greater than 0.");
+            throw new GmlGeoXException("Parameter minMatchesPerCurve must be greater than 0.");
         }
 
         try {
@@ -3115,22 +3084,11 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     public com.vividsolutions.jts.geom.Geometry curveUnmatchedByIdenticalCurvesMax(ANode geomNode,
             Value otherGeomsNodes, int maxMatchesPerCurve) throws QueryException {
 
-        final Curve[] curvesToMatch = curves(geomNode);
-        List<Curve> otherCurves = new ArrayList<>();
-
-        @SuppressWarnings("rawtypes")
-        final Collection otherGeomNodesObjectList = toObjectCollection(otherGeomsNodes);
-        for (Object o : otherGeomNodesObjectList) {
-            if (!(o instanceof ANode)) {
-                throw new IllegalArgumentException(
-                        "Calling this function with an item in the second parameter that is not an ANode is illegal.");
-            } else {
-                otherCurves.addAll(Arrays.asList(curves((ANode) o)));
-            }
-        }
+        final Collection<Curve> curvesToMatch = deegreeTransformer.getCurveComponents(geomNode);
+        final List<Curve> otherCurves = deegreeTransformer.getCurveComponents(otherGeomsNodes);
 
         if (maxMatchesPerCurve <= 0) {
-            throw new QueryException("Parameter maxMatchesPerCurve must be greater than 0.");
+            throw new GmlGeoXException("Parameter maxMatchesPerCurve must be greater than 0.");
         }
 
         try {
@@ -3189,7 +3147,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             STRtree index, int numberOfIdenticalCurvesToDetect, boolean isMaxNumberToDetect)
             throws UnsupportedGeometryTypeException {
 
-        final Points curveControlPoints = getCurveControlPoints(curve);
+        final Points curveControlPoints = deegreeTransformer.getCurveControlPoints(curve);
 
         // get other curves from spatial index to compare
         @SuppressWarnings("rawtypes")
@@ -3208,7 +3166,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                 /* So the two JTS geometries (of the two curves) are spatially equal. However, we need to ensure that the control points are identical as well (ignoring orientation). */
 
                 final Curve otherCurve_deegree = pair.right;
-                final Points otherCurveControlPoints = getCurveControlPoints(otherCurve_deegree);
+                final Points otherCurveControlPoints = deegreeTransformer.getCurveControlPoints(otherCurve_deegree);
 
                 if (curveControlPoints.size() == otherCurveControlPoints.size()) {
 
@@ -3297,8 +3255,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             }
 
             /* Compute deegree and JTS geometries for the node given as first parameter. */
-            final ICRS geomSrs = srsLookup.getSrs(geomNode);
-            final Geometry geom_deegree = deegreeTransformer.parseGeometry(geomSrs, geomNode);
+            final Geometry geom_deegree = deegreeTransformer.parseGeometry(geomNode);
             // try to get JTS geometry for the geometry node from cache
             com.vividsolutions.jts.geom.Geometry geom_jts = null;
             if (geomNode instanceof DBNode) {
@@ -3309,7 +3266,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             }
 
             /* Create a map of the curve components from the geometry (key: JTS geometry of a curve, value: deegree geometry of that curve) */
-            final Collection<Curve> geomCurves = jtsTransformer.getCurveComponents(geom_deegree);
+            final Collection<Curve> geomCurves = deegreeTransformer.getCurveComponents(geom_deegree);
             final Map<com.vividsolutions.jts.geom.Geometry, Curve> geomCurvesMap = new HashMap<>(geomCurves.size());
             for (final Curve c : geomCurves) {
                 geomCurvesMap.put(jtsTransformer.toJTSGeometry(c), c);
@@ -3321,7 +3278,6 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
 
             for (ANode otherGeomNode : otherGeomNodes_list) {
 
-                final ICRS otherGeomSrs = srsLookup.getSrs(otherGeomNode);
                 /* NOTE: We do not directly compute the deegree geometry here, because it is only necessary to do so if the JTS geometries are equal */
                 Geometry otherGeom_deegree = null;
                 // try to get JTS geometry for the geometry node from cache
@@ -3331,7 +3287,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                             .getGeometry(this.dbNodeRefFactory.createDBNodeEntry((DBNode) otherGeomNode));
                 }
                 if (otherGeom_jts == null) {
-                    otherGeom_deegree = deegreeTransformer.parseGeometry(otherGeomSrs, otherGeomNode);
+                    otherGeom_deegree = deegreeTransformer.parseGeometry(otherGeomNode);
                     otherGeom_jts = jtsTransformer.toJTSGeometry(otherGeom_deegree);
                 }
 
@@ -3341,10 +3297,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                 if (geom_jts.intersects(otherGeom_jts)) {
 
                     if (otherGeom_deegree == null) {
-                        otherGeom_deegree = deegreeTransformer.parseGeometry(otherGeomSrs, otherGeomNode);
+                        otherGeom_deegree = deegreeTransformer.parseGeometry(otherGeomNode);
                     }
 
-                    final Collection<Curve> otherGeomCurves = jtsTransformer.getCurveComponents(otherGeom_deegree);
+                    final Collection<Curve> otherGeomCurves = deegreeTransformer.getCurveComponents(otherGeom_deegree);
                     for (final Curve oc : otherGeomCurves) {
                         final com.vividsolutions.jts.geom.Geometry oc_jts = jtsTransformer.toJTSGeometry(oc);
                         otherGeomsCurvesIndex.insert(oc_jts.getEnvelopeInternal(),
@@ -3358,7 +3314,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
 
                 final com.vividsolutions.jts.geom.Geometry geomCurve_jts = e.getKey();
                 final Curve geomCurve_deegree = e.getValue();
-                final Points geomCurveControlPoints = getCurveControlPoints(geomCurve_deegree);
+                final Points geomCurveControlPoints = deegreeTransformer.getCurveControlPoints(geomCurve_deegree);
 
                 // get other curves from spatial index to compare
                 @SuppressWarnings("rawtypes")
@@ -3376,7 +3332,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                         /* So the two JTS geometries (of the two curves) are spatially equal. However, we need to ensure that the control points are identical as well (ignoring orientation). */
 
                         final Curve otherGeomCurve_deegree = pair.right;
-                        final Points otherGeomCurveControlPoints = getCurveControlPoints(otherGeomCurve_deegree);
+                        final Points otherGeomCurveControlPoints = deegreeTransformer
+                                .getCurveControlPoints(otherGeomCurve_deegree);
 
                         if (geomCurveControlPoints.size() == otherGeomCurveControlPoints.size()) {
 
@@ -3426,67 +3383,6 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Getting the control points from a deegree Curve via Curve.getControlPoints() is, according to the javadoc of that method, only safe for linearly interpolated curves. Therefore, we use a different way to compute the control points.
-     *
-     * @param curve
-     * @throws IllegalArgumentException
-     *             If the curve contains an unsupported type of curve segment
-     */
-    private Points getCurveControlPoints(Curve curve) throws IllegalArgumentException {
-
-        final List<CurveSegment> curveSegments = curve.getCurveSegments();
-
-        final List<Points> pointsList = new ArrayList<Points>(curveSegments.size());
-        boolean first = true;
-
-        for (CurveSegment cs : curve.getCurveSegments()) {
-
-            Points p;
-
-            if (cs instanceof DefaultLineStringSegment) {
-                p = ((DefaultLineStringSegment) cs).getControlPoints();
-            } else if (cs instanceof LineStringRevWrapper) {
-                p = ((LineStringRevWrapper) cs).getControlPoints();
-            } else if (cs instanceof DefaultArcString) {
-                p = ((DefaultArcString) cs).getControlPoints();
-            } else if (cs instanceof ArcStringRevWrapper) {
-                p = ((ArcStringRevWrapper) cs).getControlPoints();
-            } else if (cs instanceof DefaultArc) {
-                p = ((DefaultArc) cs).getControlPoints();
-            } else if (cs instanceof ArcRevWrapper) {
-                p = ((ArcRevWrapper) cs).getControlPoints();
-            } else if (cs instanceof DefaultArcStringByBulge) {
-                p = ((DefaultArcStringByBulge) cs).getControlPoints();
-            } else if (cs instanceof DefaultArcByBulge) {
-                p = ((DefaultArcByBulge) cs).getControlPoints();
-            } else if (cs instanceof DefaultBSpline) {
-                p = ((DefaultBSpline) cs).getControlPoints();
-            } else if (cs instanceof DefaultBezier) {
-                p = ((DefaultBezier) cs).getControlPoints();
-            } else if (cs instanceof DefaultCubicSpline) {
-                p = ((DefaultCubicSpline) cs).getControlPoints();
-            } else if (cs instanceof DefaultGeodesicString) {
-                p = ((DefaultGeodesicString) cs).getControlPoints();
-            } else if (cs instanceof DefaultGeodesic) {
-                p = ((DefaultGeodesic) cs).getControlPoints();
-            } else {
-                throw new IllegalArgumentException("Computing control points from a curve segment of type "
-                        + cs.getSegmentType().name() + " is not supported.");
-            }
-
-            if (first) {
-                pointsList.add(p);
-                first = false;
-            } else {
-                /* starting with the second segment, skip the first point (as it *must* be identical to last point of the last segment) */
-                pointsList.add(new PointsSubsequence(p, 1));
-            }
-        }
-
-        return new PointsPoints(pointsList);
-    }
-
-    /**
      * Checks two geometries for interior intersection of curve components. If both geometries are point based, the result will be <code>null</code> (since then there are no curves to check). Components of the first geometry are compared with the components of the second geometry (using a spatial index to prevent unnecessary checks): If two components are not equal (a situation that is allowed) then they are checked for an interior intersection, meaning that the interiors of the two components intersect (T********) or - only when curves are compared - that the boundary of one component intersects the interior of the other component (*T******* or ***T*****). If such a situation is detected, the intersection of the two components will be returned and testing will stop (meaning that the result will only provide information for one invalid intersection, not all intersections).
      *
      * @param geomNode1
@@ -3509,16 +3405,13 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             Geometry g1 = null;
             Geometry g2 = null;
 
-            final ICRS geomNode1Srs = srsLookup.getSrs(geomNode1);
-            final ICRS geomNode2Srs = srsLookup.getSrs(geomNode2);
-
             // try to get JTS geometry for first geometry node from cache
             com.vividsolutions.jts.geom.Geometry jtsg1 = null;
             if (geomNode1 instanceof DBNode) {
                 jtsg1 = geometryCache.getGeometry(this.dbNodeRefFactory.createDBNodeEntry((DBNode) geomNode1));
             }
             if (jtsg1 == null) {
-                g1 = deegreeTransformer.parseGeometry(geomNode1Srs, geomNode1);
+                g1 = deegreeTransformer.parseGeometry(geomNode1);
                 jtsg1 = jtsTransformer.toJTSGeometry(g1);
             }
 
@@ -3528,7 +3421,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                 jtsg2 = geometryCache.getGeometry(this.dbNodeRefFactory.createDBNodeEntry((DBNode) geomNode2));
             }
             if (jtsg2 == null) {
-                g2 = deegreeTransformer.parseGeometry(geomNode2Srs, geomNode2);
+                g2 = deegreeTransformer.parseGeometry(geomNode2);
                 jtsg2 = jtsTransformer.toJTSGeometry(g2);
             }
 
@@ -3557,9 +3450,9 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                 g1Components = Arrays.asList(flattenAllGeometryCollections(mp));
             } else {
                 if (g1 == null) {
-                    g1 = deegreeTransformer.parseGeometry(geomNode1Srs, geomNode1);
+                    g1 = deegreeTransformer.parseGeometry(geomNode1);
                 }
-                final Collection<Curve> curves = jtsTransformer.getCurveComponents(g1);
+                final Collection<Curve> curves = deegreeTransformer.getCurveComponents(g1);
                 g1Components = new ArrayList<>(curves.size());
                 for (final Curve c : curves) {
                     g1Components.add(jtsTransformer.toJTSGeometry(c));
@@ -3574,9 +3467,9 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                 g2Components = Arrays.asList(flattenAllGeometryCollections(mp));
             } else {
                 if (g2 == null) {
-                    g2 = deegreeTransformer.parseGeometry(geomNode2Srs, geomNode2);
+                    g2 = deegreeTransformer.parseGeometry(geomNode2);
                 }
-                final Collection<Curve> curves = jtsTransformer.getCurveComponents(g2);
+                final Collection<Curve> curves = deegreeTransformer.getCurveComponents(g2);
                 g2Components = new ArrayList<>(curves.size());
                 for (final Curve c : curves) {
                     g2Components.add(jtsTransformer.toJTSGeometry(c));
@@ -3902,11 +3795,11 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         final BxNamespaceHolder bxNamespaceHolder = BxNamespaceHolder.init(queryContext);
         this.srsLookup.setStandardSRS(in.readUTF());
         this.geometryFactory = (IIGeometryFactory) in.readObject();
-        this.deegreeTransformer = new DeegreeTransformer(this.geometryFactory, bxNamespaceHolder);
-        this.jtsTransformer = new JtsTransformer(this.deegreeTransformer, this.jtsFactory, srsLookup);
+        this.deegreeTransformer = new DeegreeTransformer(this.geometryFactory, bxNamespaceHolder, this.srsLookup);
+        this.jtsTransformer = new JtsTransformer(this.deegreeTransformer, this.jtsFactory, this.srsLookup);
         this.dbNodeRefFactory = DBNodeRefFactory.create(in.readUTF() + "000");
         this.dbNodeRefLookup = new DBNodeRefLookup(this.queryContext, this.dbNodeRefFactory);
-        this.geometryValidator = new GeometryValidator(srsLookup, jtsTransformer, deegreeTransformer,
+        this.geometryValidator = new GeometryValidator(this.srsLookup, this.jtsTransformer, this.deegreeTransformer,
                 bxNamespaceHolder);
         this.geometryValidator.unregisterAllGmlGeometries();
         final String gmlGeometries = in.readUTF();

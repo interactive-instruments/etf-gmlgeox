@@ -15,7 +15,13 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryCollection;
@@ -33,24 +39,19 @@ import org.basex.query.value.node.ANode;
 import org.basex.util.Token;
 import org.deegree.cs.coordinatesystems.ICRS;
 import org.deegree.geometry.Geometry;
-import org.deegree.geometry.composite.CompositeCurve;
 import org.deegree.geometry.composite.CompositeGeometry;
 import org.deegree.geometry.composite.CompositeSolid;
 import org.deegree.geometry.multi.MultiGeometry;
-import org.deegree.geometry.multi.MultiPoint;
 import org.deegree.geometry.multi.MultiSolid;
 import org.deegree.geometry.primitive.Curve;
-import org.deegree.geometry.primitive.LineString;
 import org.deegree.geometry.primitive.OrientableCurve;
 import org.deegree.geometry.primitive.Point;
 import org.deegree.geometry.primitive.Ring;
-import org.deegree.geometry.primitive.Solid;
 import org.deegree.geometry.primitive.Surface;
 import org.deegree.geometry.primitive.patches.PolygonPatch;
 import org.deegree.geometry.primitive.patches.SurfacePatch;
 import org.deegree.geometry.primitive.segments.CurveSegment;
 import org.deegree.geometry.standard.AbstractDefaultGeometry;
-import org.deegree.geometry.standard.primitive.DefaultCurve;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -406,90 +407,6 @@ final public class JtsTransformer {
     }
 
     /**
-     * Retrieves all basic curve components from the given geometry. Composite geometries - including curves - will be broken up into their parts. Point based geometries will be ignored.
-     *
-     * @param geom
-     * @return A list with the curve components of the given geometry. Can be empty but not <code>null</code>.
-     * @throws Exception
-     */
-    public Collection<Curve> getCurveComponents(final @NotNull Geometry geom) throws QueryException {
-        if (geom instanceof DefaultCurve) {
-            return Collections.singleton((DefaultCurve) geom);
-        } else if (geom instanceof CompositeCurve) {
-            final CompositeCurve cc = (CompositeCurve) geom;
-            final List<Curve> result = new ArrayList<>(cc.size());
-            for (int i = 0; i < cc.size(); i++) {
-                result.addAll(getCurveComponents(cc.get(i)));
-            }
-            return result;
-        } else if (geom instanceof LineString) {
-            return Collections.singleton((LineString) geom);
-        } else if (geom instanceof OrientableCurve) {
-            /* 2015-12-14 JE: special treatment is necessary because OrientableCurve.getJTSGeometry() returns null (with code from deegree 3.4-pre22-SNAPSHOT). */
-            final OrientableCurve oc = (OrientableCurve) geom;
-            final Curve baseCurve = oc.getBaseCurve();
-            return getCurveComponents(baseCurve);
-        } else if (geom instanceof Ring) {
-            final Ring r = (Ring) geom;
-            final List<Curve> result = new ArrayList<>(r.getMembers().size());
-            for (Curve c : r.getMembers()) {
-                result.addAll(getCurveComponents(c));
-            }
-            return result;
-        } else if (geom instanceof Surface) {
-            // covers CompositeSurface, OrientableSurface, Polygon, ...
-            final Surface s = (Surface) geom;
-            final List<? extends SurfacePatch> patches = s.getPatches();
-            final List<Curve> result = new ArrayList<>();
-            for (SurfacePatch sp : patches) {
-                final List<? extends Ring> boundaryRings;
-                if (sp instanceof PolygonPatch) {
-                    boundaryRings = ((PolygonPatch) sp).getBoundaryRings();
-                } else {
-                    throw new UnsupportedGeometryTypeException(
-                            "Surface contains a surface patch that is not a polygon patch, a rectangle, or a triangle.");
-                }
-                for (Ring r : boundaryRings) {
-                    result.addAll(getCurveComponents(r));
-                }
-            }
-            return result;
-        } else if (geom instanceof Point || geom instanceof MultiPoint) {
-            // ignore
-            return Collections.emptyList();
-        } else if (geom instanceof Solid) {
-            final Solid s = (Solid) geom;
-            final List<Curve> result = new ArrayList<>();
-            if (s.getExteriorSurface() != null) {
-                result.addAll(getCurveComponents(s.getExteriorSurface()));
-            }
-            for (Surface surface : s.getInteriorSurfaces()) {
-                result.addAll(getCurveComponents(surface));
-            }
-            return result;
-        } else if (geom instanceof MultiGeometry) {
-            final MultiGeometry mg = (MultiGeometry) geom;
-            final List<Curve> result = new ArrayList<>(mg.size());
-            for (int i = 0; i < mg.size(); i++) {
-                result.addAll(getCurveComponents((Geometry) mg.get(i)));
-            }
-            return result;
-        } else if (geom instanceof CompositeGeometry) {
-            final CompositeGeometry cg = (CompositeGeometry) geom;
-            final List<Curve> result = new ArrayList<>(cg.size());
-            for (int i = 0; i < cg.size(); i++) {
-                result.addAll(getCurveComponents((Geometry) cg.get(i)));
-            }
-            return result;
-        } else {
-            throw new QueryException(
-                    "Determination of curve components for deegree geometry type '"
-                            + geom.getClass().getName()
-                            + "' is not supported.");
-        }
-    }
-
-    /**
      * Computes a JTS geometry from the given node (which must represent a GML geometry).
      * <p>
      * See {{@link #toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -500,7 +417,7 @@ final public class JtsTransformer {
      */
     @NotNull
     public com.vividsolutions.jts.geom.Geometry toJTSGeometry(final @NotNull ANode node) throws QueryException {
-        final Geometry geom = deegreeTransformer.parseGeometry(srsLookup.getSrs(node), node);
+        final Geometry geom = deegreeTransformer.parseGeometry(node);
         return toJTSGeometry(geom);
     }
 
@@ -638,7 +555,7 @@ final public class JtsTransformer {
         }
 
         String positions = null;
-        for (final ANode child : arcStringNode.children()) {
+        for (final ANode child : arcStringNode.childIter()) {
             if (Arrays.equals("posList".getBytes(), Token.local(child.name()))) {
                 positions = child.toJava().getTextContent();
                 break;

@@ -199,6 +199,15 @@ public class BasicXQueryTest {
     }
 
     @Test
+    public void test_curveEndpoints() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000",
+                "src/test/resources/xml/test_curveEndpoints.xml")
+                        .execute(context);
+        xmlTest("test_curveEndpoints.xq");
+    }
+
+    @Test
     public void test_moduleStorage() throws BaseXException {
 
         new DropDB("GmlGeoXUnitTestDB-000").execute(context);
@@ -210,6 +219,16 @@ public class BasicXQueryTest {
         Map<String, String> externalVariables = new HashMap<>();
         externalVariables.put("restoreModules", "true");
         xmlTest("test_moduleStorage_restore.xq", externalVariables);
+    }
+
+    @Test
+    public void test_graphConnectivity() throws BaseXException {
+
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/graphx/test_graphConnectivity.xml")
+                .execute(context);
+
+        xmlTest("/graphx/test_graphConnectivity.xq");
     }
 
     private void xmlTest(String xquery) {

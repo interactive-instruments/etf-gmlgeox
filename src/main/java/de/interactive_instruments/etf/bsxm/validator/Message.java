@@ -53,9 +53,9 @@ public class Message {
     private static final ResourceBundle bundle = ResourceBundle.getBundle(
             "gmlgeox-messages", Locale.ENGLISH);
 
-    private String translatedMessage;
-    private String messageId;
-    private String[] arguments;
+    private final String translatedMessage;
+    private final String messageId;
+    private final String[] arguments;
 
     private Message(final String messageId, final String[] arguments, final String translatedMessage) {
         this.messageId = "TR." + messageId;

@@ -32,6 +32,12 @@ public class GmlGeoXException extends QueryException {
         super(message);
     }
 
+    GmlGeoXException(final String message, final Throwable cause) {
+        super(message);
+        // looks like QueryException does not provide a constructor that takes both a message and a cause
+        this.initCause(cause);
+    }
+
     GmlGeoXException(final Throwable cause) {
         super(cause);
     }
