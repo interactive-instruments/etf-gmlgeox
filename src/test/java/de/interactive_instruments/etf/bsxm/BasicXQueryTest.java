@@ -228,7 +228,7 @@ public class BasicXQueryTest {
         new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/graphx/test_graphConnectivity.xml")
                 .execute(context);
 
-        xmlTest("/graphx/test_graphConnectivity.xq");
+        xmlTest("graphx/test_graphConnectivity.xq");
     }
 
     private void xmlTest(String xquery) {
