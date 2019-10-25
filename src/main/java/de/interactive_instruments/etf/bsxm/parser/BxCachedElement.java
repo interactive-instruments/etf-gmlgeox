@@ -89,7 +89,7 @@ class BxCachedElement implements Element {
     @Override
     public final BXNode getLastChild() {
         ANode node = null;
-        for (final ANode n : dbNode.childIter())
+        for (final ANode n : dbNode.children())
             node = n;
         return node != null ? BXNode.get(node) : null;
     }
@@ -103,7 +103,7 @@ class BxCachedElement implements Element {
     @Override
     public NamedNodeMap getAttributes() {
         if (cachedNamedNodeMap == null) {
-            cachedNamedNodeMap = new BxCachedNamedNodeMap(dbNode.attributeIter());
+            cachedNamedNodeMap = new BxCachedNamedNodeMap(dbNode.attributes());
         }
         return cachedNamedNodeMap;
     }
@@ -121,7 +121,7 @@ class BxCachedElement implements Element {
 
     @Override
     public BXNode getFirstChild() {
-        return BXNode.get(dbNode.childIter().next());
+        return BXNode.get(dbNode.children().next());
     }
 
     @Override
@@ -147,12 +147,12 @@ class BxCachedElement implements Element {
 
     @Override
     public BXNode getNextSibling() {
-        return BXNode.get(dbNode.followingSiblingIter().next());
+        return BXNode.get(dbNode.followingSibling().next());
     }
 
     @Override
     public BXNode getPreviousSibling() {
-        return BXNode.get(dbNode.precedingSiblingIter().next());
+        return BXNode.get(dbNode.precedingSibling().next());
     }
 
     @Override
@@ -361,7 +361,7 @@ class BxCachedElement implements Element {
 
     private ANode attribute(final String name) {
         final byte[] nm = Token.token(name);
-        for (final ANode n : dbNode.attributeIter())
+        for (final ANode n : dbNode.attributes())
             if (Token.eq(nm, n.name()))
                 return n.finish();
         return null;

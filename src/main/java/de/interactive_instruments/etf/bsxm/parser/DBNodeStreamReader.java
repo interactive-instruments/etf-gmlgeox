@@ -64,7 +64,7 @@ final public class DBNodeStreamReader implements XMLStreamReader {
         case END_DOCUMENT:
             throw new IllegalStateException("END_DOCUMENT");
         case START_ELEMENT:
-            final ANode firstChild = currentNode.childIter().next();
+            final ANode firstChild = currentNode.children().next();
             if (firstChild == null) {
                 return (currentEvent = XMLStreamConstants.END_ELEMENT);
             }
@@ -75,7 +75,7 @@ final public class DBNodeStreamReader implements XMLStreamReader {
                 return (currentEvent = END_DOCUMENT);
             }
         default: {
-            final ANode next = currentNode.followingSiblingIter().next();
+            final ANode next = currentNode.followingSibling().next();
             // If sibling, let's just assign and fall through
             if (next != null) {
                 currentNode = next;

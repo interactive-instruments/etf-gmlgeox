@@ -94,16 +94,16 @@ final public class SrsLookup {
             // Traverse the ancestor nodes. The following time-consuming steps should be
             // avoided
             // by setting the default srs.
-            for (final ANode ancestor : geometryNode.ancestorIter()) {
+            for (final ANode ancestor : geometryNode.ancestor()) {
                 final byte[] srs = ancestor.attribute(srsNameB);
                 if (srs != null) {
                     return Token.string(srs);
                 }
             }
-            for (final ANode ancestor : geometryNode.ancestorIter()) {
-                for (final ANode ancestorChild : ancestor.childIter()) {
+            for (final ANode ancestor : geometryNode.ancestor()) {
+                for (final ANode ancestorChild : ancestor.children()) {
                     if (Token.eq(boundedByB, Token.local(ancestorChild.name()))) {
-                        for (final ANode boundedByChild : ancestorChild.childIter()) {
+                        for (final ANode boundedByChild : ancestorChild.children()) {
                             if (Token.eq(envelopeB, Token.local(boundedByChild.name()))) {
                                 final byte[] srs = boundedByChild.attribute(srsNameB);
                                 if (srs != null) {
