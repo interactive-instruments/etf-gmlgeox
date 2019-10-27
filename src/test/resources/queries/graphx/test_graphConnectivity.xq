@@ -2,6 +2,7 @@ import module namespace graph = 'de.interactive_instruments.etf.bsxm.graphx.Grap
 
 declare namespace list = 'java.util.List';
 
+let $dummyInitGraphX := graph:init("GmlGeoXUnitTestDB-000")
 let $nodes := db:open("GmlGeoXUnitTestDB-000")//*:n
 
 let $v1 := $nodes[@id="v1"]

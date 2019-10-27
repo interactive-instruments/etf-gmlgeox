@@ -26,6 +26,10 @@ import org.jgrapht.alg.connectivity.ConnectivityInspector;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
+import de.interactive_instruments.etf.bsxm.node.DBNodeRef;
+import de.interactive_instruments.etf.bsxm.node.DBNodeRefFactory;
+import de.interactive_instruments.etf.bsxm.node.DBNodeRefLookup;
+
 /**
  * This module supports the creation of graphs and performing algorithms on them.
  *
@@ -33,7 +37,10 @@ import org.jgrapht.graph.SimpleGraph;
  */
 final public class GraphX extends QueryModule {
 
-    private SimpleGraph<DBNode, DefaultEdge> simpleGraph = new SimpleGraph<>(DefaultEdge.class);
+    private SimpleGraph<DBNodeRef, DefaultEdge> simpleGraph = new SimpleGraph<>(DefaultEdge.class);
+
+    private DBNodeRefLookup dbNodeRefLookup;
+    private DBNodeRefFactory dbNodeRefFactory;
 
     public GraphX() {}
 
@@ -44,12 +51,21 @@ final public class GraphX extends QueryModule {
 
     @Requires(Permission.NONE)
     public void addVertexToSimpleGraph(DBNode vertex) throws QueryException {
-        simpleGraph.addVertex(vertex);
+        final DBNodeRef nodeEntry = this.dbNodeRefFactory.createDBNodeEntry(vertex);
+        simpleGraph.addVertex(nodeEntry);
     }
 
     @Requires(Permission.NONE)
     public void addEdgeToSimpleGraph(DBNode vertex1, DBNode vertex2) throws QueryException {
-        simpleGraph.addEdge(vertex1, vertex2);
+        final DBNodeRef nodeEntry1 = this.dbNodeRefFactory.createDBNodeEntry(vertex1);
+        final DBNodeRef nodeEntry2 = this.dbNodeRefFactory.createDBNodeEntry(vertex2);
+        simpleGraph.addEdge(nodeEntry1, nodeEntry2);
+    }
+
+    @Requires(Permission.NONE)
+    public void init(final String databaseName) {
+        this.dbNodeRefFactory = DBNodeRefFactory.create(databaseName);
+        this.dbNodeRefLookup = new DBNodeRefLookup(this.queryContext, this.dbNodeRefFactory);
     }
 
     /**
@@ -59,14 +75,22 @@ final public class GraphX extends QueryModule {
     @Requires(Permission.NONE)
     public List<List<DBNode>> determineConnectedSetsInSimpleGraph() throws QueryException {
 
-        final ConnectivityInspector<DBNode, DefaultEdge> ci = new ConnectivityInspector<>(simpleGraph);
+        final ConnectivityInspector<DBNodeRef, DefaultEdge> ci = new ConnectivityInspector<>(simpleGraph);
 
-        final List<Set<DBNode>> connectedSets = ci.connectedSets();
+        final List<Set<DBNodeRef>> connectedSets = ci.connectedSets();
 
         final List<List<DBNode>> result = new ArrayList<>();
 
-        for (final Set<DBNode> s : connectedSets) {
-            result.add(new ArrayList<DBNode>(s));
+        for (final Set<DBNodeRef> s : connectedSets) {
+
+            final List<DBNode> nodeList = new ArrayList<>();
+
+            for (DBNodeRef nodeRef : s) {
+                final DBNode node = this.dbNodeRefLookup.resolve(nodeRef);
+                nodeList.add(node);
+            }
+
+            result.add(nodeList);
         }
 
         return result;
