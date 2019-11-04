@@ -202,9 +202,9 @@ public class BasicXQueryTest {
     public void test_curveEndpoints() throws BaseXException {
         new DropDB("GmlGeoXUnitTestDB-000").execute(context);
         new CreateDB("GmlGeoXUnitTestDB-000",
-                "src/test/resources/xml/test_curveEndpoints.xml")
+                "src/test/resources/xml/test_curve_Endpoints.xml")
                         .execute(context);
-        xmlTest("test_curveEndPoints.xq");
+        xmlTest("test_curve_Endpoints.xq");
     }
 
     @Test
