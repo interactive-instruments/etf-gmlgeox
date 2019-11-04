@@ -204,7 +204,7 @@ public class BasicXQueryTest {
         new CreateDB("GmlGeoXUnitTestDB-000",
                 "src/test/resources/xml/test_curveEndpoints.xml")
                         .execute(context);
-        xmlTest("test_curveEndpoints.xq");
+        xmlTest("test_curveEndPoints.xq");
     }
 
     @Test

@@ -225,5 +225,5 @@ task copyGmlGeoXToRepo(dependsOn: jar) {
 }
 
 install {
-	dependsOn = ["copyGmlGeoXToRepo"]
+	dependsOn = ["sourcesJar", "copyGmlGeoXToRepo"]
 }
