@@ -3793,6 +3793,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         // Todo read from meta
         final BxNamespaceHolder bxNamespaceHolder = BxNamespaceHolder.init(queryContext);
+        this.srsLookup = new SrsLookup();
         this.srsLookup.setStandardSRS(in.readUTF());
         this.geometryFactory = (IIGeometryFactory) in.readObject();
         this.deegreeTransformer = new DeegreeTransformer(this.geometryFactory, bxNamespaceHolder, this.srsLookup);
