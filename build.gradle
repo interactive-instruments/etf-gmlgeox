@@ -55,7 +55,7 @@ configurations {
 
 dependencies {
 
-    compile group: 'de.interactive_instruments', name: 'ii-commons-util', version: '3.0.0' + project.snapshotSuffix
+    compile group: 'de.interactive_instruments', name: 'ii-commons-util', version: '3.2.0' + project.snapshotSuffix
 
 	// Validator dependencies
 	compile('org.bouncycastle:bcprov-jdk15on:1.57')
