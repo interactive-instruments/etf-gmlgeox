@@ -37,7 +37,7 @@ public final class ValidationReport {
     // S - skipped, F - failed, V - valid
     private final byte[] testResults;
 
-    public static final byte[] GGEO_NS = "de.interactive_instruments.etf.bsxm.GmlGeoX".getBytes();
+    public static final byte[] GGEO_NS = "http://www.interactive-instruments.de/gmlgeox/report/1.0".getBytes();
     public static final byte[] GGEO_PREFIX = "ggeo".getBytes();
     private static final QNm VALIDATION_RESULT_QNM = new QNm(GGEO_PREFIX, "ValidationResult", GGEO_NS);
     private static final QNm VALID_QNM = new QNm(GGEO_PREFIX, "valid", GGEO_NS);
