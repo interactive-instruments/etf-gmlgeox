@@ -37,26 +37,26 @@ final class BasicValidator implements Validator {
     @Override
     public void validate(final ElementContext elementContext, final ValidationResult result) {
         final Geometry jtsGeom = elementContext.getJtsGeometry(result);
+        boolean jtsValid = false;
         if (jtsGeom == null) {
             result.failSilently();
-            return;
-        }
-        boolean jtsValid = false;
-        try {
-            final IsValidOp ivo = new IsValidOp(jtsGeom);
-            final TopologyValidationError topError = ivo.getValidationError();
-            if (topError != null) {
-                // Optimization: ivo.isValid() is the same as topError==null. Otherwise
-                // the validation is performed twice in case of geometry problems.
+        } else {
+            try {
+                final IsValidOp ivo = new IsValidOp(jtsGeom);
+                final TopologyValidationError topError = ivo.getValidationError();
+                if (topError != null) {
+                    // Optimization: ivo.isValid() is the same as topError==null. Otherwise
+                    // the validation is performed twice in case of geometry problems.
+                    result.addError(elementContext,
+                            Message.translate("gmlgeox.validation.geometry.jts." + topError.getErrorType()), jtsGeom,
+                            topError.getCoordinate());
+                } else {
+                    jtsValid = true;
+                }
+            } catch (final IllegalArgumentException e) {
                 result.addError(elementContext,
-                        Message.translate("gmlgeox.validation.geometry.jts." + topError.getErrorType()), jtsGeom,
-                        topError.getCoordinate());
-            } else {
-                jtsValid = true;
+                        Message.translate("gmlgeox.validation.geometry.unsupported", e.getMessage()));
             }
-        } catch (final IllegalArgumentException e) {
-            result.addError(elementContext,
-                    Message.translate("gmlgeox.validation.geometry.unsupported", e.getMessage()));
         }
 
         final BasicValidatorGMLEventHandler eventHandler = new BasicValidatorGMLEventHandler(elementContext, result,

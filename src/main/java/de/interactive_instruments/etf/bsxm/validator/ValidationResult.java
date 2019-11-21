@@ -41,11 +41,13 @@ public class ValidationResult {
     private byte result;
     private static byte[] coordinatesArgument = "coordinates".getBytes();
     private final List<FElem> messages;
+    private final List<FElem> backupMessages;
 
     @Contract(pure = true)
     public ValidationResult() {
         this.result = 'V';
         this.messages = new ArrayList<>();
+        this.backupMessages = new ArrayList<>();
     }
 
     void failSilently() {
@@ -56,7 +58,7 @@ public class ValidationResult {
         this.result = 'F';
         final ANodeList children = new ANodeList(1).add(
                 Message.exception(e).toNodeList(null, null));
-        this.messages.add(new FElem(ERROR_QNM, null, children, null));
+        this.backupMessages.add(new FElem(ERROR_QNM, null, children, null));
     }
 
     void addError(@NotNull final ElementContext elementContext, @NotNull final Message message) {
@@ -139,6 +141,9 @@ public class ValidationResult {
     }
 
     public List<FElem> getMessages() {
+        if (messages.isEmpty()) {
+            return backupMessages;
+        }
         return messages;
     }
 }
