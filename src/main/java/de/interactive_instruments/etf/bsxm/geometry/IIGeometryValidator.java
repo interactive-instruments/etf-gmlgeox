@@ -28,9 +28,15 @@ import org.deegree.geometry.multi.MultiGeometry;
 import org.deegree.geometry.primitive.*;
 import org.deegree.geometry.primitive.patches.PolygonPatch;
 import org.deegree.geometry.primitive.patches.SurfacePatch;
+import org.deegree.geometry.primitive.segments.ArcByCenterPoint;
+import org.deegree.geometry.primitive.segments.BSpline;
+import org.deegree.geometry.primitive.segments.Clothoid;
+import org.deegree.geometry.primitive.segments.CubicSpline;
 import org.deegree.geometry.primitive.segments.CurveSegment;
 import org.deegree.geometry.primitive.segments.CurveSegment.CurveSegmentType;
+import org.deegree.geometry.primitive.segments.GeodesicString;
 import org.deegree.geometry.primitive.segments.LineStringSegment;
+import org.deegree.geometry.primitive.segments.OffsetCurve;
 import org.deegree.geometry.validation.GeometryValidationEventHandler;
 import org.deegree.geometry.validation.GeometryValidator;
 import org.deegree.geometry.validation.event.*;
@@ -165,35 +171,65 @@ public class IIGeometryValidator {
         Point lastSegmentEndPoint = null;
         segmentIdx = 0;
         for (CurveSegment segment : curve.getCurveSegments()) {
-            Point startPoint = segment.getStartPoint();
-            if (lastSegmentEndPoint != null) {
-                if (startPoint.get0() != lastSegmentEndPoint.get0()
-                        || startPoint.get1() != lastSegmentEndPoint.get1()) {
-                    logger.debug("Found discontinuous segments.");
-                    if (!fireEvent(new CurveDiscontinuity(curve, segmentIdx, affectedGeometryParticles2))) {
-                        isValid = false;
+
+            if (doesNotSupportGettingStartOrEndPoint(segment)) {
+                /* Operations getStartPoint() and getEndPoint() not supported skip this segment; continue check starting with next supported segment type. */
+                lastSegmentEndPoint = null;
+
+            } else {
+
+                Point startPoint = segment.getStartPoint();
+                if (lastSegmentEndPoint != null) {
+                    if (startPoint.get0() != lastSegmentEndPoint.get0()
+                            || startPoint.get1() != lastSegmentEndPoint.get1()) {
+                        logger.debug("Found discontinuous segments.");
+                        if (!fireEvent(new CurveDiscontinuity(curve, segmentIdx, affectedGeometryParticles2))) {
+                            isValid = false;
+                        }
                     }
                 }
+
+                lastSegmentEndPoint = segment.getEndPoint();
             }
             segmentIdx++;
-            lastSegmentEndPoint = segment.getEndPoint();
         }
 
         if (curve instanceof Ring) {
             logger.trace("Ring geometry. Testing if it's closed. ");
-            if (!curve.isClosed()) {
-                logger.debug("Not closed.");
-                if (!fireEvent(new RingNotClosed((Ring) curve, affectedGeometryParticles2))) {
-                    isValid = false;
+            List<CurveSegment> segments = curve.getCurveSegments();
+
+            if (doesNotSupportGettingStartOrEndPoint(segments.get(0))
+                    || doesNotSupportGettingStartOrEndPoint(segments.get(segments.size() - 1))) {
+                logger.debug(
+                        "Ring with start or end segment not supporting getStartPoint or getEndPoint operation. Skipping check if ring is closed.");
+            } else {
+                if (!curve.isClosed()) {
+                    logger.debug("Not closed.");
+                    if (!fireEvent(new RingNotClosed((Ring) curve, affectedGeometryParticles2))) {
+                        isValid = false;
+                    }
                 }
             }
         }
 
         // CurveSelfIntersection check is ignored by the GMLValidationEventHandler,
-        // since self intersection checks are performed separately (by the JTS validation).
-        // No need to perform the self intersection test here, in this geometry validator.
+        // since self intersection checks are performed separately (by the JTS
+        // validation).
+        // No need to perform the self intersection test here, in this geometry
+        // validator.
 
         return isValid;
+    }
+
+    private boolean doesNotSupportGettingStartOrEndPoint(CurveSegment segment) {
+
+        if (segment instanceof ArcByCenterPoint || segment instanceof BSpline || segment instanceof Clothoid
+                || segment instanceof CubicSpline || segment instanceof GeodesicString
+                || segment instanceof OffsetCurve) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean validateSurface(Surface surface, List<Object> affectedGeometryParticles,
@@ -234,17 +270,25 @@ public class IIGeometryValidator {
             isValid = false;
         }
 
-        // CGAlgorithms.isCCW(..) is only guaranteed to work for valid rings. If a ring is not valid, then the result
+        // CGAlgorithms.isCCW(..) is only guaranteed to work for valid rings. If a ring
+        // is not valid, then the result
         // of isCCW(..) is not reliable.
-        // Note that axis orientation plays a role for CGAlgorithms.isCCW(..). It assumes a right-handed coordinate reference system.
-        // An explanation for why CGAlgorithms.isCCW(..) would return false (in unit test
-        // test_arc_interpolation_self_intersection for test surface with gml:id=DETHL56P00019ALS) when our
-        // custom linearizer is used would be that the result of isCCW(..) is wrong because the linearized ring is
+        // Note that axis orientation plays a role for CGAlgorithms.isCCW(..). It
+        // assumes a right-handed coordinate reference system.
+        // An explanation for why CGAlgorithms.isCCW(..) would return false (in unit
+        // test
+        // test_arc_interpolation_self_intersection for test surface with
+        // gml:id=DETHL56P00019ALS) when our
+        // custom linearizer is used would be that the result of isCCW(..) is wrong
+        // because the linearized ring is
         // invalid (due to the self-intersection).
-        // We perform an orientation check only if the geometry is valid (based upon the result of the JTS validation).
-        // The orientation checks are performed based upon the results of our custom linearization (because with a
+        // We perform an orientation check only if the geometry is valid (based upon the
+        // result of the JTS validation).
+        // The orientation checks are performed based upon the results of our custom
+        // linearization (because with a
         // different linearization the resulting JTS geometry could be invalid).
-        // TODO If the ring is given in a left-handed CRS, the ring coordinates need to be transformed. Realizing such a transformation is future work.
+        // TODO If the ring is given in a left-handed CRS, the ring coordinates need to
+        // be transformed. Realizing such a transformation is future work.
 
         // Only perform the orientation test if JTS validation found out that the
         // geometry is valid
@@ -286,8 +330,10 @@ public class IIGeometryValidator {
             }
         }
 
-        // Validation events InteriorRingIntersectsExterior, InteriorRingOutsideExterior, InteriorRingsIntersect,
-        // InteriorRingsNested, InteriorRingsTouch, and InteriorRingTouchesExterior are ignored by the
+        // Validation events InteriorRingIntersectsExterior,
+        // InteriorRingOutsideExterior, InteriorRingsIntersect,
+        // InteriorRingsNested, InteriorRingsTouch, and InteriorRingTouchesExterior are
+        // ignored by the
         // GMLValidationEventHandler. These events are handled by the JTS validation.
         // Thus, no need to compute such events here.
 

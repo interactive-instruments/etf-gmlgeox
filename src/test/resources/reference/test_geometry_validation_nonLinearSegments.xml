@@ -1,0 +1,11 @@
+<validationtest>
+  <test>
+    <valid>false</valid>
+    <result>FFVF</result>
+    <messages>
+      <etf:message xmlns:etf="http://www.interactive-instruments.de/etf/2.0" ref="TR.TR.exception.java.lang.IllegalArgumentException">
+        <etf:argument token="original">Cannot determine control points for curve, contains non-linear segments.</etf:argument>
+      </etf:message>
+    </messages>
+  </test>
+</validationtest>

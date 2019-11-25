@@ -74,7 +74,7 @@ public class Message {
     private static String[] toStrs(final Object[] strs) {
         final String[] newStrs = new String[strs.length];
         for (int i = 0; i < strs.length; i++) {
-            newStrs[i] = strs[i].toString();
+            newStrs[i] = strs[i] == null ? "" : strs[i].toString();
         }
         return newStrs;
     }

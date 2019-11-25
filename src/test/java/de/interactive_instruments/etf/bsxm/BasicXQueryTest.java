@@ -66,6 +66,14 @@ public class BasicXQueryTest {
     }
 
     @Test
+    public void test_validation_nonLinearSegments() throws BaseXException {
+        new DropDB("GmlGeoXUnitTestDB-000").execute(context);
+        new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/test_geometry_validation_nonLinearSegments.xml")
+                .execute(context);
+        xmlTest("test_geometry_validation_nonLinearSegments.xq");
+    }
+
+    @Test
     public void test_basic_tests() throws BaseXException {
         new DropDB("GmlGeoXUnitTestDB-000").execute(context);
         new CreateDB("GmlGeoXUnitTestDB-000", "src/test/resources/xml/geometryRelationship/GeometryRelationshipTest.xml")
