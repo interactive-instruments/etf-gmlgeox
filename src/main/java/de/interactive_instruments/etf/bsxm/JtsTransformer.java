@@ -555,7 +555,7 @@ final public class JtsTransformer {
         }
 
         String positions = null;
-        for (final ANode child : arcStringNode.children()) {
+        for (final ANode child : arcStringNode.childIter()) {
             if (Arrays.equals("posList".getBytes(), Token.local(child.name()))) {
                 positions = child.toJava().getTextContent();
                 break;
