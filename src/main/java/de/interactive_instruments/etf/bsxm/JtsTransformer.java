@@ -527,7 +527,8 @@ final public class JtsTransformer {
     }
 
     Coordinate[] parseArcStringControlPoints(final ANode arcStringNode) throws QueryException {
-        final ICRS crs = srsLookup.getSrs(arcStringNode);
+
+        final ICRS crs = srsLookup.getSrsForGeometryComponentNode(arcStringNode);
 
         int dimension;
         if (crs == null) {

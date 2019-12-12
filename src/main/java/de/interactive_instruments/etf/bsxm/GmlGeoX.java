@@ -1148,9 +1148,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      */
     @Requires(Permission.NONE)
     @Deterministic
-    @Deprecated
     public String determineSrsNameForGeometryComponent(final ANode geometryComponentNode) {
-        return this.srsLookup.determineSrsName(geometryComponentNode);
+        return this.srsLookup.determineSrsNameForGeometryComponent(geometryComponentNode);
     }
 
     /**

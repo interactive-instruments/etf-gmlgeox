@@ -128,7 +128,7 @@ public final class GeometryValidator {
                 report,
                 gmlGeometryElementNames,
                 this.validators,
-                srsLookup.getSrs(node),
+                srsLookup.getSrsForGeometryNode(node),
                 this.jtsTransformer,
                 this.deegreeTransformer);
         final BxElementReader reader = new BxElementReader(node, handler, namespaceHolder);
