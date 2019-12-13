@@ -2781,7 +2781,9 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     @Deterministic
     public DBNode[] search(final String indexName, ANode geometryNode) throws QueryException {
-
+        if(geometryNode==null) {
+            return new DBNode[0];
+        }
         /* Try lookup in envelope map first. */
         final DBNodeRef entry = dbNodeRefFactory.createDBNodeEntry((DBNode) geometryNode);
         if (geometryCache.hasEnvelope(entry)) {
