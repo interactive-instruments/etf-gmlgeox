@@ -15,7 +15,8 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -194,7 +195,7 @@ public final class DeegreeTransformer {
             throw new IllegalStateException();
         }
 
-        final ICRS crs = srsLookup.getSrs(aNode);
+        final ICRS crs = srsLookup.getSrsForGeometryNode(aNode);
         final XMLStreamReader xmlStream = nodeToStreamReader(aNode);
 
         try {

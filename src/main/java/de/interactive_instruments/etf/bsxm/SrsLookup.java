@@ -31,6 +31,7 @@ import de.interactive_instruments.SUtils;
  * Command to determine the SRS
  *
  * @author Jon Herrmann ( herrmann aT interactive-instruments doT de )
+ * @author Johannes Echterhoff ( echterhoff aT interactive-instruments doT de )
  */
 final public class SrsLookup {
     // Byte comparison
@@ -56,16 +57,34 @@ final public class SrsLookup {
     }
 
     @Nullable
-    public ICRS getSrs(final ANode geometryNode) {
-        if (standardDeegreeSRS != null) {
+    public ICRS getSrsForGeometryNode(final ANode geometryNode) {
+
+        final String srsName = determineSrsName(geometryNode);
+        if (srsName != null) {
+            return lookup(srsName);
+        } else {
+            return null;
+        }
+    }
+
+    @Nullable
+    public ICRS getSrsForGeometryComponentNode(final ANode geometryComponentNode) {
+
+        final String srsName = determineSrsNameForGeometryComponent(geometryComponentNode);
+        if (srsName != null) {
+            return lookup(srsName);
+        } else {
+            return null;
+        }
+    }
+
+    public ICRS lookup(String srsName) {
+
+        if (srsName.equals(standardSRS)) {
+            // use pre-computed ICRS
             return standardDeegreeSRS;
         } else {
-            final String defaultSrsName = determineSrsName(geometryNode);
-            if (defaultSrsName != null) {
-                return CRSManager.getCRSRef(defaultSrsName);
-            } else {
-                return null;
-            }
+            return CRSManager.getCRSRef(srsName);
         }
     }
 
@@ -73,48 +92,101 @@ final public class SrsLookup {
     String determineSrsName(@NotNull final ANode geometryNode) {
 
         final byte[] srsDirect = geometryNode.attribute(srsNameB);
+
+        // search for @srsName in geometry node first
         if (srsDirect != null) {
+
             return Token.string(srsDirect);
+
         } else if (this.standardSRS != null) {
+
             return this.standardSRS;
+
         } else {
-            // Check in the index if it contains a srs attribute.
-            if (geometryNode.data() != null) {
-                // query the index (side effect: a non-existing index will be created)
-                final int index = geometryNode.data().attrNames.index(srsNameB);
-                final TokenIntMap values = geometryNode.data().attrNames.stats(index).values;
-                if (values == null || values.size() == 0) {
-                    // we will never find one
-                    return null;
-                } else if (values.size() == 1) {
-                    // the index contains exactly one value, which can be used
-                    return Token.string(values.key(1));
-                }
+
+            /* Check the attribute index. If it does NOT contain an srsName attribute, then a search for such attributes in the wider XML structure (see the following steps) can be avoided. */
+            if (geometryNode.data() != null && !attributeIndexHasSrsName(geometryNode)) {
+                return null;
             }
-            // Traverse the ancestor nodes. The following time-consuming steps should be
-            // avoided
-            // by setting the default srs.
-            for (final ANode ancestor : geometryNode.ancestor()) {
-                final byte[] srs = ancestor.attribute(srsNameB);
-                if (srs != null) {
-                    return Token.string(srs);
-                }
+
+            String srsName = searchSrsNameInAncestors(geometryNode);
+
+            if (srsName != null) {
+                return srsName;
+            } else {
+                return searchSrsNameInAncestorBoundedBy(geometryNode);
             }
-            for (final ANode ancestor : geometryNode.ancestor()) {
-                for (final ANode ancestorChild : ancestor.children()) {
-                    if (Token.eq(boundedByB, Token.local(ancestorChild.name()))) {
-                        for (final ANode boundedByChild : ancestorChild.children()) {
-                            if (Token.eq(envelopeB, Token.local(boundedByChild.name()))) {
-                                final byte[] srs = boundedByChild.attribute(srsNameB);
-                                if (srs != null) {
-                                    return Token.string(srs);
-                                }
+        }
+    }
+
+    private @Nullable String searchSrsNameInAncestorBoundedBy(@NotNull ANode node) {
+
+        // Search in ancestor for boundedBy/Envelope with @srsName
+        for (final ANode ancestor : node.ancestorIter()) {
+            for (final ANode ancestorChild : ancestor.childIter()) {
+                if (Token.eq(boundedByB, Token.local(ancestorChild.name()))) {
+                    for (final ANode boundedByChild : ancestorChild.childIter()) {
+                        if (Token.eq(envelopeB, Token.local(boundedByChild.name()))) {
+                            final byte[] srs = boundedByChild.attribute(srsNameB);
+                            if (srs != null) {
+                                return Token.string(srs);
                             }
                         }
                     }
                 }
             }
-            return null;
+        }
+        return null;
+    }
+
+    private String searchSrsNameInAncestors(@NotNull ANode node) {
+
+        // Traverse the ancestor nodes. The following time-consuming steps should be
+        // avoided by setting the default srs.
+        for (final ANode ancestor : node.ancestorIter()) {
+            final byte[] srs = ancestor.attribute(srsNameB);
+            if (srs != null) {
+                return Token.string(srs);
+            }
+        }
+
+        return null;
+    }
+
+    private boolean attributeIndexHasSrsName(@NotNull ANode node) {
+
+        // query the index (side effect: a non-existing index will be created)
+        final int index = node.data().attrNames.index(srsNameB);
+        final TokenIntMap values = node.data().attrNames.stats(index).values;
+        if (values == null || values.size() == 0) {
+            // we will never find an srsName attribute
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @Nullable
+    String determineSrsNameForGeometryComponent(@NotNull final ANode geometryComponentNode) {
+
+        if (this.standardSRS != null) {
+            return this.standardSRS;
+        } else {
+
+            // NOTE: DO NOT search for @srsName in the component itself
+
+            /* Check the attribute index. If it does NOT contain an srsName attribute, then a search for such attributes in the wider XML structure (see the following steps) can be avoided. */
+            if (geometryComponentNode.data() != null && !attributeIndexHasSrsName(geometryComponentNode)) {
+                return null;
+            }
+
+            String srsName = searchSrsNameInAncestors(geometryComponentNode);
+
+            if (srsName != null) {
+                return srsName;
+            } else {
+                return searchSrsNameInAncestorBoundedBy(geometryComponentNode);
+            }
         }
     }
 }

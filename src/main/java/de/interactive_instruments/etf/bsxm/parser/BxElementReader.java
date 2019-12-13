@@ -143,17 +143,17 @@ public class BxElementReader implements BxReader {
     }
 
     private ANode getFirstChildElement(final ANode node) {
-        ANode firstChild = node.children().next();
+        ANode firstChild = node.childIter().next();
         while (firstChild != null && !firstChild.nodeType().eq(NodeType.ELM)) {
-            firstChild = firstChild.followingSibling().next();
+            firstChild = firstChild.followingSiblingIter().next();
         }
         return firstChild;
     }
 
     private ANode getNextSiblingdElement(final ANode node) {
-        ANode sibling = node.followingSibling().next();
+        ANode sibling = node.followingSiblingIter().next();
         while (sibling != null && !sibling.nodeType().eq(NodeType.ELM)) {
-            sibling = node.followingSibling().next();
+            sibling = node.followingSiblingIter().next();
         }
         return sibling;
     }
