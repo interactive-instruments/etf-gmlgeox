@@ -60,7 +60,7 @@ final public class ExternalizableDBNodeRefMap implements Externalizable {
             }
             // use a second loop to support loop unwinding
             for (int p = 0; p < positions.length; p++) {
-                positions[p] = p + 1;
+                positions[p] = p;
             }
         } else {
             int pIndex = 0;

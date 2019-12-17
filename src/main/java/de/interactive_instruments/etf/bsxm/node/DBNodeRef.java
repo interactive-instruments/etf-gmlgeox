@@ -58,11 +58,11 @@ final public class DBNodeRef implements Comparable<DBNodeRef> {
         final StringBuilder sb = callback.getSBForDbNamePrefix();
         final int pads = 3 - dbIndexStr.length();
         if (pads > 0) {
-            for (int i = pads; i >= 0; i--) {
+            for (int i = pads - 1; i >= 0; i--) {
                 sb.append('0');
             }
         }
-        return sb.toString();
+        return sb.append(dbIndexStr).toString();
     }
 
     @Contract(pure = true)
