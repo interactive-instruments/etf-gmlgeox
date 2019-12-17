@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.basex.query.QueryException;
 import org.basex.query.QueryModule;
 import org.basex.query.value.node.DBNode;
 import org.jgrapht.alg.connectivity.ConnectivityInspector;
@@ -50,13 +49,13 @@ final public class GraphX extends QueryModule {
     }
 
     @Requires(Permission.NONE)
-    public void addVertexToSimpleGraph(DBNode vertex) throws QueryException {
+    public void addVertexToSimpleGraph(DBNode vertex) {
         final DBNodeRef nodeEntry = this.dbNodeRefFactory.createDBNodeEntry(vertex);
         simpleGraph.addVertex(nodeEntry);
     }
 
     @Requires(Permission.NONE)
-    public void addEdgeToSimpleGraph(DBNode vertex1, DBNode vertex2) throws QueryException {
+    public void addEdgeToSimpleGraph(DBNode vertex1, DBNode vertex2) {
         final DBNodeRef nodeEntry1 = this.dbNodeRefFactory.createDBNodeEntry(vertex1);
         final DBNodeRef nodeEntry2 = this.dbNodeRefFactory.createDBNodeEntry(vertex2);
         simpleGraph.addEdge(nodeEntry1, nodeEntry2);
@@ -70,29 +69,19 @@ final public class GraphX extends QueryModule {
 
     /**
      * @return list with connected sets (represented as a list of nodes of the vertexes in the set) found in the simple graph; can be empty (if the graph is empty) but not <code>null</code>
-     * @throws QueryException
      */
     @Requires(Permission.NONE)
-    public List<List<DBNode>> determineConnectedSetsInSimpleGraph() throws QueryException {
-
+    public List<List<DBNode>> determineConnectedSetsInSimpleGraph() {
         final ConnectivityInspector<DBNodeRef, DefaultEdge> ci = new ConnectivityInspector<>(simpleGraph);
-
         final List<Set<DBNodeRef>> connectedSets = ci.connectedSets();
-
-        final List<List<DBNode>> result = new ArrayList<>();
-
+        final List<List<DBNode>> result = new ArrayList<>(connectedSets.size());
         for (final Set<DBNodeRef> s : connectedSets) {
-
-            final List<DBNode> nodeList = new ArrayList<>();
-
+            final List<DBNode> nodeList = new ArrayList<>(s.size());
             for (DBNodeRef nodeRef : s) {
-                final DBNode node = this.dbNodeRefLookup.resolve(nodeRef);
-                nodeList.add(node);
+                nodeList.add(this.dbNodeRefLookup.resolve(nodeRef));
             }
-
             result.add(nodeList);
         }
-
         return result;
     }
 

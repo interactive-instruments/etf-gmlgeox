@@ -58,7 +58,6 @@ final public class SrsLookup {
 
     @Nullable
     public ICRS getSrsForGeometryNode(final ANode geometryNode) {
-
         final String srsName = determineSrsName(geometryNode);
         if (srsName != null) {
             return lookup(srsName);
@@ -68,8 +67,7 @@ final public class SrsLookup {
     }
 
     @Nullable
-    public ICRS getSrsForGeometryComponentNode(final ANode geometryComponentNode) {
-
+    ICRS getSrsForGeometryComponentNode(final ANode geometryComponentNode) {
         final String srsName = determineSrsNameForGeometryComponent(geometryComponentNode);
         if (srsName != null) {
             return lookup(srsName);
@@ -78,8 +76,7 @@ final public class SrsLookup {
         }
     }
 
-    public ICRS lookup(String srsName) {
-
+    private ICRS lookup(String srsName) {
         if (srsName.equals(standardSRS)) {
             // use pre-computed ICRS
             return standardDeegreeSRS;
@@ -90,37 +87,15 @@ final public class SrsLookup {
 
     @Nullable
     String determineSrsName(@NotNull final ANode geometryNode) {
-
         final byte[] srsDirect = geometryNode.attribute(srsNameB);
-
         // search for @srsName in geometry node first
         if (srsDirect != null) {
-
             return Token.string(srsDirect);
-
-        } else if (this.standardSRS != null) {
-
-            return this.standardSRS;
-
-        } else {
-
-            /* Check the attribute index. If it does NOT contain an srsName attribute, then a search for such attributes in the wider XML structure (see the following steps) can be avoided. */
-            if (geometryNode.data() != null && !attributeIndexHasSrsName(geometryNode)) {
-                return null;
-            }
-
-            String srsName = searchSrsNameInAncestors(geometryNode);
-
-            if (srsName != null) {
-                return srsName;
-            } else {
-                return searchSrsNameInAncestorBoundedBy(geometryNode);
-            }
         }
+        return determineSrsNameForGeometryComponent(geometryNode);
     }
 
     private @Nullable String searchSrsNameInAncestorBoundedBy(@NotNull ANode node) {
-
         // Search in ancestor for boundedBy/Envelope with @srsName
         for (final ANode ancestor : node.ancestorIter()) {
             for (final ANode ancestorChild : ancestor.childIter()) {
@@ -139,6 +114,7 @@ final public class SrsLookup {
         return null;
     }
 
+    @Nullable
     private String searchSrsNameInAncestors(@NotNull ANode node) {
 
         // Traverse the ancestor nodes. The following time-consuming steps should be
@@ -149,39 +125,29 @@ final public class SrsLookup {
                 return Token.string(srs);
             }
         }
-
         return null;
     }
 
     private boolean attributeIndexHasSrsName(@NotNull ANode node) {
-
         // query the index (side effect: a non-existing index will be created)
         final int index = node.data().attrNames.index(srsNameB);
         final TokenIntMap values = node.data().attrNames.stats(index).values;
-        if (values == null || values.size() == 0) {
-            // we will never find an srsName attribute
-            return false;
-        } else {
-            return true;
-        }
+        // we will never find an srsName attribute
+        return values != null && values.size() != 0;
     }
 
     @Nullable
     String determineSrsNameForGeometryComponent(@NotNull final ANode geometryComponentNode) {
-
         if (this.standardSRS != null) {
             return this.standardSRS;
         } else {
-
             // NOTE: DO NOT search for @srsName in the component itself
-
-            /* Check the attribute index. If it does NOT contain an srsName attribute, then a search for such attributes in the wider XML structure (see the following steps) can be avoided. */
+            // Check the attribute index. If it does NOT contain an srsName attribute,
+            // then a search for such attributes in the wider XML structure (see the following steps) can be avoided.
             if (geometryComponentNode.data() != null && !attributeIndexHasSrsName(geometryComponentNode)) {
                 return null;
             }
-
-            String srsName = searchSrsNameInAncestors(geometryComponentNode);
-
+            final String srsName = searchSrsNameInAncestors(geometryComponentNode);
             if (srsName != null) {
                 return srsName;
             } else {
