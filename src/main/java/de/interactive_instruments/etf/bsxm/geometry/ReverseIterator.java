@@ -23,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Jon Herrmann ( herrmann aT interactive-instruments doT de )
+ * @param <T>
+ *            tbd
  */
 public class ReverseIterator<T> implements Iterator<T>, Iterable<T> {
 

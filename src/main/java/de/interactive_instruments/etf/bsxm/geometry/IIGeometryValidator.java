@@ -61,6 +61,8 @@ public class IIGeometryValidator {
      *
      * @param eventHandler
      *            callback handler for errors, must not be <code>null</code>
+     * @param geomFac
+     *            The geometry factory to use.
      */
     public IIGeometryValidator(final GeometryValidationEventHandler eventHandler, final IIGeometryFactory geomFac) {
         this.eventHandler = eventHandler;
@@ -75,6 +77,8 @@ public class IIGeometryValidator {
      *
      * @param geom
      *            geometry to be validated
+     * @param jtsValidationSucceeded
+     *            <code>true</code> if the JTS geometry representing the given deegree geometry is known to be valid according to JTS validation, <code>false</code> if it is known to be invalid; relevant for some checks that require valid JTS geometries
      * @return true, if the geometry is valid, false otherwise (depends on the {@link GeometryValidationEventHandler} implementation)
      */
     public boolean validateGeometry(Geometry geom, boolean jtsValidationSucceeded) {

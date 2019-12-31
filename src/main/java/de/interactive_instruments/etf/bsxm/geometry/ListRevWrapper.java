@@ -20,6 +20,8 @@ import java.util.List;
 
 /**
  * @author Jon Herrmann ( herrmann aT interactive-instruments doT de )
+ * @param <E>
+ *            tbd
  */
 public class ListRevWrapper<E> extends AbstractList<E> {
 

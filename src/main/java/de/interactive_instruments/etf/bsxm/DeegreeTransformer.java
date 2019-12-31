@@ -168,11 +168,11 @@ public final class DeegreeTransformer {
     /**
      * Reads a geometry from the given nod.
      *
-     * @param crs
      * @param aNode
      *            represents a GML geometry element
      * @return the geometry represented by the node
-     * @throws Exception
+     * @throws GmlGeoXException
+     *             tbd
      */
     public Geometry parseGeometry(ANode aNode) throws GmlGeoXException {
 
@@ -222,8 +222,10 @@ public final class DeegreeTransformer {
      * Retrieves all basic curve components from the given geometry. Composite geometries - including curves - will be broken up into their parts. Point based geometries will be ignored.
      *
      * @param geom
+     *            tbd
      * @return A list with the curve components of the given geometry. Can be empty but not <code>null</code>.
-     * @throws Exception
+     * @throws GmlGeoXException
+     *             tbd
      */
     public Collection<Curve> getCurveComponents(final @NotNull Geometry geom) throws GmlGeoXException {
         if (geom instanceof DefaultCurve) {
@@ -308,7 +310,8 @@ public final class DeegreeTransformer {
      * @param geomNode
      *            GML geometry node
      * @return A list with the curve components of the given geometry. Can be empty but not <code>null</code>.
-     * @throws Exception
+     * @throws GmlGeoXException
+     *             tbd
      */
     public Collection<Curve> getCurveComponents(final @NotNull ANode geomNode) throws GmlGeoXException {
 
@@ -338,6 +341,8 @@ public final class DeegreeTransformer {
      * Getting the control points from a deegree Curve via Curve.getControlPoints() is, according to the javadoc of that method, only safe for linearly interpolated curves. Therefore, we use a different way to compute the control points.
      *
      * @param curve
+     *            Curve geometry from which to retrieve the control points
+     * @return the control points of the given curve
      * @throws IllegalArgumentException
      *             If the curve contains an unsupported type of curve segment
      */

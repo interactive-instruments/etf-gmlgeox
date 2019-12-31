@@ -77,6 +77,8 @@ final public class JtsTransformer {
      *            the Transformer for Deegree Geometries
      * @param jtsFactory
      *            used to build JTS geometries
+     * @param srsLookup
+     *            to perform SRS lookups
      */
     public JtsTransformer(final DeegreeTransformer deegreeTransformer,
             final GeometryFactory jtsFactory, final SrsLookup srsLookup) {
@@ -89,6 +91,7 @@ final public class JtsTransformer {
      * Creates a JTS Polygon from the given deegree PolygonPatch.
      *
      * @param patch
+     *            the polygon patch
      * @return the resulting JTS Polygon
      */
     public Polygon toJTSPolygon(PolygonPatch patch) {
@@ -112,6 +115,7 @@ final public class JtsTransformer {
      * Creates a JTS Polygon from the given JTS LineString.
      *
      * @param exterior
+     *            the LineString
      * @return the resulting JTS Polygon
      */
     public Polygon toJTSPolygon(
@@ -137,7 +141,9 @@ final public class JtsTransformer {
      * Creates a JTS GeometryCollection from the list of JTS geometry objects. If the geometries are homogeneous, ie only points, line strings, or polygons, create the specific geometric aggregate
      *
      * @param gList
+     *            list of JTS geometries
      * @param forceGeometryCollection
+     *            <code>true</code>, if the result shall be a com.vividsolutions.jts.geom.GeometryCollection no matter what, else <code>false</code>
      * @return a JTS GeometryCollection (empty if the given list is <code>null</code> or empty)
      */
     public GeometryCollection toJTSGeometryCollection(final @NotNull List<com.vividsolutions.jts.geom.Geometry> gList,
@@ -296,8 +302,10 @@ final public class JtsTransformer {
      * </ul>
      *
      * @param geom
+     *            the deegree geometry
      * @return the resulting JTS geometry
-     * @throws Exception
+     * @throws UnsupportedGeometryTypeException
+     *             if transformation to a JTS geometry is not supported for this type of deegree geometry
      */
     public @NotNull com.vividsolutions.jts.geom.Geometry toJTSGeometry(final @NotNull Geometry geom)
             throws UnsupportedGeometryTypeException {
@@ -412,8 +420,10 @@ final public class JtsTransformer {
      * See {{@link #toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param node
+     *            the geometry element
      * @return the resulting JTS geometry
-     * @throws Exception
+     * @throws QueryException
+     *             if an exception occurred
      */
     @NotNull
     public com.vividsolutions.jts.geom.Geometry toJTSGeometry(final @NotNull ANode node) throws QueryException {
@@ -493,6 +503,7 @@ final public class JtsTransformer {
      * Adds a geometry to a collection. If the geometry is a GeometryCollection (but not a MultiPoint, -LineString, or -Polygon) its members are added (recursively scanning for GeometryCollections). Spatial relationship operators cannot be performed for a JTS GeometryCollection, but for (Multi)Point, (Multi)LineString, and (Multi)Polygon.
      *
      * @param geom
+     *            the geometry
      * @return the list of JTS geometries (without GeometryCollection objects)
      */
     public static Collection<com.vividsolutions.jts.geom.Geometry> toFlattenedJTSGeometryCollection(

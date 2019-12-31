@@ -33,9 +33,9 @@ public interface BxElementHandler {
     }
 
     /**
-     * Returns a list of QNames this object will handle
+     * Returns a set of QNames this object will handle
      *
-     * @return
+     * @return qnames that will be handled
      */
     Set<QName> elementsToRegister();
 

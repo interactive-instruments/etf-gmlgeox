@@ -135,6 +135,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     /**
      * Loads SRS configuration files from the given directory, to be used when looking up SRS names for creating geometry objects.
      *
+     * @param databaseName
+     *            tbd
      * @param configurationDirectoryPathName
      *            Path to a directory that contains SRS configuration files
      * @throws QueryException
@@ -167,6 +169,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Retrieve the Well-Known-Text representation of a given JTS geometry.
      *
      * @param geom
+     *            a JTS geometry
      * @return the WKT representation of the given geometry, or '&lt;null&gt;' if the geometry is <code>null</code>.
      */
     @Requires(Permission.NONE)
@@ -639,7 +642,6 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param node
      *            The GML geometry element to validate.
      * @return a validation report, with the validation result and validation message (providing further details about any errors). The validation result is encoded as a sequence of characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF' shows that the first test was skipped, while the second test passed and the third and fourth failed.
-     * @throws QueryException
      */
     @Requires(Permission.NONE)
     public FElem validateAndReport(ANode node) {
@@ -704,6 +706,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the first geometry contains the second one, else <code>false
      *     </code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -731,6 +734,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -754,6 +758,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the first geometry contains the second one, else <code>false
      *     </code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -780,6 +785,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -808,6 +814,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            represents the second geometry, encoded as a GML geometry element
      * @return <code>true</code> if the first geometry crosses the second one, else <code>false</code> .
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -834,6 +841,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -856,6 +864,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            represents the second geometry, encoded as a JTS geometry object
      * @return <code>true</code> if the first geometry crosses the second one, else <code>false</code> .
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -882,6 +891,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -910,6 +920,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            represents the second geometry, encoded as a GML geometry element
      * @return <code>true</code> if the first geometry equals the second one, else <code>false</code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -936,6 +947,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -958,6 +970,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            represents the second geometry, encoded as a JTS geometry object
      * @return <code>true</code> if the first geometry equals the second one, else <code>false</code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -984,6 +997,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1013,6 +1027,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the first geometry intersects the second one, else <code>false
      *     </code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1040,6 +1055,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1063,6 +1079,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the first geometry intersects the second one, else <code>false
      *     </code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1089,6 +1106,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1121,7 +1139,6 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param geometryNode
      *            a gml geometry node
      * @return the value of the applicable 'srsName' attribute, if found, otherwise <code>null</code>
-     * @throws QueryException
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1144,7 +1161,6 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param geometryComponentNode
      *            a gml geometry component node (e.g. Arc or Circle)
      * @return the value of the applicable 'srsName' attribute, if found, otherwise <code>null</code>
-     * @throws QueryException
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1159,6 +1175,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            - either a geometry node or a JTS geometry
      * @return a JTS geometry
      * @throws QueryException
+     *             If an exception occurred while parsing the geometry.
      */
     public com.vividsolutions.jts.geom.Geometry parseGeometry(Value v) throws QueryException {
         if (v instanceof ANode) {
@@ -1306,6 +1323,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the first and the second geometry are disjoint, else <code>false
      *     </code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1333,6 +1351,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1355,6 +1374,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the first and the second geometry are disjoint, else <code>false
      *     </code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1381,6 +1401,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1410,6 +1431,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the first geometry is within the second geometry, else <code>false
      *     </code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1437,6 +1459,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1460,6 +1483,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the first geometry is within the second geometry, else <code>false
      *     </code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1486,6 +1510,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1515,6 +1540,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the first geometry overlaps the second one, else <code>false
      *     </code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1542,6 +1568,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1565,6 +1592,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the first geometry intersects the second one, else <code>false
      *     </code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1591,6 +1619,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1619,6 +1648,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            represents the second geometry, encoded as a GML geometry element
      * @return <code>true</code> if the first geometry touches the second one, else <code>false</code> .
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1646,6 +1676,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1669,6 +1700,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the first geometry intersects the second one, else <code>false
      *     </code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1695,6 +1727,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1727,6 +1760,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *
      * @param srsName
      *            name of the SRS to assign to a geometry if it does not have an srsName attribute itself.
+     * @throws QueryException
+     *             tbd
      */
     @Requires(Permission.NONE)
     public void setStandardSRS(final String srsName) throws QueryException {
@@ -1743,6 +1778,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param maxNumPoints
      *            maximum number of points to be created when interpolating an arc
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public void setMaxNumPointsForInterpolation(int maxNumPoints) throws QueryException {
@@ -1759,6 +1795,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param maxError
      *            the maximum difference between an arc and the interpolated line
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public void setMaxErrorForInterpolation(double maxError) throws QueryException {
@@ -1803,6 +1840,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            a single or collection of JTS geometries or geometry nodes.
      * @return the union of the geometries - can be a JTS geometry collection
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1827,6 +1865,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            a single or collection of geometry nodes.
      * @return the union of the geometries - can be a JTS geometry collection
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -1891,6 +1930,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Check if a JTS geometry is empty.
      *
      * @param geom
+     *            the geometry to check
      * @return <code>true</code> if the geometry is <code>null</code> or empty, else <code>false
      *     </code>.
      */
@@ -1906,6 +1946,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return The coordinate of the second control point of the first invalid arc, or <code>null
      *     </code> if all arcs are valid.
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2004,6 +2045,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the minimum angle between each control point, in degree (0<=x<=120)
      * @return The coordinate of a control point which does not have the minimum angle to one of the other control points, or <code>null</code> if the angles between all points are greater than or equal to the minimum separation angle
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2064,6 +2106,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the geometry to check
      * @return <code>true</code>, if the geometry is closed, else <code>false</code>
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2082,6 +2125,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the geometry to check
      * @return <code>true</code>, if the geometry is closed, else <code>false</code>
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2098,6 +2142,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            <code>true</code> if only curve geometries (i.e., for JTS: LineString, LinearRing, and MultiLineString) shall be tested, else <code>false</code> (in this case, the occurrence of polygons will result in the return value <code>false</code>).
      * @return <code>true</code> if the given geometry is closed, else <code>false</code>
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2161,6 +2206,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the geometry represented by the given node is closed, else <code>
      *     false</code>
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2176,6 +2222,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            potentially existing holes will be extracted from the geometry represented by this node (the geometry can be a Polygon, MultiPolygon, or any other JTS geometry)
      * @return A geometry (JTS Polygon or MultiPolygon) with the holes contained in the given geometry. Can also be an empty JTS GeometryCollection but not <code>null</code>;
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2274,9 +2321,11 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Check if a given geometry node is valid.
      *
      * @param geometryNode
+     *            the geometry element
      * @return <code>true</code> if the given node represents a valid geometry, else <code>false
      *     </code>.
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public boolean isValid(ANode geometryNode) throws QueryException {
@@ -2298,6 +2347,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the pattern against which to check the intersection matrix for the two geometries (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
      * @return <code>true</code> if the DE-9IM intersection matrix for the two geometries matches the <code>intersectionPattern</code>, else <code>false</code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2345,6 +2395,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2412,6 +2463,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the pattern against which to check the intersection matrix for the two geometries (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
      * @return <code>true</code> if the DE-9IM intersection matrix for the two geometries matches the <code>intersectionPattern</code>, else <code>false</code>.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2443,6 +2495,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
+     *             If an exception occurred while computing the spatial operation.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2485,6 +2538,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            represents the second geometry
      * @return the point-set common to the two geometries
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2511,6 +2565,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the second geometry
      * @return the point-set common to the two geometries
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2536,6 +2591,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            represents the second geometry
      * @return the closure of the point-set of the points contained in geometry1 that are not contained in geometry2.
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2553,8 +2609,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     /**
      * @see #boundaryGeom(com.vividsolutions.jts.geom.Geometry)
      * @param geometryNode
+     *            the geometry element
      * @return the closure of the combinatorial boundary of this Geometry
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2566,8 +2624,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Returns the boundary, or an empty geometry of appropriate dimension if the given geometry is empty or has no boundary (e.g. a curve whose end points are equal). (In the case of zero-dimensional geometries, an empty GeometryCollection is returned.) For a discussion of this function, see the OpenGIS SimpleFeatures Specification. As stated in SFS Section 2.1.13.1, "the boundary of a Geometry is a set of Geometries of the next lower dimension."
      *
      * @param geometry
+     *            the geometry
      * @return the closure of the combinatorial boundary of this Geometry
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2593,6 +2653,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the second geometry
      * @return the closure of the point-set of the points contained in geometry1 that are not contained in geometry2.
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2615,6 +2676,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            represents the geometry
      * @return The bounding box, an array { x1, y1, x2, y2 }
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2640,6 +2702,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the geometry
      * @return The bounding box, as an array { x1, y1, x2, y2 }
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2659,8 +2722,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * NOTE: This is different to computing the boundary of a curve in case that the curve end points are equal (in that case, the curve does not have a boundary).
      *
      * @param geomNode
+     *            the geometry element
      * @return An array with the two end points of the curve geometry (node); can be empty if the given geometry nodes does not represent a single curve.
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2700,6 +2765,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            represents the maximum value on the second coordinate axis; a number
      * @return the node set of all items in the envelope
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2722,6 +2788,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            represents the maximum value on the second coordinate axis; a number
      * @return the node set of all items in the envelope
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2759,8 +2826,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Searches the default spatial r-tree index for items whose minimum bounding box intersects with the the minimum bounding box of the given geometry node.
      *
      * @param geometryNode
+     *            the geometry element
      * @return the node set of all items in the envelope
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2774,8 +2843,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param indexName
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
      * @param geometryNode
+     *            the geometry element
      * @return the node set of all items in the envelope
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2804,8 +2875,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Searches the default spatial r-tree index for items whose minimum bounding box intersects with the the minimum bounding box of the given geometry.
      *
      * @param geom
+     *            the geometry
      * @return the node set of all items in the envelope
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2819,8 +2892,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param indexName
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
      * @param geom
+     *            the geometry
      * @return the node set of all items in the envelope
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2845,6 +2920,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *
      * @return the node set of all items in the index
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public DBNode[] search() throws QueryException {
@@ -2859,6 +2935,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
      * @return the node set of all items in the index
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public DBNode[] searchInIndex(final String indexName) throws QueryException {
@@ -2897,6 +2974,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param size
      *            the size of the geometry cache; default is 100000
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public void cacheSize(final Object size) throws QueryException {
@@ -2932,6 +3010,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param geometry
      *            represents the GML geometry to index
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public void index(final ANode node, final ANode geometry) throws QueryException {
@@ -2944,6 +3023,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param indexName
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public void removeIndex(final String indexName) throws QueryException {
@@ -2964,6 +3044,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param geometry
      *            represents the GML geometry to index
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public void index(final String indexName, final ANode node, final ANode geometry) throws QueryException {
@@ -3032,6 +3113,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the minimum number of matching identical curves that must be found for each curve from the geomNode
      * @return <code>null</code>, if all curves are matched correctly, otherwise the JTS geometry of the first curve from geomNode which is not covered by the required number of identical curves from otherGeomsNodes
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -3079,6 +3161,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the maximum number of matching identical curves that are allowed to be found for each curve from the geomNode
      * @return <code>null</code>, if all curves are matched correctly, otherwise the JTS geometry of the first curve from geomNode which is covered by more than the allowed number of identical curves from otherGeomsNodes
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -3234,6 +3317,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            one or more database nodes representing GML geometries
      * @return <code>null</code>, if full coverage was determined, otherwise the JTS geometry of the first curve from geomNode which is not covered by an identical curve from otherGeomNodes
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -3392,6 +3476,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the node that represents the second geometry
      * @return The intersection of two components from the two geometries, where an invalid intersection was detected, or <code>null</code> if no such case exists.
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -3539,6 +3624,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the node that represents the geometry
      * @return the geometry of the node; can be an empty geometry if the node does not represent a geometry
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -3605,6 +3691,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param geometry
      *            represents the GML geometry to index
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public void prepareSpatialIndex(final ANode node, final ANode geometry) throws QueryException {
@@ -3624,6 +3711,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param geometry
      *            represents the GML geometry to index
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public void prepareSpatialIndex(final String indexName, final ANode node, final ANode geometry)
@@ -3671,6 +3759,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param geometry
      *            represents the GML geometry to index
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public void prepareDefaultAndSpecificSpatialIndex(final String indexName, final ANode node, final ANode geometry)
@@ -3707,6 +3796,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Uses the index entries that have been prepared using method(s) prepareSpatialIndex(...).
      *
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     public void buildSpatialIndex() throws QueryException {
@@ -3733,6 +3823,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Retrieve the first two coordinates of a given geometry.
      *
      * @param geom
+     *            the geometry
      * @return an empty array if the geometry is null or empty, otherwise an array with the x and y from the first coordinate of the geometry
      */
     @Requires(Permission.NONE)
@@ -3751,8 +3842,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Retrieve x and y of the given coordinate, as strings without scientific notation.
      *
      * @param coord
+     *            the coordinate
      * @return an array with the x and y of the given coordinate, as strings without scientific notation.
      * @throws QueryException
+     *             In case an exception occurred.
      */
     @Requires(Permission.NONE)
     @Deterministic

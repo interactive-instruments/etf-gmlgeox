@@ -82,7 +82,6 @@ public final class GeometryCache implements Externalizable {
      *
      * @param maxSize
      *            new cache size
-     * @throws QueryException
      */
     public void resetCache(final int maxSize) {
         try {
@@ -102,6 +101,7 @@ public final class GeometryCache implements Externalizable {
      * Get a geometry from the cache
      *
      * @param dbNode
+     *            tbd
      * @return the parsed geometry of the geometry node, or <code>null</code> if no geometry was found
      */
     @Nullable
@@ -179,6 +179,8 @@ public final class GeometryCache implements Externalizable {
      *
      * @param indexName
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     * @param lookup
+     *            tbd
      * @return iterator over all entries; can be <code>null</code> if no index with given name was found
      */
     public List<DBNode> getAll(@NotNull final String indexName, final DBNodeRefLookup lookup) {
@@ -196,6 +198,8 @@ public final class GeometryCache implements Externalizable {
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
      * @param bbox
      *            the bounding box / rectangle
+     * @param lookup
+     *            tbd
      * @return iterator over all detected entries; can be <code>null</code> if no index with given name was found
      */
     @NotNull
@@ -208,9 +212,10 @@ public final class GeometryCache implements Externalizable {
     }
 
     /**
-     * Create the named spatial index by bulk loading, using the STR method. Before the index can be built, entries must be added by calling {@link #prepareSpatialIndex(String, DBNodeRef, com.github.davidmoten.rtree.geometry.Geometry).
+     * Create the named spatial index by bulk loading, using the STR method. Before the index can be built, entries must be added by calling {@link #prepareSpatialIndex(String, DBNodeRef, com.github.davidmoten.rtree.geometry.Geometry)}.
      *
-     * <p> According to https://github.com/ambling/rtree-benchmark, creating an R*-tree using bulk loading is faster than doing so without bulk loading. Furthermore, according to https://en.wikipedia.org/wiki/R-tree, an STR bulk loaded R*-tree is a "very efficient tree".
+     * <p>
+     * According to https://github.com/ambling/rtree-benchmark, creating an R*-tree using bulk loading is faster than doing so without bulk loading. Furthermore, according to https://en.wikipedia.org/wiki/R-tree, an STR bulk loaded R*-tree is a "very efficient tree".
      *
      * @param indexName
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
@@ -241,6 +246,7 @@ public final class GeometryCache implements Externalizable {
 
     /**
      * @param entry
+     *            tbd
      * @return <code>true</code> if a mapping to an envelope exists for the given DBNode entry, else <code>false</code>s
      */
     public boolean hasEnvelope(final DBNodeRef entry) {
@@ -249,6 +255,7 @@ public final class GeometryCache implements Externalizable {
 
     /**
      * @param entry
+     *            tbd
      * @return The envelope stored for the given entry, or <code>null</code> if the manager does not contain a mapping for the given entry.
      */
     public Envelope getEnvelope(final DBNodeRef entry) {
@@ -259,7 +266,9 @@ public final class GeometryCache implements Externalizable {
      * Adds a mapping from the given entry to the given envelope to this manager.
      *
      * @param entry
+     *            tbd
      * @param env
+     *            tbd
      */
     public void addEnvelope(final DBNodeRef entry, final Envelope env) {
         envelopeByDBNodeEntry.put(entry, env);
@@ -277,7 +286,6 @@ public final class GeometryCache implements Externalizable {
      *            represents the node of the element to be indexed
      * @param geometry
      *            the geometry to use in the index
-     * @throws QueryException
      */
     public void prepareSpatialIndex(
             @NotNull final String indexName,
