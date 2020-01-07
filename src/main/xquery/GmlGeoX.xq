@@ -4,7 +4,7 @@
  : GmlGeoX XQuery Function Library Facade
  : ---------------------------------------
  :
- : Copyright (C) 2018 interactive instruments GmbH
+ : Copyright (C) 2018-2020 interactive instruments GmbH
  :
  : Licensed under the EUPL, Version 1.2 or - as soon they will be approved by
  : the European Commission - subsequent versions of the EUPL (the "Licence");
@@ -19,12 +19,13 @@
  : See the Licence for the specific language governing permissions and
  : limitations under the Licence.
  :
- : @author  Jon Herrmann ( herrmann aT interactive-instruments doT de )
  : @author  Johannes Echterhoff (echterhoff aT interactive-instruments doT de)
+ : @author  Clemens Portele ( portele aT interactive-instruments doT de )
+ : @author  Jon Herrmann ( herrmann aT interactive-instruments doT de )
  : @author  Christoph Spalek (spalek aT interactive-instruments doT de)
  :
  :)
-module namespace geox = 'https://modules.etf-validator.net/geox/1';
+module namespace geox = 'https://modules.etf-validator.net/gmlgeox/2';
 
 import module namespace java = 'java:de.interactive_instruments.etf.bsxm.GmlGeoX';
 
