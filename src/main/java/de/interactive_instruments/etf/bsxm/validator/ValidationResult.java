@@ -29,6 +29,10 @@ import org.basex.query.value.node.FElem;
 import org.deegree.geometry.points.Points;
 import org.deegree.geometry.primitive.Curve;
 import org.deegree.geometry.primitive.Point;
+import org.deegree.geometry.primitive.Surface;
+import org.deegree.geometry.primitive.patches.PolygonPatch;
+import org.deegree.geometry.primitive.patches.SurfacePatch;
+import org.deegree.geometry.primitive.segments.CubicSpline;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -94,33 +98,57 @@ public class ValidationResult {
     private static String coordinates(@NotNull final org.deegree.geometry.Geometry affectedGeometry) {
         if (affectedGeometry instanceof Curve) {
             final Points points = ((Curve) affectedGeometry).getControlPoints();
-            final StringBuilder builder = new StringBuilder(points.size() * points.getDimension() * 12);
-            if (points.getDimension() == 3) {
-                for (Point point : points) {
-                    builder.append(formatValue(point.get0())).append(',')
-                            .append(formatValue(point.get1())).append(',')
-                            .append(formatValue(point.get2())).append(' ');
-                }
-            } else {
-                for (Point point : points) {
-                    builder.append(formatValue(point.get0())).append(',')
-                            .append(formatValue(point.get1())).append(' ');
-                }
-            }
-            if (builder.length() > 60) {
-                builder.setLength(60);
-                builder.append("...");
-            } else {
-                builder.deleteCharAt(builder.length() - 1);
-            }
-            return builder.toString();
+            return formatPoints(points);
         } else if (affectedGeometry instanceof Point) {
             return formatPoint(((Point) affectedGeometry));
+        } else if (affectedGeometry instanceof Surface) {
+            try {
+                final List<? extends SurfacePatch> patches = ((Surface) affectedGeometry).getPatches();
+                if (patches == null) {
+                    return "";
+                }
+                final SurfacePatch p = patches.get(0);
+                if (!(p instanceof PolygonPatch)) {
+                    return "";
+                }
+                final PolygonPatch pp = (PolygonPatch) p;
+                if (pp.getExteriorRing().getCurveSegments().get(0) instanceof CubicSpline) {
+                    return formatPoints(((CubicSpline) pp.getExteriorRing().getMembers().get(0).getCurveSegments().get(0))
+                            .getControlPoints());
+                } else {
+                    return formatPoints(((PolygonPatch) p).getExteriorRing().getControlPoints());
+                }
+            } catch (IllegalArgumentException e) {
+                return "";
+            }
         } else {
             Objects.requireNonNull(affectedGeometry, "Invalid call, affected points are null");
             throw new IllegalArgumentException(
                     "Cannot derive affected points from geometry type " + affectedGeometry.getClass().getName());
         }
+    }
+
+    private static String formatPoints(final Points points) {
+        final StringBuilder builder = new StringBuilder(points.size() * points.getDimension() * 12);
+        if (points.getDimension() == 3) {
+            for (Point point : points) {
+                builder.append(formatValue(point.get0())).append(',')
+                        .append(formatValue(point.get1())).append(',')
+                        .append(formatValue(point.get2())).append(' ');
+            }
+        } else {
+            for (Point point : points) {
+                builder.append(formatValue(point.get0())).append(',')
+                        .append(formatValue(point.get1())).append(' ');
+            }
+        }
+        if (builder.length() > 60) {
+            builder.setLength(60);
+            builder.append("...");
+        } else {
+            builder.deleteCharAt(builder.length() - 1);
+        }
+        return builder.toString();
     }
 
     private static String coordinates(final com.vividsolutions.jts.geom.Geometry geometry, final Coordinate coordProblem) {

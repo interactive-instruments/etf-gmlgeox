@@ -15,8 +15,8 @@
  */
 package de.interactive_instruments.etf.bsxm;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +30,7 @@ import org.deegree.geometry.primitive.segments.Circle;
 import org.deegree.geometry.primitive.segments.LineStringSegment;
 import org.deegree.geometry.standard.AbstractDefaultGeometry;
 import org.deegree.geometry.standard.JTSGeometryPair;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.interactive_instruments.etf.bsxm.geometry.IIGeometryFactory;
 

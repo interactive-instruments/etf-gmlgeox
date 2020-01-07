@@ -1,4 +1,0 @@
-<test_3d>
-  <validationtest>Error parsing element MultiSurface with id Nc.3.3.1 : Error in XML document (file '3DCoodinates.xml', line: 0): Cannot parse 'gml:posList': contains 14 values, but coordinate dimension is 3. This does not match.</validationtest>
-  <geoIndexTest>gmlid: Mem.14 - Error in XML document (file '3DCoodinates.xml', line: 0): Cannot parse 'gml:posList': contains 14 values, but coordinate dimension is 3. This does not match.</geoIndexTest>
-</test_3d>

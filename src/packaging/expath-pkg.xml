@@ -10,5 +10,9 @@
         <namespace>https://modules.etf-validator.net/gmlgeox/2</namespace>
         <file>GmlGeoX.xq</file>
     </xquery>
+    <xquery>
+        <namespace>https://modules.etf-validator.net/graphx/1</namespace>
+        <file>GraphX.xq</file>
+    </xquery>
 
 </package>

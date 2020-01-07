@@ -41,6 +41,7 @@ public class XmlUnitDetailFormatter extends DefaultComparisonFormatter {
         String description = type.getDescription();
         final String target = getShortString(detail.getTarget(), detail.getXPath(),
                 type);
+
         if (type == ComparisonType.ATTR_NAME_LOOKUP) {
             return new StringBuilder().append(description).append(" ").append(detail.getXPath()).append(" ").append(target)
                     .toString();

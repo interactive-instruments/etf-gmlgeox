@@ -674,18 +674,18 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *           </ggeo:errors>
      *         </ggeo:ValidationResult>
      * }
-     *         </pre>
+     * </pre>
      *
-     *         Where:
-     *         <ul>
-     *         <li>ggeo:valid - contains the boolean value indicating if the object passed all tests (defined by the testMask).
-     *         <li>ggeo:result - contains a string that is a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed
-     *         <li>ggeo:message (one for each message produced during validation) contains:
-     *         <ul>
-     *         <li>an XML attribute 'type' that indicates the severity level of the message ('FATAL', 'ERROR', 'WARNING', or 'NOTICE')
-     *         <li>the actual validation message as text content
-     *         </ul>
-     *         </ul>
+     * Where:
+     * <ul>
+     * <li>ggeo:valid - contains the boolean value indicating if the object passed all tests (defined by the testMask).
+     * <li>ggeo:result - contains a string that is a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed
+     * <li>ggeo:message (one for each message produced during validation) contains:
+     * <ul>
+     * <li>an XML attribute 'type' that indicates the severity level of the message ('FATAL', 'ERROR', 'WARNING', or 'NOTICE')
+     * <li>the actual validation message as text content
+     * </ul>
+     * </ul>
      *
      */
     @Requires(Permission.NONE)

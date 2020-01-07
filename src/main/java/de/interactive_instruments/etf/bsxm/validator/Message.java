@@ -64,7 +64,7 @@ public class Message {
     }
 
     static Message exception(final Exception e) {
-        return new Message("TR.exception." + e.getClass().getName(), null, e.getMessage());
+        return new Message("exception." + e.getClass().getName(), null, e.getMessage());
     }
 
     static Message translate(final String messageId) {

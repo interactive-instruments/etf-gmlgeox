@@ -32,7 +32,7 @@ See [the ETF developer manual](http://docs.etf-validator.net/Developer_manuals/D
 The plugin can be used by importing the module **de.interactive_instruments.etf.bsxm.GmlGeoX**:
 
 ```xquery
-import module namespace ggeo = 'de.interactive_instruments.etf.bsxm.GmlGeoX';
+import module namespace ggeo = 'https://modules.etf-validator.net/gmlgeox/2';
 
 let $gml := fn:parse-xml(
 "<gml:posList xmlns:gml='http://www.opengis.net/gml/3.2' count='2'>0 0 1 0</gml:posList>")

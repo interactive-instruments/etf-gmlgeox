@@ -73,7 +73,12 @@ final class ElementContext {
             try {
                 jtsGeom = jtsTransformer.toJTSGeometry(deegreeGeom);
             } catch (final GmlGeoXException | IllegalArgumentException e) {
-                result.failWith(e);
+                if (e.getMessage() != null
+                        && e.getMessage().startsWith("Cannot determine control points for curve, contains")) {
+                    result.addError(this, Message.translate("gmlgeox.validation.geometry.non.linear.segment"), deegreeGeom);
+                } else {
+                    result.failWith(e);
+                }
             }
             return jtsGeom;
         }
