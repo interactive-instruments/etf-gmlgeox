@@ -241,6 +241,7 @@ task ('generateBaseXPackagingFile') {
 }
 
 artifacts {
+	archives xar
 	archives sourcesJar
 	// archives javadocJar
 }
