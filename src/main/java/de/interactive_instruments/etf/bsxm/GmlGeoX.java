@@ -364,14 +364,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Calls the {@link #validate(ANode)} method, with <code>null</code> as the bitmask, resulting in a validation with all tests enabled.
+     * Validates the given (GML geometry) node, using all available tests.
      *
      * <p>
-     * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry types.
+     * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry types and tests.
      *
      * @param node
      *            Node
-     * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed.
+     * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped.
      */
     @Requires(Permission.NONE)
     public String validate(ANode node) {
@@ -386,63 +386,6 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *
      * <p>
      * The validation tasks to perform can be specified via the given mask. The mask is a simple string, where the character '1' at the position of a specific test (assuming a 1-based index) specifies that the test shall be performed. If the mask does not contain a character at the position of a specific test (because the mask is empty or the length is smaller than the position), then the test will be executed.
-     *
-     * <p>
-     * The following tests are available:
-     *
-     * <p>
-     *
-     * <table summary="Available tests">
-     * <tr>
-     * <th>Position</th>
-     * <th>Test Name</th>
-     * <th>Description</th>
-     * </tr>
-     * <tr>
-     * <td>1</td>
-     * <td>General Validation</td>
-     * <td>This test validates the given geometry using the validation functionality of both deegree and JTS.</td>
-     * </tr>
-     * <tr>
-     * <td>2</td>
-     * <td>Polygon Patch Connectivity</td>
-     * <td>Checks that multiple polygon patches within a single surface are connected.</td>
-     * </tr>
-     * <tr>
-     * <td>3</td>
-     * <td>Repetition of Position in CurveSegments</td>
-     * <td>Checks that consecutive positions within a CurveSegment are not equal.</td>
-     * </tr>
-     * </table>
-     *
-     * <p>
-     * Examples:
-     *
-     * <ul>
-     * <li>The mask '010' indicates that only the 'Polygon Patch Connectivity' test shall be performed.
-     * <li>The mask '1' indicates that all tests shall be performed (because the first one is set to true/'1' and nothing is said for the other tests).
-     * <li>The mask '0' indicates that all except the first test shall be performed.
-     * </ul>
-     *
-     * @param node
-     *            the GML geometry to validate
-     * @param testMask
-     *            test mask
-     * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed.
-     */
-    @Requires(Permission.NONE)
-    public String validate(final ANode node, final String testMask) {
-        return geometryValidator.validateWithSimplifiedResults(node, testMask.getBytes());
-    }
-
-    /**
-     * Validates the given (GML geometry) node.
-     *
-     * <p>
-     * By default validation is only performed for the following GML geometry elements: Point, Polygon, Surface, Curve, LinearRing, MultiPolygon, MultiGeometry, MultiSurface, MultiCurve, Ring, and LineString. The set of GML elements to validate can be modified via the following methods: {@link #registerGmlGeometry(String)}, {@link #unregisterGmlGeometry(String)}, and {@link #unregisterAllGmlGeometries()}. These methods are also available for XQueries.
-     *
-     * <p>
-     * The validation tasks to perform can be specified via the given mask. The mask is a simple string, where the character '1' at the position of a specific test (assuming a 1-based index) specifies that the test shall be performed. If the mask does not contain a character at the position of a specific test (because the mask is empty or the length is smaller than the position), then the test will NOT be executed. If no mask is provided, ALL tests will be executed.
      *
      * <p>
      * The following tests are available:
@@ -640,8 +583,25 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * </ul>
      *
      * @param node
-     *            The GML geometry element to validate.
-     * @return a validation report, with the validation result and validation message (providing further details about any errors). The validation result is encoded as a sequence of characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF' shows that the first test was skipped, while the second test passed and the third and fourth failed.
+     *            the GML geometry to validate
+     * @param testMask
+     *            test mask
+     * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF' shows that the first test was skipped, while the second test passed and the third and fourth failed.
+     */
+    @Requires(Permission.NONE)
+    public String validate(final ANode node, final String testMask) {
+        return geometryValidator.validateWithSimplifiedResults(node, testMask.getBytes());
+    }
+
+    /**
+     * Validates the given (GML geometry) node, using all available tests.
+     *
+     * <p>
+     * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry types and tests.
+     *
+     * @param node
+     *            Node
+     * @return a DOM element with the validation result (for details about its structure, see the description of the result in method {@link #validateAndReport(ANode, String)})
      */
     @Requires(Permission.NONE)
     public FElem validateAndReport(ANode node) {
@@ -649,12 +609,16 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * @see #validateAndReport(ANode, String)
+     * Validates the given (GML geometry) node. The validation tasks to perform are specified via the given mask.
+     *
+     * <p>
+     * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry types, tests, and the test mask.
+     *
      * @param node
-     *            Node
+     *            The GML geometry element to validate.
      * @param testMask
-     *            Defines which tests shall be executed; if <code>null</code>, all tests will be executed.
-     * @return a DOM element like the following:
+     *            Defines which tests shall be executed.
+     * @return a DOM element, with the validation result and validation message (providing further details about any errors). The validation result is encoded as a sequence of characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF' shows that the first test was skipped, while the second test passed and the third and fourth failed.
      *
      *         <pre>
      * {@code
@@ -679,7 +643,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Where:
      * <ul>
      * <li>ggeo:valid - contains the boolean value indicating if the object passed all tests (defined by the testMask).
-     * <li>ggeo:result - contains a string that is a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVF' shows that the first test was skipped, while the second test passed and the third failed
+     * <li>ggeo:result - contains a string that is a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped.
      * <li>ggeo:message (one for each message produced during validation) contains:
      * <ul>
      * <li>an XML attribute 'type' that indicates the severity level of the message ('FATAL', 'ERROR', 'WARNING', or 'NOTICE')
@@ -1129,12 +1093,11 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * <ol>
      * <li>If the element itself has an 'srsName' attribute, then the value of that attribute is returned.
      * <li>Otherwise, if a standard SRS is defined (see {@link #setStandardSRS(String)}), it is used.
-     * <li>Otherwise, if the root element of the document of the given element has local name 'AX_Bestandsdatenauszug', 'AX_NutzerbezogeneBestandsdatenaktualisierung_NBA', 'AA_Fortfuehrungsauftrag', or 'AX_Einrichtungsauftrag', then the standard CRS (within element 'koordinatenangaben') as defined by the AAA GeoInfoDok is used.
      * <li>Otherwise, if an ancestor of the given element has the 'srsName' attribute, then the value of that attribute from the first ancestor (i.e., the nearest) is used.
      * <li>Otherwise, if an ancestor of the given element has a child element with local name 'boundedBy', which itself has a child with local name 'Envelope', and that child has an 'srsName' attribute, then the value of that attribute from the first ancestor (i.e., the nearest) that fulfills the criteria is used.
      * </ol>
      *
-     * NOTE: The underlying query is independent of a specific GML namespace.
+     * NOTE: The lookup is independent of a specific GML namespace.
      *
      * @param geometryNode
      *            a gml geometry node
@@ -1152,11 +1115,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * <ol>
      * <li>If a standard SRS is defined (see {@link #setStandardSRS(String)}), it is used.
      * <li>Otherwise, if an ancestor of the given element has the 'srsName' attribute, then the value of that attribute from the first ancestor (i.e., the nearest) is used.
-     * <li>Otherwise, if the root element of the document of the given element has local name 'AX_Bestandsdatenauszug', 'AX_NutzerbezogeneBestandsdatenaktualisierung_NBA', 'AA_Fortfuehrungsauftrag', or 'AX_Einrichtungsauftrag', then the standard CRS (within element 'koordinatenangaben') as defined by the AAA GeoInfoDok is used.
      * <li>Otherwise, if an ancestor of the given element has a child element with local name 'boundedBy', which itself has a child with local name 'Envelope', and that child has an 'srsName' attribute, then the value of that attribute from the first ancestor (i.e., the nearest) that fulfills the criteria is used.
      * </ol>
      *
-     * NOTE: The underlying query is independent of a specific GML namespace.
+     * NOTE: The lookup is independent of a specific GML namespace.
      *
      * @param geometryComponentNode
      *            a gml geometry component node (e.g. Arc or Circle)
@@ -1941,6 +1903,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
+     * Checks that the second control point of each arc in the given $arcStringNode is positioned in the middle third of that arc.
+     *
      * @param arcStringNode
      *            A gml:Arc or gml:ArcString element
      * @return The coordinate of the second control point of the first invalid arc, or <code>null
@@ -2039,6 +2003,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
+     * Check that the three control points of a gml:Circle are at least a given amount of degrees apart from each other.
+     *
      * @param circleNode
      *            A gml:Circle element, defined by three control points
      * @param minSeparationInDegree
@@ -3021,7 +2987,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Removes the named spatial index. WARNING: Be sure you know what you are doing.
      *
      * @param indexName
-     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     *            Identifies the index. The empty string identifies the default index.
      * @throws QueryException
      *             In case an exception occurred.
      */
@@ -3038,7 +3004,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param indexName
-     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     *            Identifies the index. The empty string identifies the default index.
      * @param node
      *            represents the indexed item node (can be the gml:id of a GML feature element, or the element itself)
      * @param geometry
@@ -3705,7 +3671,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param indexName
-     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     *            Identifies the index. The empty string identifies the default index.
      * @param node
      *            represents the node of the feature to be indexed
      * @param geometry
@@ -3753,7 +3719,7 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
      *
      * @param indexName
-     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     *            Identifies the index. The empty string identifies the default index.
      * @param node
      *            represents the node of the feature to be indexed
      * @param geometry

@@ -143,7 +143,7 @@ public final class GeometryCache implements Externalizable {
      * Index a geometry
      *
      * @param indexName
-     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     *            Identifies the index. The empty string identifies the default index.
      * @param entry
      *            the entry referencing the BaseX node (typically of a feature)
      * @param geometry
@@ -163,7 +163,7 @@ public final class GeometryCache implements Externalizable {
      * Report current size of the named spatial index
      *
      * @param indexName
-     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     *            Identifies the index. The empty string identifies the default index.
      * @return size of the spatial index; can be 0 if no index with given name was found
      */
     public int indexSize(@NotNull final String indexName) {
@@ -178,7 +178,7 @@ public final class GeometryCache implements Externalizable {
      * return all entries in the named spatial index
      *
      * @param indexName
-     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     *            Identifies the index. The empty string identifies the default index.
      * @param lookup
      *            tbd
      * @return iterator over all entries; can be <code>null</code> if no index with given name was found
@@ -195,7 +195,7 @@ public final class GeometryCache implements Externalizable {
      * Return all entries in the named spatial index whose bounding box intersects with the given bounding box
      *
      * @param indexName
-     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     *            Identifies the index. The empty string identifies the default index.
      * @param bbox
      *            the bounding box / rectangle
      * @param lookup
@@ -218,7 +218,7 @@ public final class GeometryCache implements Externalizable {
      * According to https://github.com/ambling/rtree-benchmark, creating an R*-tree using bulk loading is faster than doing so without bulk loading. Furthermore, according to https://en.wikipedia.org/wiki/R-tree, an STR bulk loaded R*-tree is a "very efficient tree".
      *
      * @param indexName
-     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     *            Identifies the index. The empty string identifies the default index.
      * @throws QueryException
      *             If the index has already been built.
      */
@@ -238,7 +238,7 @@ public final class GeometryCache implements Externalizable {
      * Removes the named spatial index and all its entries.
      *
      * @param indexName
-     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     *            Identifies the index. The empty string identifies the default index.
      */
     public void removeIndex(@NotNull final String indexName) {
         rtreeByIndexName.remove(indexName);
@@ -281,7 +281,7 @@ public final class GeometryCache implements Externalizable {
      * With an explicit call to {@link #buildIndexUsingBulkLoading(String)}, that index is built.
      *
      * @param indexName
-     *            Identifies the index. <code>null</code> or the empty string identifies the default index.
+     *            Identifies the index. The empty string identifies the default index.
      * @param nodeEntry
      *            represents the node of the element to be indexed
      * @param geometry
