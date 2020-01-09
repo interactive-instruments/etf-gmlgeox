@@ -1,7 +1,5 @@
 import module namespace graph = 'https://modules.etf-validator.net/graphx/1';
 
-declare namespace list = 'java.util.List';
-
 declare variable $dbname external := 'GMLGEOX-JUNIT-TEST-DB-000';
 let $dummyInitGraphX := graph:init($dbname)
 let $nodes := db:open($dbname)//n
@@ -35,15 +33,9 @@ let $createSimpleGraph :=	(
 	graph:addEdgeToSimpleGraph($v7, $v8))
 	
 	let $connectedSets := graph:determineConnectedSetsInSimpleGraph()
-	let $setCount := list:size($connectedSets)
 	let $results :=
-	  for $i in 0 to $setCount -1
-	  let $connectedSet := list:get($connectedSets,xs:int($i))
-	  let $csCount := list:size($connectedSet)
-	  let $csNodes := 
-	    for $j in 0 to $csCount -1
-	    return list:get($connectedSet,xs:int($j))	
-   return <connectedSet>{string-join(sort($csNodes/@id),'; ')}</connectedSet>
+	  for $connectedSet in $connectedSets/*:set/*
+	  return <connectedSet>{string-join(sort($connectedSet/*:member/*/@id),'; ')}</connectedSet>
  (: Ensure that resources can be reclaimed once the graph is no longer needed. :)
  let $resetSimpleGraph := graph:resetSimpleGraph()
  return 
