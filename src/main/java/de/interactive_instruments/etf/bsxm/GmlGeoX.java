@@ -4141,12 +4141,12 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        final String setStandardSRS = this.srsLookup.getStandardSRS();
-        out.writeUTF(setStandardSRS != null ? setStandardSRS : "");
         out.writeObject(this.geometryFactory);
         out.writeUTF(this.dbNodeRefFactory.getDbNamePrefix());
         out.writeUTF(this.geometryValidator.registeredGmlGeometries());
         out.writeObject(this.geometryCache);
+        final String setStandardSRS = this.srsLookup.getStandardSRS();
+        out.writeUTF(setStandardSRS != null ? setStandardSRS : "");
     }
 
     @Override
@@ -4154,7 +4154,6 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         // Todo read from meta
         final BxNamespaceHolder bxNamespaceHolder = BxNamespaceHolder.init(queryContext);
         this.srsLookup = new SrsLookup();
-        this.srsLookup.setStandardSRS(in.readUTF());
         this.geometryFactory = (IIGeometryFactory) in.readObject();
         this.deegreeTransformer = new DeegreeTransformer(this.geometryFactory, bxNamespaceHolder, this.srsLookup);
         this.jtsTransformer = new JtsTransformer(this.deegreeTransformer, this.jtsFactory, this.srsLookup);
@@ -4167,5 +4166,6 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         Stream.of(gmlGeometries.split(",")).map(e -> e.trim())
                 .forEach(e -> this.geometryValidator.registerGmlGeometry(e));
         this.geometryCache = (GeometryCache) in.readObject();
+        this.srsLookup.setStandardSRS(in.readUTF());
     }
 }
