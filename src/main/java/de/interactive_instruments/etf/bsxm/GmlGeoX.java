@@ -3086,6 +3086,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     public com.vividsolutions.jts.geom.Geometry curveUnmatchedByIdenticalCurvesMin(ANode geomNode,
             Value otherGeomsNodes, int minMatchesPerCurve) throws QueryException {
 
+	if(geomNode == null) {
+	    throw new GmlGeoXException("Parameter geomNode must contain a database node.");
+	}
+	
+	if(otherGeomsNodes == null || otherGeomsNodes.isEmpty()) {
+	    throw new GmlGeoXException("Parameter otherGeomsNodes must contain one or more database nodes.");
+	}
+	
         final Collection<Curve> curvesToMatch = deegreeTransformer.getCurveComponents(geomNode);
         final List<Curve> otherCurves = deegreeTransformer.getCurveComponents(otherGeomsNodes);
 
@@ -3134,6 +3142,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     public com.vividsolutions.jts.geom.Geometry curveUnmatchedByIdenticalCurvesMax(ANode geomNode,
             Value otherGeomsNodes, int maxMatchesPerCurve) throws QueryException {
 
+	if(geomNode == null) {
+	    throw new GmlGeoXException("Parameter geomNode must contain a database node.");
+	}
+	
+	if(otherGeomsNodes == null || otherGeomsNodes.isEmpty()) {
+	    throw new GmlGeoXException("Parameter otherGeomsNodes must contain one or more database nodes.");
+	}
+	
         final Collection<Curve> curvesToMatch = deegreeTransformer.getCurveComponents(geomNode);
         final List<Curve> otherCurves = deegreeTransformer.getCurveComponents(otherGeomsNodes);
 
