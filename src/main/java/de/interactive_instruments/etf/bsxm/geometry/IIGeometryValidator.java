@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +44,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Geometry validator, loosely based on the according deegree class. This class is optimized for GmlGeoX (does not compute validation events that are ignored by the GMLValidationEventHandler, also performs orientation checks [and linearization for such checks] for a given geometry only if it is valid according to JTS validation).
+ * Geometry validator, loosely based on the according deegree class. This class is optimized for GmlGeoX (does not
+ * compute validation events that are ignored by the GMLValidationEventHandler, also performs orientation checks [and
+ * linearization for such checks] for a given geometry only if it is valid according to JTS validation).
  * <p>
- * With this class, the issue of incorrect results when checking the orientation of surface boundaries whose coordinates are given in a left-handed CRS could also be fixed. For more details, see https://github.com/deegree/deegree3/issues/886.
+ * With this class, the issue of incorrect results when checking the orientation of surface boundaries whose coordinates
+ * are given in a left-handed CRS could also be fixed. For more details, see
+ * https://github.com/deegree/deegree3/issues/886.
  */
 public class IIGeometryValidator {
 
@@ -57,7 +61,8 @@ public class IIGeometryValidator {
     private final GeometryValidationEventHandler eventHandler;
 
     /**
-     * Creates a new {@link GeometryValidator} which performs callbacks on the given {@link GeometryValidationEventHandler} in case of errors.
+     * Creates a new {@link GeometryValidator} which performs callbacks on the given {@link GeometryValidationEventHandler}
+     * in case of errors.
      *
      * @param eventHandler
      *            callback handler for errors, must not be <code>null</code>
@@ -73,13 +78,18 @@ public class IIGeometryValidator {
     /**
      * Validates the given {@link Geometry}.
      * <p>
-     * Contained geometry objects and geometry particles are recursively checked (e.g. the members of a {@link MultiGeometry}) and callbacks to the associated {@link GeometryValidationEventHandler} are performed for each detected issue.
+     * Contained geometry objects and geometry particles are recursively checked (e.g. the members of a
+     * {@link MultiGeometry}) and callbacks to the associated {@link GeometryValidationEventHandler} are performed for each
+     * detected issue.
      *
      * @param geom
      *            geometry to be validated
      * @param jtsValidationSucceeded
-     *            <code>true</code> if the JTS geometry representing the given deegree geometry is known to be valid according to JTS validation, <code>false</code> if it is known to be invalid; relevant for some checks that require valid JTS geometries
-     * @return true, if the geometry is valid, false otherwise (depends on the {@link GeometryValidationEventHandler} implementation)
+     *            <code>true</code> if the JTS geometry representing the given deegree geometry is known to be valid
+     *            according to JTS validation, <code>false</code> if it is known to be invalid; relevant for some checks
+     *            that require valid JTS geometries
+     * @return true, if the geometry is valid, false otherwise (depends on the {@link GeometryValidationEventHandler}
+     *         implementation)
      */
     public boolean validateGeometry(Geometry geom, boolean jtsValidationSucceeded) {
         return validateGeometry(geom, new ArrayList<>(), jtsValidationSucceeded);
@@ -134,7 +144,8 @@ public class IIGeometryValidator {
     }
 
     /**
-     * Checks for duplicate control points and discontinuous segments in curves. If the curve is a ring, it is also checked whether the ring is closed or not.
+     * Checks for duplicate control points and discontinuous segments in curves. If the curve is a ring, it is also checked
+     * whether the ring is closed or not.
      *
      * @param curve
      * @param affectedGeometryParticles
@@ -177,7 +188,10 @@ public class IIGeometryValidator {
         for (CurveSegment segment : curve.getCurveSegments()) {
 
             if (doesNotSupportGettingStartOrEndPoint(segment)) {
-                /* Operations getStartPoint() and getEndPoint() not supported skip this segment; continue check starting with next supported segment type. */
+                /*
+                 * Operations getStartPoint() and getEndPoint() not supported skip this segment; continue check starting with
+                 * next supported segment type.
+                 */
                 lastSegmentEndPoint = null;
 
             } else {

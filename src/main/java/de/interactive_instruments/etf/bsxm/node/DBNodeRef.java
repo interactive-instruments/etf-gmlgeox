@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This flyweight class holds BaseX information to quickly access a node in the database. The instances are stored in the spatial index.
+ * This flyweight class holds BaseX information to quickly access a node in the database. The instances are stored in
+ * the spatial index.
  *
  * The {@link DBNodeRefLookup } command must be used to retrieve the BaseX
  *
@@ -34,7 +35,9 @@ import org.jetbrains.annotations.NotNull;
 final public class DBNodeRef implements Comparable<DBNodeRef> {
 
     /**
-     * We are compressing three values as 8 bytes to save memory (and hard disk storage when serialized). The first 32 bits are for the pre value, the next 16 bit for the nodeKind value and the last 16 bits are reserved for the database index (but as in TopoX we only use one byte right now).
+     * We are compressing three values as 8 bytes to save memory (and hard disk storage when serialized). The first 32 bits
+     * are for the pre value, the next 16 bit for the nodeKind value and the last 16 bits are reserved for the database
+     * index (but as in TopoX we only use one byte right now).
      */
     private final long compressedData;
 

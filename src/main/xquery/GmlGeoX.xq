@@ -1371,6 +1371,17 @@ declare function geox:buildSpatialIndex($indexName as xs:string) as empty-sequen
 };
 
 (:~
+  : Identify all geometries contained in the given geometry, that have the given dimension. Note that Point and MultiPoint have dimension 0, LineString and MultiLineString have dimension 1, and Polygon and MultiPolygon have dimension 2.
+ :
+ : @param $geom the geometry - typically a collection - to investigate; must not be empty 
+ : @param $dimension the dimension of geometries to return (value must be 0, 1, or 2)
+ : @return the geometries with the specified dimension; can be empty
+ :)
+declare function geox:geometriesWithDimension($geom , $dimension as xs:int )  {
+    java:geometriesWithDimension($geom, $dimension)
+};
+
+(:~
  : Retrieves the first two coordinates of a given geometry.
  :
  : @param $geom a JTS Geometry object

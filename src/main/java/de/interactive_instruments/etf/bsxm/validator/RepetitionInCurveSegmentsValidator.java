@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,14 +53,17 @@ public class RepetitionInCurveSegmentsValidator implements Validator {
      * <ul>
      * <li>Curve (including CompositeCurve, LineString, OrientableCurve, Ring)</li>
      * <li>The following CurveSegment types: Arc, ArcString, CubicSpline, GeodesicString, LineStringSegment</li>
-     * <li>The exterior and interior rings of polygon patches (contained within Surface, Polygon, PolyhedralSurface, TriangulatedSurface, Tin, CompositeSurface, or OrientableSurface) - NOTE: all other types of surface patches are currently ignored!</li>
+     * <li>The exterior and interior rings of polygon patches (contained within Surface, Polygon, PolyhedralSurface,
+     * TriangulatedSurface, Tin, CompositeSurface, or OrientableSurface) - NOTE: all other types of surface patches are
+     * currently ignored!</li>
      * <li>The elements of multi and composite geometries</li>
      * </ul>
      * Does NOT check curve segments within solids!
      *
      * @param geom
      *            the geometry that shall be tested
-     * @return <code>true</code> if no repetition was detected (or if the geometry is a point, a solid, or consists of solids), else <code>false</code>
+     * @return <code>true</code> if no repetition was detected (or if the geometry is a point, a solid, or consists of
+     *         solids), else <code>false</code>
      */
     private boolean checkNoRepetitionInCurveSegment(final ElementContext elementContext, final ValidationResult result,
             final @NotNull Geometry geom) {

@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,12 +138,14 @@ final public class JtsTransformer {
     }
 
     /**
-     * Creates a JTS GeometryCollection from the list of JTS geometry objects. If the geometries are homogeneous, ie only points, line strings, or polygons, create the specific geometric aggregate
+     * Creates a JTS GeometryCollection from the list of JTS geometry objects. If the geometries are homogeneous, ie only
+     * points, line strings, or polygons, create the specific geometric aggregate
      *
      * @param gList
      *            list of JTS geometries
      * @param forceGeometryCollection
-     *            <code>true</code>, if the result shall be a com.vividsolutions.jts.geom.GeometryCollection no matter what, else <code>false</code>
+     *            <code>true</code>, if the result shall be a com.vividsolutions.jts.geom.GeometryCollection no matter what,
+     *            else <code>false</code>
      * @return a JTS GeometryCollection (empty if the given list is <code>null</code> or empty)
      */
     public GeometryCollection toJTSGeometryCollection(final @NotNull List<com.vividsolutions.jts.geom.Geometry> gList,
@@ -314,11 +316,19 @@ final public class JtsTransformer {
 
             // covers CompositeSurface, OrientableSurface, Polygon, ...
 
-            /* Deegree does not support spatial operations for surfaces with more than one patch - or rather: it ignores all patches except the first one. So we need to detect and handle this case ourselves.
+            /*
+             * Deegree does not support spatial operations for surfaces with more than one patch - or rather: it ignores all
+             * patches except the first one. So we need to detect and handle this case ourselves.
              *
-             * In fact, it is DefaultSurface that does not support multiple patches. So we could check that the geometry is an instance of DefaultSurface. However, it is not planned to create another Geometry-Implementation for deegree. Thus we treat each Surface as having the issue of not supporting JTS geometry creation if it has multiple patches.
+             * In fact, it is DefaultSurface that does not support multiple patches. So we could check that the geometry is an
+             * instance of DefaultSurface. However, it is not planned to create another Geometry-Implementation for deegree.
+             * Thus we treat each Surface as having the issue of not supporting JTS geometry creation if it has multiple
+             * patches.
              *
-             * Because we compute the JTS geometry of a surface directly from its patch(es), we don't need a special treatment for the case of an OrientableSurface. Much like for OrientableCurve, the deegree framework returns null when OrientableSurface.getJTSGeometry() is called (with code from deegree 3.4-pre22-SNAPSHOT). */
+             * Because we compute the JTS geometry of a surface directly from its patch(es), we don't need a special treatment
+             * for the case of an OrientableSurface. Much like for OrientableCurve, the deegree framework returns null when
+             * OrientableSurface.getJTSGeometry() is called (with code from deegree 3.4-pre22-SNAPSHOT).
+             */
 
             final Surface s = (Surface) geom;
             final List<? extends SurfacePatch> patches = s.getPatches();
@@ -348,7 +358,8 @@ final public class JtsTransformer {
             }
 
         } else if (geom instanceof OrientableCurve) {
-            // special treatment is necessary because OrientableCurve.getJTSGeometry() returns null (with code from deegree 3.4-pre22-SNAPSHOT).
+            // special treatment is necessary because OrientableCurve.getJTSGeometry() returns null (with code from deegree
+            // 3.4-pre22-SNAPSHOT).
             try {
                 final OrientableCurve oc = (OrientableCurve) geom;
                 final Curve baseCurve = oc.getBaseCurve();
@@ -500,7 +511,9 @@ final public class JtsTransformer {
     }
 
     /**
-     * Adds a geometry to a collection. If the geometry is a GeometryCollection (but not a MultiPoint, -LineString, or -Polygon) its members are added (recursively scanning for GeometryCollections). Spatial relationship operators cannot be performed for a JTS GeometryCollection, but for (Multi)Point, (Multi)LineString, and (Multi)Polygon.
+     * Adds a geometry to a collection. If the geometry is a GeometryCollection (but not a MultiPoint, -LineString, or
+     * -Polygon) its members are added (recursively scanning for GeometryCollections). Spatial relationship operators cannot
+     * be performed for a JTS GeometryCollection, but for (Multi)Point, (Multi)LineString, and (Multi)Polygon.
      *
      * @param geom
      *            the geometry

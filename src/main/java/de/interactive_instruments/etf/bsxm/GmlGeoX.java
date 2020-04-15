@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,8 @@ import de.interactive_instruments.etf.bsxm.validator.GeometryValidator;
  * This module supports the validation of geometries as well as computing the spatial relationship between geometries.
  *
  * <p>
- * NOTE 1: the validation and spatial relationship methods only support specific sets of geometry types - please see the documentation of the respective methods for details on which geometry types are supported.
+ * NOTE 1: the validation and spatial relationship methods only support specific sets of geometry types - please see the
+ * documentation of the respective methods for details on which geometry types are supported.
  *
  * @author Johannes Echterhoff (echterhoff at interactive-instruments dot de)
  */
@@ -133,14 +134,16 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Loads SRS configuration files from the given directory, to be used when looking up SRS names for creating geometry objects.
+     * Loads SRS configuration files from the given directory, to be used when looking up SRS names for creating geometry
+     * objects.
      *
      * @param databaseName
      *            tbd
      * @param configurationDirectoryPathName
      *            Path to a directory that contains SRS configuration files
      * @throws QueryException
-     *             in case that the SRS configuration directory does not exist, is not a directory, cannot be read, or an exception occurred while loading the configuration files
+     *             in case that the SRS configuration directory does not exist, is not a directory, cannot be read, or an
+     *             exception occurred while loading the configuration files
      */
     @Requires(Permission.NONE)
     public void init(final String databaseName, final String configurationDirectoryPathName) throws QueryException {
@@ -183,7 +186,9 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Flattens the given geometry if it is a geometry collection. Members that are not geometry collections are added to the result. Thus, MultiPoint, -LineString, and -Polygon will also be flattened. Contained geometry collections are recursively scanned for relevant members.
+     * Flattens the given geometry if it is a geometry collection. Members that are not geometry collections are added to
+     * the result. Thus, MultiPoint, -LineString, and -Polygon will also be flattened. Contained geometry collections are
+     * recursively scanned for relevant members.
      *
      * @param geom
      *            a JTS geometry, can be a JTS GeometryCollection
@@ -212,7 +217,75 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Identifies points of the given line, where the segment that ends in a point and the following segment that starts with that point form a change in direction whose angular value is within a given interval.
+     * Only dissolves GeometryCollection objects, not MultiPoint, -LineString, or -Polygon.
+     *
+     * @param geom
+     *            the geometry to flatten
+     * @return the resulting set of geometry objects (none of direct type GeometryCollection)
+     */
+    public com.vividsolutions.jts.geom.Geometry[] flattenGeometryCollections(
+            com.vividsolutions.jts.geom.Geometry geom) {
+
+        if (geom == null) {
+            return new com.vividsolutions.jts.geom.Geometry[]{};
+        } else {
+            final List<com.vividsolutions.jts.geom.Geometry> geoms;
+            if (geom instanceof GeometryCollection && !(geom instanceof com.vividsolutions.jts.geom.MultiLineString
+                    || geom instanceof com.vividsolutions.jts.geom.MultiPoint
+                    || geom instanceof com.vividsolutions.jts.geom.MultiPolygon)) {
+                final GeometryCollection col = (GeometryCollection) geom;
+                geoms = new ArrayList<>(col.getNumGeometries());
+                for (int i = 0; i < col.getNumGeometries(); i++) {
+                    geoms.addAll(Arrays.asList(flattenAllGeometryCollections(col.getGeometryN(i))));
+                }
+            } else {
+                geoms = Collections.singletonList(geom);
+            }
+            return geoms.toArray(new com.vividsolutions.jts.geom.Geometry[0]);
+        }
+    }
+
+    /**
+     * Identify all geometries contained in the given geometry, that have the given dimension. Note that Point and
+     * MultiPoint have dimension 0, LineString and MultiLineString have dimension 1, and Polygon and MultiPolygon have
+     * dimension 2.
+     *
+     * @param geom
+     *            the geometry - typically a collection - to investigate; must not be <code>null</code>
+     * @param dimension
+     *            the dimension of geometries to return (value must be 0, 1, or 2)
+     * @return the geometries with the specified dimension; can be empty
+     * @throws GmlGeoXException
+     *             if parameter values are incorrect
+     */
+    @Requires(Permission.NONE)
+    @Deterministic
+    public com.vividsolutions.jts.geom.Geometry[] geometriesWithDimension(com.vividsolutions.jts.geom.Geometry geom,
+            int dimension) throws GmlGeoXException {
+
+        if (geom == null) {
+            throw new GmlGeoXException("Parameter geom must not be null.");
+        } else if (dimension < 0 || dimension > 2) {
+            throw new GmlGeoXException("Parameter dimension must be 0, 1, or 2.");
+        }
+
+        com.vividsolutions.jts.geom.Geometry[] geoms = flattenGeometryCollections(geom);
+
+        List<com.vividsolutions.jts.geom.Geometry> result = new ArrayList<>();
+
+        for (com.vividsolutions.jts.geom.Geometry g : geoms) {
+
+            if (g.getDimension() == dimension) {
+                result.add(g);
+            }
+        }
+
+        return result.toArray(new com.vividsolutions.jts.geom.Geometry[result.size()]);
+    }
+
+    /**
+     * Identifies points of the given line, where the segment that ends in a point and the following segment that starts
+     * with that point form a change in direction whose angular value is within a given interval.
      *
      * @param geom
      *            A LineString which shall be checked for directional changes whose value is within the given interval.
@@ -220,7 +293,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            Minimum directional change to be considered, in degrees. 0<=minAngle<=maxAngle<=180
      * @param maxAngle
      *            Maximum directional change to be considered, in degrees. 0<=minAngle<=maxAngle<=180
-     * @return The point(s) where the line has a directional change within the given change interval. Can be <code>null</code> in case that the given geometry is <code>null</code> or only has one segment.
+     * @return The point(s) where the line has a directional change within the given change interval. Can be
+     *         <code>null</code> in case that the given geometry is <code>null</code> or only has one segment.
      * @throws QueryException
      *             If the given geometry is not a LineString, or the minimum and maximum values are incorrect.
      */
@@ -291,13 +365,15 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Identifies points of the given line, where the segment that ends in a point and the following segment that starts with that point form a change in direction whose angular value is greater than the given limit.
+     * Identifies points of the given line, where the segment that ends in a point and the following segment that starts
+     * with that point form a change in direction whose angular value is greater than the given limit.
      *
      * @param geom
      *            A LineString which shall be checked for directional changes that are greater than the given limit.
      * @param limitAngle
      *            Angular value of directional change that defines the limit, in degrees. 0 <= limitAngle <= 180
-     * @return The point(s) where the line has a directional change that is greater than the given limit. Can be <code>null</code> in case that the given geometry is <code>null</code> or only has one segment.
+     * @return The point(s) where the line has a directional change that is greater than the given limit. Can be
+     *         <code>null</code> in case that the given geometry is <code>null</code> or only has one segment.
      * @throws QueryException
      *             If the given geometry is not a LineString, or the limit value is incorrect.
      */
@@ -367,11 +443,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Validates the given (GML geometry) node, using all available tests.
      *
      * <p>
-     * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry types and tests.
+     * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry
+     * types and tests.
      *
      * @param node
      *            Node
-     * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped.
+     * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available
+     *         tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F'
+     *         indicates that the test failed. 'S' indicates that the test was skipped.
      */
     @Requires(Permission.NONE)
     public String validate(ANode node) {
@@ -382,10 +461,17 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Validates the given (GML geometry) node.
      *
      * <p>
-     * By default validation is only performed for the following GML geometry elements: Point, Polygon, Surface, Curve, LinearRing, MultiPolygon, MultiGeometry, MultiSurface, MultiCurve, Ring, and LineString. The set of GML elements to validate can be modified via the following methods: {@link #registerGmlGeometry(String)}, {@link #unregisterGmlGeometry(String)}, and {@link #unregisterAllGmlGeometries()}. These methods are also available for XQueries.
+     * By default validation is only performed for the following GML geometry elements: Point, Polygon, Surface, Curve,
+     * LinearRing, MultiPolygon, MultiGeometry, MultiSurface, MultiCurve, Ring, and LineString. The set of GML elements to
+     * validate can be modified via the following methods: {@link #registerGmlGeometry(String)},
+     * {@link #unregisterGmlGeometry(String)}, and {@link #unregisterAllGmlGeometries()}. These methods are also available
+     * for XQueries.
      *
      * <p>
-     * The validation tasks to perform can be specified via the given mask. The mask is a simple string, where the character '1' at the position of a specific test (assuming a 1-based index) specifies that the test shall be performed. If the mask does not contain a character at the position of a specific test (because the mask is empty or the length is smaller than the position), then the test will be executed.
+     * The validation tasks to perform can be specified via the given mask. The mask is a simple string, where the character
+     * '1' at the position of a specific test (assuming a 1-based index) specifies that the test shall be performed. If the
+     * mask does not contain a character at the position of a specific test (because the mask is empty or the length is
+     * smaller than the position), then the test will be executed.
      *
      * <p>
      * The following tests are available:
@@ -401,7 +487,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * <tr>
      * <td>1</td>
      * <td>General Validation</td>
-     * <td>This test validates the given geometry using the validation functionality of both deegree and JTS. More specifically:
+     * <td>This test validates the given geometry using the validation functionality of both deegree and JTS. More
+     * specifically:
      * <p>
      * <p>
      * <span style="text-decoration: underline;"><strong>deegree based validation:</strong></span>
@@ -530,13 +617,18 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * <ul>
      * <li>invalid coordinates: x and y are neither NaN or infinite)</li>
      * <li>closed ring: tests if ring is closed; empty rings are closed by definition</li>
-     * <li>too few points: tests if length of coordinate array - after repeated points have been removed - is big enough (e.g. &gt;= 4 for a ring, &gt;= 2 for a line string)</li>
-     * <li>no self intersecting rings: Check that there is no ring which self-intersects (except of course at its endpoints); required by OGC topology rules</li>
-     * <li>consistent area: Checks that the arrangement of edges in a polygonal geometry graph forms a consistent area. Includes check for duplicate rings.</li>
-     * <li>holes in shell: Tests that each hole is inside the polygon shell (i.e. hole rings do not cross the shell ring).</li>
+     * <li>too few points: tests if length of coordinate array - after repeated points have been removed - is big enough
+     * (e.g. &gt;= 4 for a ring, &gt;= 2 for a line string)</li>
+     * <li>no self intersecting rings: Check that there is no ring which self-intersects (except of course at its
+     * endpoints); required by OGC topology rules</li>
+     * <li>consistent area: Checks that the arrangement of edges in a polygonal geometry graph forms a consistent area.
+     * Includes check for duplicate rings.</li>
+     * <li>holes in shell: Tests that each hole is inside the polygon shell (i.e. hole rings do not cross the shell
+     * ring).</li>
      * <li>holes not nested: Tests that no hole is nested inside another hole.</li>
      * <li>connected interiors: Check that the holes do not split the interior of the polygon into at least two pieces.</li>
-     * <li>shells not nested: Tests that no element polygon is wholly in the interior of another element polygon (of a MultiPolygon).</li>
+     * <li>shells not nested: Tests that no element polygon is wholly in the interior of another element polygon (of a
+     * MultiPolygon).</li>
      * </ul>
      * </td>
      * </tr>
@@ -555,7 +647,9 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * <td>isSimple</td>
      * <td>
      * <p>
-     * Tests whether a geometry is simple, based on JTS Geometry.isSimple(). In general, the OGC Simple Features specification of simplicity follows the rule: A Geometry is simple if and only if the only self-intersections are at boundary points.
+     * Tests whether a geometry is simple, based on JTS Geometry.isSimple(). In general, the OGC Simple Features
+     * specification of simplicity follows the rule: A Geometry is simple if and only if the only self-intersections are at
+     * boundary points.
      * </p>
      * <p>
      * Simplicity is defined for each JTS geometry type as follows:
@@ -563,7 +657,9 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * <ul>
      * <li>Polygonal geometries are simple if their rings are simple (i.e., their rings do not self-intersect).
      * <ul>
-     * <li>Note: This does not check if different rings of the geometry intersect, meaning that isSimple cannot be used to fully test for (invalid) self-intersections in polygons. The JTS validity check fully tests for self-intersections in polygons, and is part of the general validation in GmlGeoX.</li>
+     * <li>Note: This does not check if different rings of the geometry intersect, meaning that isSimple cannot be used to
+     * fully test for (invalid) self-intersections in polygons. The JTS validity check fully tests for self-intersections in
+     * polygons, and is part of the general validation in GmlGeoX.</li>
      * </ul>
      * </li>
      * <li>Linear geometries are simple iff they do not self-intersect at points other than boundary points.</li>
@@ -586,7 +682,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            the GML geometry to validate
      * @param testMask
      *            test mask
-     * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF' shows that the first test was skipped, while the second test passed and the third and fourth failed.
+     * @return a mask with the test results, encoded as characters - one at each position (1-based index) of the available
+     *         tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F'
+     *         indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF' shows
+     *         that the first test was skipped, while the second test passed and the third and fourth failed.
      */
     @Requires(Permission.NONE)
     public String validate(final ANode node, final String testMask) {
@@ -597,11 +696,13 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Validates the given (GML geometry) node, using all available tests.
      *
      * <p>
-     * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry types and tests.
+     * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry
+     * types and tests.
      *
      * @param node
      *            Node
-     * @return a DOM element with the validation result (for details about its structure, see the description of the result in method {@link #validateAndReport(ANode, String)})
+     * @return a DOM element with the validation result (for details about its structure, see the description of the result
+     *         in method {@link #validateAndReport(ANode, String)})
      */
     @Requires(Permission.NONE)
     public FElem validateAndReport(ANode node) {
@@ -612,13 +713,18 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Validates the given (GML geometry) node. The validation tasks to perform are specified via the given mask.
      *
      * <p>
-     * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry types, tests, and the test mask.
+     * See the documentation of the {@link #validate(ANode, String)} method for a description of the supported geometry
+     * types, tests, and the test mask.
      *
      * @param node
      *            The GML geometry element to validate.
      * @param testMask
      *            Defines which tests shall be executed.
-     * @return a DOM element, with the validation result and validation message (providing further details about any errors). The validation result is encoded as a sequence of characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF' shows that the first test was skipped, while the second test passed and the third and fourth failed.
+     * @return a DOM element, with the validation result and validation message (providing further details about any
+     *         errors). The validation result is encoded as a sequence of characters - one at each position (1-based index)
+     *         of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that
+     *         test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF'
+     *         shows that the first test was skipped, while the second test passed and the third and fourth failed.
      *
      *         <pre>
      * {@code
@@ -630,10 +736,12 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *             <etf:message
      *               xmlns:etf="http://www.interactive-instruments.de/etf/2.0"
      *               ref="TR.gmlgeox.validation.geometry.jts.5">
-     *               <etf:argument token="original">Invalid polygon. Two rings of the polygonal geometry intersect.</etf:argument>
+     *               <etf:argument token=
+    "original">Invalid polygon. Two rings of the polygonal geometry intersect.</etf:argument>
      *               <etf:argument token="ID">DETHL56P0000F1TJ</etf:argument>
      *               <etf:argument token="context">Surface</etf:argument>
-     *               <etf:argument token="coordinates">666424.2393405803,5614560.422015165</etf:argument>
+     *               <etf:argument token=
+    "coordinates">666424.2393405803,5614560.422015165</etf:argument>
      *             </etf:message>
      *           </ggeo:errors>
      *         </ggeo:ValidationResult>
@@ -643,10 +751,13 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Where:
      * <ul>
      * <li>ggeo:valid - contains the boolean value indicating if the object passed all tests (defined by the testMask).
-     * <li>ggeo:result - contains a string that is a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped.
+     * <li>ggeo:result - contains a string that is a mask with the test results, encoded as characters - one at each
+     * position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid
+     * according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped.
      * <li>ggeo:message (one for each message produced during validation) contains:
      * <ul>
-     * <li>an XML attribute 'type' that indicates the severity level of the message ('FATAL', 'ERROR', 'WARNING', or 'NOTICE')
+     * <li>an XML attribute 'type' that indicates the severity level of the message ('FATAL', 'ERROR', 'WARNING', or
+     * 'NOTICE')
      * <li>the actual validation message as text content
      * </ul>
      * </ul>
@@ -678,13 +789,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CONTAINS);
         } catch (Exception e) {
-            throw new GmlGeoXException(
-                    "Exception while executing contains(Value,Value). Message is: " + e.getMessage(), e);
+            throw new GmlGeoXException("Exception while executing contains(Value,Value). Message is: " + e.getMessage(),
+                    e);
         }
     }
 
     /**
-     * Tests if one geometry contains a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry contains a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * <p>
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -694,7 +806,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param arg2
      *            represents a list of geometries, encoded as GML geometry elements
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -738,14 +851,16 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Tests if one geometry contains a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry contains a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * @param geom1
      *            represents the first geometry, encoded as a JTS geometry object
      * @param geom2
      *            represents a list of geometries, encoded as a JTS geometry object (typically a JTS geometry collection)
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -786,12 +901,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.CROSSES);
         } catch (Exception e) {
-            throw new GmlGeoXException("Exception while executing crosses(Value,Value). Message is: " + e.getMessage(), e);
+            throw new GmlGeoXException("Exception while executing crosses(Value,Value). Message is: " + e.getMessage(),
+                    e);
         }
     }
 
     /**
-     * Tests if one geometry crosses a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry crosses a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * <p>
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -801,7 +918,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param arg2
      *            represents a list of geometries, encoded as GML geometry elements
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -844,14 +962,16 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Tests if one geometry crosses a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry crosses a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * @param geom1
      *            represents the first geometry, encoded as a JTS geometry object
      * @param geom2
      *            represents a list of geometries, encoded as a JTS geometry object (typically a JTS geometry collection)
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -892,12 +1012,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.EQUALS);
         } catch (Exception e) {
-            throw new GmlGeoXException("Exception while executing equals(Value,Value). Message is: " + e.getMessage(), e);
+            throw new GmlGeoXException("Exception while executing equals(Value,Value). Message is: " + e.getMessage(),
+                    e);
         }
     }
 
     /**
-     * Tests if one geometry equals a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry equals a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * <p>
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -907,7 +1029,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param arg2
      *            represents a list of geometries, encoded as GML geometry elements
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -950,14 +1073,16 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Tests if one geometry equals a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry equals a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * @param geom1
      *            represents the first geometry, encoded as a JTS geometry object
      * @param geom2
      *            represents a list of geometries, encoded as a JTS geometry object (typically a JTS geometry collection)
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -1005,7 +1130,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Tests if one geometry intersects a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry intersects a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * <p>
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -1015,7 +1141,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param arg2
      *            represents a list of geometries, encoded as GML geometry elements
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -1054,19 +1181,22 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.INTERSECTS);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing intersectsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(), e);
+                    "Exception while executing intersectsGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(),
+                    e);
         }
     }
 
     /**
-     * Tests if one geometry intersects a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry intersects a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * @param geom1
      *            represents the first geometry, encoded as a JTS geometry object
      * @param geom2
      *            represents a list of geometries, encoded as a JTS geometry object (typically a JTS geometry collection)
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -1093,8 +1223,11 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * <ol>
      * <li>If the element itself has an 'srsName' attribute, then the value of that attribute is returned.
      * <li>Otherwise, if a standard SRS is defined (see {@link #setStandardSRS(String)}), it is used.
-     * <li>Otherwise, if an ancestor of the given element has the 'srsName' attribute, then the value of that attribute from the first ancestor (i.e., the nearest) is used.
-     * <li>Otherwise, if an ancestor of the given element has a child element with local name 'boundedBy', which itself has a child with local name 'Envelope', and that child has an 'srsName' attribute, then the value of that attribute from the first ancestor (i.e., the nearest) that fulfills the criteria is used.
+     * <li>Otherwise, if an ancestor of the given element has the 'srsName' attribute, then the value of that attribute from
+     * the first ancestor (i.e., the nearest) is used.
+     * <li>Otherwise, if an ancestor of the given element has a child element with local name 'boundedBy', which itself has
+     * a child with local name 'Envelope', and that child has an 'srsName' attribute, then the value of that attribute from
+     * the first ancestor (i.e., the nearest) that fulfills the criteria is used.
      * </ol>
      *
      * NOTE: The lookup is independent of a specific GML namespace.
@@ -1110,12 +1243,16 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Determine the name of the SRS that applies to the given geometry component element (e.g. a curve segment). The SRS is looked up as follows (in order):
+     * Determine the name of the SRS that applies to the given geometry component element (e.g. a curve segment). The SRS is
+     * looked up as follows (in order):
      *
      * <ol>
      * <li>If a standard SRS is defined (see {@link #setStandardSRS(String)}), it is used.
-     * <li>Otherwise, if an ancestor of the given element has the 'srsName' attribute, then the value of that attribute from the first ancestor (i.e., the nearest) is used.
-     * <li>Otherwise, if an ancestor of the given element has a child element with local name 'boundedBy', which itself has a child with local name 'Envelope', and that child has an 'srsName' attribute, then the value of that attribute from the first ancestor (i.e., the nearest) that fulfills the criteria is used.
+     * <li>Otherwise, if an ancestor of the given element has the 'srsName' attribute, then the value of that attribute from
+     * the first ancestor (i.e., the nearest) is used.
+     * <li>Otherwise, if an ancestor of the given element has a child element with local name 'boundedBy', which itself has
+     * a child with local name 'Envelope', and that child has an 'srsName' attribute, then the value of that attribute from
+     * the first ancestor (i.e., the nearest) that fulfills the criteria is used.
      * </ol>
      *
      * NOTE: The lookup is independent of a specific GML namespace.
@@ -1151,7 +1288,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Compares two objects that represent geometries. If one of these objects is an instance of BaseX Empty, <code>false</code> will be returned. Cannot compare JTS GeometryCollection objects that are real collections (so not one of the subtypes: MultiPoint, MultiLineString, MultiPolygon) - unless both are empty (then the result is <code>false</code>).
+     * Compares two objects that represent geometries. If one of these objects is an instance of BaseX Empty,
+     * <code>false</code> will be returned. Cannot compare JTS GeometryCollection objects that are real collections (so not
+     * one of the subtypes: MultiPoint, MultiLineString, MultiPolygon) - unless both are empty (then the result is
+     * <code>false</code>).
      *
      * @param geom1x
      * @param geom2x
@@ -1240,7 +1380,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     /**
      * @param o
      *            A Value, an Object[], a JTS geometry (also a geometry collection) or anything else
-     * @return a list of single objects (Value of size > 1 is flattened to a list of Items, a JTS geometry collection is flattened as well)
+     * @return a list of single objects (Value of size > 1 is flattened to a list of Items, a JTS geometry collection is
+     *         flattened as well)
      */
     static Collection toObjectCollection(final @NotNull Object o) {
         if (o instanceof Value) {
@@ -1299,7 +1440,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Tests if one geometry is disjoint with a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry is disjoint with a list of geometries. Whether a match is required for all or just one of these
+     * is controlled via parameter.
      *
      * <p>
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -1309,7 +1451,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param arg2
      *            represents a list of geometries, encoded as GML geometry elements
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -1347,19 +1490,22 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISDISJOINT);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing isDisjointGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(), e);
+                    "Exception while executing isDisjointGeomGeom(Geometry,Geometry). Message is: " + e.getMessage(),
+                    e);
         }
     }
 
     /**
-     * Tests if one geometry is disjoint with a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry is disjoint with a list of geometries. Whether a match is required for all or just one of these
+     * is controlled via parameter.
      *
      * @param geom1
      *            represents the first geometry, encoded as a JTS geometry object
      * @param geom2
      *            represents a list of geometries, encoded as a JTS geometry object (typically a JTS geometry collection)
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -1401,13 +1547,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.ISWITHIN);
         } catch (Exception e) {
-            throw new GmlGeoXException(
-                    "Exception while executing isWithin(Value,Value). Message is: " + e.getMessage(), e);
+            throw new GmlGeoXException("Exception while executing isWithin(Value,Value). Message is: " + e.getMessage(),
+                    e);
         }
     }
 
     /**
-     * Tests if one geometry is within a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry is within a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * <p>
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -1417,7 +1564,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param arg2
      *            represents a list of geometries, encoded as GML geometry elements
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -1461,14 +1609,16 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Tests if one geometry is within a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry is within a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * @param geom1
      *            represents the first geometry, encoded as a JTS geometry object
      * @param geom2
      *            represents a list of geometries, encoded as a JTS geometry object (typically a JTS geometry collection)
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -1510,13 +1660,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.OVERLAPS);
         } catch (Exception e) {
-            throw new GmlGeoXException(
-                    "Exception while executing overlaps(Value,Value). Message is: " + e.getMessage(), e);
+            throw new GmlGeoXException("Exception while executing overlaps(Value,Value). Message is: " + e.getMessage(),
+                    e);
         }
     }
 
     /**
-     * Tests if one geometry overlaps a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry overlaps a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * <p>
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -1526,7 +1677,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param arg2
      *            represents a list of geometries, encoded as GML geometry elements
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -1570,14 +1722,16 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Tests if one geometry overlaps a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry overlaps a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * @param geom1
      *            represents the first geometry, encoded as a JTS geometry object
      * @param geom2
      *            represents a list of geometries, encoded as a JTS geometry object (typically a JTS geometry collection)
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -1618,13 +1772,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
         try {
             return applySpatialRelationshipOperation(geom1, geom2, SpatialRelOp.TOUCHES);
         } catch (Exception e) {
-            throw new GmlGeoXException(
-                    "Exception while executing touches(Value,Value). Message is: " + e.getMessage(), e);
+            throw new GmlGeoXException("Exception while executing touches(Value,Value). Message is: " + e.getMessage(),
+                    e);
         }
     }
 
     /**
-     * Tests if one geometry touches a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry touches a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * <p>
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -1634,7 +1789,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param arg2
      *            represents a list of geometries, encoded as GML geometry elements
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -1678,14 +1834,16 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Tests if one geometry touches a list of geometries. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry touches a list of geometries. Whether a match is required for all or just one of these is
+     * controlled via parameter.
      *
      * @param geom1
      *            represents the first geometry, encoded as a JTS geometry object
      * @param geom2
      *            represents a list of geometries, encoded as a JTS geometry object (typically a JTS geometry collection)
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -1718,7 +1876,9 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Set the standard SRS to use for a geometry if no srsName attribute is directly defined for it. Setting a standard SRS can improve performance, but should only be done if all geometry elements without srsName attribute have the same SRS.
+     * Set the standard SRS to use for a geometry if no srsName attribute is directly defined for it. Setting a standard SRS
+     * can improve performance, but should only be done if all geometry elements without srsName attribute have the same
+     * SRS.
      *
      * @param srsName
      *            name of the SRS to assign to a geometry if it does not have an srsName attribute itself.
@@ -1735,7 +1895,11 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Set the maximum number of points to be created when interpolating an arc. Default is 1000. The lower the maximum error (set via {@link #setMaxErrorForInterpolation(double)}), the higher the number of points needs to be. Arc interpolation will never create more than the configured maximum number of points. However, the interpolation will also never create more points than needed to achieve the maximum error. In order to achieve interpolations with a very low maximum error, the maximum number of points needs to be increased accordingly.
+     * Set the maximum number of points to be created when interpolating an arc. Default is 1000. The lower the maximum
+     * error (set via {@link #setMaxErrorForInterpolation(double)}), the higher the number of points needs to be. Arc
+     * interpolation will never create more than the configured maximum number of points. However, the interpolation will
+     * also never create more points than needed to achieve the maximum error. In order to achieve interpolations with a
+     * very low maximum error, the maximum number of points needs to be increased accordingly.
      *
      * @param maxNumPoints
      *            maximum number of points to be created when interpolating an arc
@@ -1752,7 +1916,11 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Set the maximum error (e.g. 0.00000001 - default setting is 0.00001), i.e. the maximum difference between an arc and the interpolated line string - that shall be achieved when creating new arc interpolations. The lower the error (maximum difference), the more interpolation points will be needed. However, note that a maximum for the number of such points exists. It can be set via {@link #setMaxNumPointsForInterpolation(int)} (default value is stated in the documentation of that method).
+     * Set the maximum error (e.g. 0.00000001 - default setting is 0.00001), i.e. the maximum difference between an arc and
+     * the interpolated line string - that shall be achieved when creating new arc interpolations. The lower the error
+     * (maximum difference), the more interpolation points will be needed. However, note that a maximum for the number of
+     * such points exists. It can be set via {@link #setMaxNumPointsForInterpolation(int)} (default value is stated in the
+     * documentation of that method).
      *
      * @param maxError
      *            the maximum difference between an arc and the interpolated line
@@ -1883,8 +2051,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return unionsGc.union();
 
         } catch (Exception e) {
-            throw new GmlGeoXException(
-                    "Exception occurred while applying union(Value)). Message is: " + e.getMessage(), e);
+            throw new GmlGeoXException("Exception occurred while applying union(Value)). Message is: " + e.getMessage(),
+                    e);
         }
     }
 
@@ -1903,7 +2071,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Checks that the second control point of each arc in the given $arcStringNode is positioned in the middle third of that arc.
+     * Checks that the second control point of each arc in the given $arcStringNode is positioned in the middle third of
+     * that arc.
      *
      * @param arcStringNode
      *            A gml:Arc or gml:ArcString element
@@ -2009,7 +2178,9 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            A gml:Circle element, defined by three control points
      * @param minSeparationInDegree
      *            the minimum angle between each control point, in degree (0<=x<=120)
-     * @return The coordinate of a control point which does not have the minimum angle to one of the other control points, or <code>null</code> if the angles between all points are greater than or equal to the minimum separation angle
+     * @return The coordinate of a control point which does not have the minimum angle to one of the other control points,
+     *         or <code>null</code> if the angles between all points are greater than or equal to the minimum separation
+     *         angle
      * @throws QueryException
      *             In case an exception occurred.
      */
@@ -2065,7 +2236,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Checks if a given geometry is closed. Only LineStrings and MultiLineStrings are checked.
      *
      * <p>
-     * NOTE: Invokes the {@link #isClosedGeom(com.vividsolutions.jts.geom.Geometry, boolean)} method, with <code>true</code> for the second parameter.
+     * NOTE: Invokes the {@link #isClosedGeom(com.vividsolutions.jts.geom.Geometry, boolean)} method, with <code>true</code>
+     * for the second parameter.
      *
      * @see #isClosedGeom(com.vividsolutions.jts.geom.Geometry, boolean)
      * @param geom
@@ -2100,12 +2272,18 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Checks if a given geometry is closed. Points and MultiPoints are closed by definition (they do not have a boundary). Polygons and MultiPolygons are never closed in 2D, and since operations in 3D are not supported, this method will always return <code>false</code> if a polygon is encountered - unless the parameter onlyCheckCurveGeometries is set to <code>true</code>. LinearRings are closed by definition. The remaining geometry types that will be checked are LineString and MultiLineString. If a (Multi)LineString is not closed, this method will return <code>false</code>.
+     * Checks if a given geometry is closed. Points and MultiPoints are closed by definition (they do not have a boundary).
+     * Polygons and MultiPolygons are never closed in 2D, and since operations in 3D are not supported, this method will
+     * always return <code>false</code> if a polygon is encountered - unless the parameter onlyCheckCurveGeometries is set
+     * to <code>true</code>. LinearRings are closed by definition. The remaining geometry types that will be checked are
+     * LineString and MultiLineString. If a (Multi)LineString is not closed, this method will return <code>false</code>.
      *
      * @param geom
      *            the geometry to test
      * @param onlyCheckCurveGeometries
-     *            <code>true</code> if only curve geometries (i.e., for JTS: LineString, LinearRing, and MultiLineString) shall be tested, else <code>false</code> (in this case, the occurrence of polygons will result in the return value <code>false</code>).
+     *            <code>true</code> if only curve geometries (i.e., for JTS: LineString, LinearRing, and MultiLineString)
+     *            shall be tested, else <code>false</code> (in this case, the occurrence of polygons will result in the
+     *            return value <code>false</code>).
      * @return <code>true</code> if the given geometry is closed, else <code>false</code>
      * @throws QueryException
      *             If an exception occurred while computing the spatial operation.
@@ -2127,15 +2305,23 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             } else if (g instanceof com.vividsolutions.jts.geom.Polygon
                     || g instanceof com.vividsolutions.jts.geom.MultiPolygon) {
 
-                /* The JTS FAQ contains the following question and answer:
+                /*
+                 * The JTS FAQ contains the following question and answer:
                  *
                  * Question: Does JTS support 3D operations?
                  *
-                 * Answer: JTS does not provide support for true 3D geometry and operations. However, JTS does allow Coordinates to carry an elevation or Z value. This does not provide true 3D support, but does allow "2.5D" uses which are required in some geospatial applications.
+                 * Answer: JTS does not provide support for true 3D geometry and operations. However, JTS does allow Coordinates
+                 * to carry an elevation or Z value. This does not provide true 3D support, but does allow "2.5D" uses which are
+                 * required in some geospatial applications.
                  *
                  * -------
                  *
-                 * So, JTS does not support true 3D geometry and operations. Therefore, JTS cannot determine if a surface is closed. deegree does not seem to support this, either. In order for a surface to be closed, it must be a sphere or torus, possibly with holes. A surface in 2D can never be closed. Since we lack the ability to compute in 3D we assume that a (Multi)Polygon is not closed. If we do check geometries other than curves, then we return false. */
+                 * So, JTS does not support true 3D geometry and operations. Therefore, JTS cannot determine if a surface is
+                 * closed. deegree does not seem to support this, either. In order for a surface to be closed, it must be a
+                 * sphere or torus, possibly with holes. A surface in 2D can never be closed. Since we lack the ability to
+                 * compute in 3D we assume that a (Multi)Polygon is not closed. If we do check geometries other than curves,
+                 * then we return false.
+                 */
                 if (!onlyCheckCurveGeometries) {
                     return false;
                 }
@@ -2162,13 +2348,19 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Checks if the geometry represented by the given node is closed. Points and MultiPoints are closed by definition (they do not have a boundary). Polygons and MultiPolygons are never closed in 2D, and since operations in 3D are not supported, this method will always return <code>false
-     * </code> if a polygon is encountered - unless the parameter onlyCheckCurveGeometries is set to <code>true</code>. LinearRings are closed by definition. The remaining geometry types that will be checked are LineString and MultiLineString. If a (Multi)LineString is not closed, this method will return <code>false</code>.
+     * Checks if the geometry represented by the given node is closed. Points and MultiPoints are closed by definition (they
+     * do not have a boundary). Polygons and MultiPolygons are never closed in 2D, and since operations in 3D are not
+     * supported, this method will always return <code>false
+     * </code> if a polygon is encountered - unless the parameter onlyCheckCurveGeometries is set to <code>true</code>.
+     * LinearRings are closed by definition. The remaining geometry types that will be checked are LineString and
+     * MultiLineString. If a (Multi)LineString is not closed, this method will return <code>false</code>.
      *
      * @param geomNode
      *            the geometry node to test
      * @param onlyCheckCurveGeometries
-     *            <code>true</code> if only curve geometries (i.e., for JTS: LineString, LinearRing, and MultiLineString) shall be tested, else <code>false</code> (in this case, the occurrence of polygons will result in the return value <code>false</code>).
+     *            <code>true</code> if only curve geometries (i.e., for JTS: LineString, LinearRing, and MultiLineString)
+     *            shall be tested, else <code>false</code> (in this case, the occurrence of polygons will result in the
+     *            return value <code>false</code>).
      * @return <code>true</code> if the geometry represented by the given node is closed, else <code>
      *     false</code>
      * @throws QueryException
@@ -2182,11 +2374,15 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Identifies the holes contained in the geometry represented by the given geometry node and returns them as a JTS geometry. If holes were found a union is built, to ensure that the result is a valid JTS Polygon or JTS MultiPolygon. If no holes were found an empty JTS GeometryCollection is returned.
+     * Identifies the holes contained in the geometry represented by the given geometry node and returns them as a JTS
+     * geometry. If holes were found a union is built, to ensure that the result is a valid JTS Polygon or JTS MultiPolygon.
+     * If no holes were found an empty JTS GeometryCollection is returned.
      *
      * @param geometryNode
-     *            potentially existing holes will be extracted from the geometry represented by this node (the geometry can be a Polygon, MultiPolygon, or any other JTS geometry)
-     * @return A geometry (JTS Polygon or MultiPolygon) with the holes contained in the given geometry. Can also be an empty JTS GeometryCollection but not <code>null</code>;
+     *            potentially existing holes will be extracted from the geometry represented by this node (the geometry can
+     *            be a Polygon, MultiPolygon, or any other JTS geometry)
+     * @return A geometry (JTS Polygon or MultiPolygon) with the holes contained in the given geometry. Can also be an empty
+     *         JTS GeometryCollection but not <code>null</code>;
      * @throws QueryException
      *             In case an exception occurred.
      */
@@ -2199,11 +2395,15 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Identifies the holes contained in the given geometry and returns them as a JTS geometry. If holes were found a union is built, to ensure that the result is a valid JTS Polygon or JTS MultiPolygon. If no holes were found an empty JTS GeometryCollection is returned.
+     * Identifies the holes contained in the given geometry and returns them as a JTS geometry. If holes were found a union
+     * is built, to ensure that the result is a valid JTS Polygon or JTS MultiPolygon. If no holes were found an empty JTS
+     * GeometryCollection is returned.
      *
      * @param geom
-     *            potentially existing holes will be extracted from this geometry (can be a Polygon, MultiPolygon, or any other JTS geometry)
-     * @return A geometry (JTS Polygon or MultiPolygon) with the holes contained in the given geometry. Can also be an empty JTS GeometryCollection but not <code>null</code>;
+     *            potentially existing holes will be extracted from this geometry (can be a Polygon, MultiPolygon, or any
+     *            other JTS geometry)
+     * @return A geometry (JTS Polygon or MultiPolygon) with the holes contained in the given geometry. Can also be an empty
+     *         JTS GeometryCollection but not <code>null</code>;
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2230,8 +2430,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * Identifies the holes contained in the given geometry and returns them as polygons within a JTS geometry collection.
      *
      * @param geom
-     *            potentially existing holes will be extracted from this geometry (can be a Polygon, MultiPolygon, or any other JTS geometry)
-     * @return A JTS geometry collection with the holes (as polygons) contained in the given geometry. Can be empty but not <code>null</code>;
+     *            potentially existing holes will be extracted from this geometry (can be a Polygon, MultiPolygon, or any
+     *            other JTS geometry)
+     * @return A JTS geometry collection with the holes (as polygons) contained in the given geometry. Can be empty but not
+     *         <code>null</code>;
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -2310,8 +2512,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param arg2
      *            represents the second geometry, encoded as a GML geometry element
      * @param intersectionPattern
-     *            the pattern against which to check the intersection matrix for the two geometries (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
-     * @return <code>true</code> if the DE-9IM intersection matrix for the two geometries matches the <code>intersectionPattern</code>, else <code>false</code>.
+     *            the pattern against which to check the intersection matrix for the two geometries
+     *            (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
+     * @return <code>true</code> if the DE-9IM intersection matrix for the two geometries matches the
+     *         <code>intersectionPattern</code>, else <code>false</code>.
      * @throws QueryException
      *             If an exception occurred while computing the spatial operation.
      */
@@ -2345,7 +2549,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Tests if one geometry relates to a list of geometries as defined by the given intersection pattern. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry relates to a list of geometries as defined by the given intersection pattern. Whether a match
+     * is required for all or just one of these is controlled via parameter.
      *
      * <p>
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -2355,9 +2560,11 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param value2
      *            represents a list of geometries, encoded as GML geometry elements
      * @param intersectionPattern
-     *            the pattern against which to check the intersection matrix for the geometries (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
+     *            the pattern against which to check the intersection matrix for the geometries
+     *            (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship defined by the <code>intersectionPattern</code> for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship defined by the
+     *            <code>intersectionPattern</code> for all geometries in arg2, else <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -2391,7 +2598,9 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
 
                     if (matchAll) {
                         if (applyRelate(o1, o2, intersectionPattern)) {
-                            /* check the next geometry pair to see if it also satisfies the spatial relationship */
+                            /*
+                             * check the next geometry pair to see if it also satisfies the spatial relationship
+                             */
                         } else {
                             allMatch = false;
                             break outer;
@@ -2402,7 +2611,9 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                         if (applyRelate(o1, o2, intersectionPattern)) {
                             return true;
                         } else {
-                            /* check the next geometry pair to see if it satisfies the spatial relationship */
+                            /*
+                             * check the next geometry pair to see if it satisfies the spatial relationship
+                             */
                         }
                     }
                 }
@@ -2426,8 +2637,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param geom2
      *            represents the second geometry, encoded as a JTS geometry object
      * @param intersectionPattern
-     *            the pattern against which to check the intersection matrix for the two geometries (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
-     * @return <code>true</code> if the DE-9IM intersection matrix for the two geometries matches the <code>intersectionPattern</code>, else <code>false</code>.
+     *            the pattern against which to check the intersection matrix for the two geometries
+     *            (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
+     * @return <code>true</code> if the DE-9IM intersection matrix for the two geometries matches the
+     *         <code>intersectionPattern</code>, else <code>false</code>.
      * @throws QueryException
      *             If an exception occurred while computing the spatial operation.
      */
@@ -2441,23 +2654,25 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
             return applyRelate(geom1, geom2, intersectionPattern);
         } catch (Exception e) {
             throw new GmlGeoXException(
-                    "Exception while executing relateGeomGeom(Geometry,Geometry,String). Message is: "
-                            + e.getMessage(),
+                    "Exception while executing relateGeomGeom(Geometry,Geometry,String). Message is: " + e.getMessage(),
                     e);
         }
     }
 
     /**
-     * Tests if one geometry relates to a list of geometries as defined by the given intersection pattern. Whether a match is required for all or just one of these is controlled via parameter.
+     * Tests if one geometry relates to a list of geometries as defined by the given intersection pattern. Whether a match
+     * is required for all or just one of these is controlled via parameter.
      *
      * @param geom1
      *            represents the first geometry, encoded as a JTS geometry object
      * @param geom2
      *            represents a list of geometries, encoded as a JTS geometry object (typically a JTS geometry collection)
      * @param intersectionPattern
-     *            the pattern against which to check the intersection matrix for the geometries (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
+     *            the pattern against which to check the intersection matrix for the geometries
+     *            (IxI,IxB,IxE,BxI,BxB,BxE,ExI,ExB,ExE)
      * @param matchAll
-     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else <code>false</code>
+     *            <code>true</code> if arg1 must fulfill the spatial relationship for all geometries in arg2, else
+     *            <code>false</code>
      * @return <code>true</code> if the conditions are met, else <code>false</code>. <code>false
      *     </code> will also be returned if arg2 is empty.
      * @throws QueryException
@@ -2587,7 +2802,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Returns the boundary, or an empty geometry of appropriate dimension if the given geometry is empty or has no boundary (e.g. a curve whose end points are equal). (In the case of zero-dimensional geometries, an empty GeometryCollection is returned.) For a discussion of this function, see the OpenGIS SimpleFeatures Specification. As stated in SFS Section 2.1.13.1, "the boundary of a Geometry is a set of Geometries of the next lower dimension."
+     * Returns the boundary, or an empty geometry of appropriate dimension if the given geometry is empty or has no boundary
+     * (e.g. a curve whose end points are equal). (In the case of zero-dimensional geometries, an empty GeometryCollection
+     * is returned.) For a discussion of this function, see the OpenGIS SimpleFeatures Specification. As stated in SFS
+     * Section 2.1.13.1, "the boundary of a Geometry is a set of Geometries of the next lower dimension."
      *
      * @param geometry
      *            the geometry
@@ -2685,11 +2903,13 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     /**
      * Retrieves the end points of the curve represented by the geometry node.
      * <p>
-     * NOTE: This is different to computing the boundary of a curve in case that the curve end points are equal (in that case, the curve does not have a boundary).
+     * NOTE: This is different to computing the boundary of a curve in case that the curve end points are equal (in that
+     * case, the curve does not have a boundary).
      *
      * @param geomNode
      *            the geometry element
-     * @return An array with the two end points of the curve geometry (node); can be empty if the given geometry nodes does not represent a single curve.
+     * @return An array with the two end points of the curve geometry (node); can be empty if the given geometry nodes does
+     *         not represent a single curve.
      * @throws QueryException
      *             In case an exception occurred.
      */
@@ -2719,7 +2939,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Searches the default spatial r-tree index for items whose minimum bounding box intersects with the rectangle defined by the given coordinates.
+     * Searches the default spatial r-tree index for items whose minimum bounding box intersects with the rectangle defined
+     * by the given coordinates.
      *
      * @param minx
      *            represents the minimum value on the first coordinate axis; a number
@@ -2740,7 +2961,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Searches the named spatial r-tree index for items whose minimum bounding box intersects with the rectangle defined by the given coordinates.
+     * Searches the named spatial r-tree index for items whose minimum bounding box intersects with the rectangle defined by
+     * the given coordinates.
      *
      * @param indexName
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
@@ -2789,7 +3011,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Searches the default spatial r-tree index for items whose minimum bounding box intersects with the the minimum bounding box of the given geometry node.
+     * Searches the default spatial r-tree index for items whose minimum bounding box intersects with the the minimum
+     * bounding box of the given geometry node.
      *
      * @param geometryNode
      *            the geometry element
@@ -2804,7 +3027,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Searches the named spatial r-tree index for items whose minimum bounding box intersects with the the minimum bounding box of the given geometry node.
+     * Searches the named spatial r-tree index for items whose minimum bounding box intersects with the the minimum bounding
+     * box of the given geometry node.
      *
      * @param indexName
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
@@ -2838,7 +3062,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Searches the default spatial r-tree index for items whose minimum bounding box intersects with the the minimum bounding box of the given geometry.
+     * Searches the default spatial r-tree index for items whose minimum bounding box intersects with the the minimum
+     * bounding box of the given geometry.
      *
      * @param geom
      *            the geometry
@@ -2853,7 +3078,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Searches the named spatial r-tree index for items whose minimum bounding box intersects with the the minimum bounding box of the given geometry.
+     * Searches the named spatial r-tree index for items whose minimum bounding box intersects with the the minimum bounding
+     * box of the given geometry.
      *
      * @param indexName
      *            Identifies the index. <code>null</code> or the empty string identifies the default index.
@@ -2994,7 +3220,12 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     @Requires(Permission.NONE)
     public void removeIndex(final String indexName) throws QueryException {
         geometryCache.removeIndex(indexName);
-        /* NOTE: We do not remove a possibly existing entry in geometryIndexEntriesByIndexName, for a case in which the spatial index exists (e.g. from previous tests), but the query developer prepares the spatial index with new entries before removing the 'old' index. The typical sequence, however, should be to remove the old index first, then prepare and build the index with the new entries. */
+        /*
+         * NOTE: We do not remove a possibly existing entry in geometryIndexEntriesByIndexName, for a case in which the spatial
+         * index exists (e.g. from previous tests), but the query developer prepares the spatial index with new entries before
+         * removing the 'old' index. The typical sequence, however, should be to remove the old index first, then prepare and
+         * build the index with the new entries.
+         */
     }
 
     /**
@@ -3046,13 +3277,15 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Checks if the coordinates of the given {@code point} are equal (comparing x, y, and z) to the coordinates of one of the points that define the given {@code geometry}.
+     * Checks if the coordinates of the given {@code point} are equal (comparing x, y, and z) to the coordinates of one of
+     * the points that define the given {@code geometry}.
      *
      * @param point
      *            The point whose coordinates are checked against the coordinates of the points of {@code geometry}
      * @param geometry
      *            The geometry whose points are checked to see if one of them has coordinates equal to that of {@code point}
-     * @return <code>true</code> if the coordinates of the given {@code point} are equal to the coordinates of one of the points that define {@code geometry}, else <code>false</code>
+     * @return <code>true</code> if the coordinates of the given {@code point} are equal to the coordinates of one of the
+     *         points that define {@code geometry}, else <code>false</code>
      */
     @Requires(Permission.NONE)
     @Deterministic
@@ -3069,7 +3302,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Checks if for each curve of the given geomNode a minimum (defined by parameter minMatchesPerCurve) number of identical curves (same control points - ignoring curve orientation) from the otherGeomsNodes exists.
+     * Checks if for each curve of the given geomNode a minimum (defined by parameter minMatchesPerCurve) number of
+     * identical curves (same control points - ignoring curve orientation) from the otherGeomsNodes exists.
      *
      * @param geomNode
      *            GML geometry node
@@ -3077,7 +3311,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *            one or more database nodes representing GML geometries
      * @param minMatchesPerCurve
      *            the minimum number of matching identical curves that must be found for each curve from the geomNode
-     * @return <code>null</code>, if all curves are matched correctly, otherwise the JTS geometry of the first curve from geomNode which is not covered by the required number of identical curves from otherGeomsNodes
+     * @return <code>null</code>, if all curves are matched correctly, otherwise the JTS geometry of the first curve from
+     *         geomNode which is not covered by the required number of identical curves from otherGeomsNodes
      * @throws QueryException
      *             In case an exception occurred.
      */
@@ -3086,14 +3321,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     public com.vividsolutions.jts.geom.Geometry curveUnmatchedByIdenticalCurvesMin(ANode geomNode,
             Value otherGeomsNodes, int minMatchesPerCurve) throws QueryException {
 
-	if(geomNode == null) {
-	    throw new GmlGeoXException("Parameter geomNode must contain a database node.");
-	}
-	
-	if(otherGeomsNodes == null || otherGeomsNodes.isEmpty()) {
-	    throw new GmlGeoXException("Parameter otherGeomsNodes must contain one or more database nodes.");
-	}
-	
+        if (geomNode == null) {
+            throw new GmlGeoXException("Parameter geomNode must contain a database node.");
+        }
+
+        if (otherGeomsNodes == null || otherGeomsNodes.isEmpty()) {
+            throw new GmlGeoXException("Parameter otherGeomsNodes must contain one or more database nodes.");
+        }
+
         final Collection<Curve> curvesToMatch = deegreeTransformer.getCurveComponents(geomNode);
         final List<Curve> otherCurves = deegreeTransformer.getCurveComponents(otherGeomsNodes);
 
@@ -3125,15 +3360,18 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Checks if for each curve of the given geomNode a maximum (defined by parameter maxMatchesPerCurve) number of identical curves (same control points - ignoring curve orientation) from the otherGeomsNodes exists.
+     * Checks if for each curve of the given geomNode a maximum (defined by parameter maxMatchesPerCurve) number of
+     * identical curves (same control points - ignoring curve orientation) from the otherGeomsNodes exists.
      *
      * @param geomNode
      *            GML geometry node
      * @param otherGeomsNodes
      *            one or more database nodes representing GML geometries
      * @param maxMatchesPerCurve
-     *            the maximum number of matching identical curves that are allowed to be found for each curve from the geomNode
-     * @return <code>null</code>, if all curves are matched correctly, otherwise the JTS geometry of the first curve from geomNode which is covered by more than the allowed number of identical curves from otherGeomsNodes
+     *            the maximum number of matching identical curves that are allowed to be found for each curve from the
+     *            geomNode
+     * @return <code>null</code>, if all curves are matched correctly, otherwise the JTS geometry of the first curve from
+     *         geomNode which is covered by more than the allowed number of identical curves from otherGeomsNodes
      * @throws QueryException
      *             In case an exception occurred.
      */
@@ -3142,14 +3380,14 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     public com.vividsolutions.jts.geom.Geometry curveUnmatchedByIdenticalCurvesMax(ANode geomNode,
             Value otherGeomsNodes, int maxMatchesPerCurve) throws QueryException {
 
-	if(geomNode == null) {
-	    throw new GmlGeoXException("Parameter geomNode must contain a database node.");
-	}
-	
-	if(otherGeomsNodes == null || otherGeomsNodes.isEmpty()) {
-	    throw new GmlGeoXException("Parameter otherGeomsNodes must contain one or more database nodes.");
-	}
-	
+        if (geomNode == null) {
+            throw new GmlGeoXException("Parameter geomNode must contain a database node.");
+        }
+
+        if (otherGeomsNodes == null || otherGeomsNodes.isEmpty()) {
+            throw new GmlGeoXException("Parameter otherGeomsNodes must contain one or more database nodes.");
+        }
+
         final Collection<Curve> curvesToMatch = deegreeTransformer.getCurveComponents(geomNode);
         final List<Curve> otherCurves = deegreeTransformer.getCurveComponents(otherGeomsNodes);
 
@@ -3205,7 +3443,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      * @param index
      * @param numberOfIdenticalCurvesToDetect
      * @param isMaxNumberToDetect
-     *            <code>true</code>, if at most numberOfIdenticalCurvesToDetect matches are allowed, otherwise <code>false</code> (then at least numberOfIdenticalCurvesToDetect matches must be found)
+     *            <code>true</code>, if at most numberOfIdenticalCurvesToDetect matches are allowed, otherwise
+     *            <code>false</code> (then at least numberOfIdenticalCurvesToDetect matches must be found)
      * @return
      * @throws UnsupportedGeometryTypeException
      */
@@ -3229,14 +3468,20 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
 
             if (c_jts.equals(otherCurve_jts)) {
 
-                /* So the two JTS geometries (of the two curves) are spatially equal. However, we need to ensure that the control points are identical as well (ignoring orientation). */
+                /*
+                 * So the two JTS geometries (of the two curves) are spatially equal. However, we need to ensure that the
+                 * control points are identical as well (ignoring orientation).
+                 */
 
                 final Curve otherCurve_deegree = pair.right;
                 final Points otherCurveControlPoints = deegreeTransformer.getCurveControlPoints(otherCurve_deegree);
 
                 if (curveControlPoints.size() == otherCurveControlPoints.size()) {
 
-                    /* NOTE: deegree.Point equals(..) implementation really just compares the coordinates. So no specific overhead in doing so. */
+                    /*
+                     * NOTE: deegree.Point equals(..) implementation really just compares the coordinates. So no specific
+                     * overhead in doing so.
+                     */
 
                     boolean pointsMatch = true;
                     for (int i = 0; i < curveControlPoints.size(); i++) {
@@ -3291,13 +3536,15 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Checks if for each curve of the given geomNode an identical curve (same control points - ignoring curve orientation) from the otherGeomNodes exists.
+     * Checks if for each curve of the given geomNode an identical curve (same control points - ignoring curve orientation)
+     * from the otherGeomNodes exists.
      *
      * @param geomNode
      *            GML geometry node
      * @param otherGeomNodes
      *            one or more database nodes representing GML geometries
-     * @return <code>null</code>, if full coverage was determined, otherwise the JTS geometry of the first curve from geomNode which is not covered by an identical curve from otherGeomNodes
+     * @return <code>null</code>, if full coverage was determined, otherwise the JTS geometry of the first curve from
+     *         geomNode which is not covered by an identical curve from otherGeomNodes
      * @throws QueryException
      *             In case an exception occurred.
      */
@@ -3308,7 +3555,9 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
 
         try {
 
-            /* Ensure that other geometry nodes only consist of ANodes because we need to compare the original control points. */
+            /*
+             * Ensure that other geometry nodes only consist of ANodes because we need to compare the original control points.
+             */
             @SuppressWarnings("rawtypes")
             final Collection otherGeomNodesObjectList = toObjectCollection(otherGeomNodes);
             final Collection<ANode> otherGeomNodes_list = new ArrayList<>(otherGeomNodesObjectList.size());
@@ -3332,20 +3581,28 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                 geom_jts = jtsTransformer.toJTSGeometry(geom_deegree);
             }
 
-            /* Create a map of the curve components from the geometry (key: JTS geometry of a curve, value: deegree geometry of that curve) */
+            /*
+             * Create a map of the curve components from the geometry (key: JTS geometry of a curve, value: deegree geometry of
+             * that curve)
+             */
             final Collection<Curve> geomCurves = deegreeTransformer.getCurveComponents(geom_deegree);
             final Map<com.vividsolutions.jts.geom.Geometry, Curve> geomCurvesMap = new HashMap<>(geomCurves.size());
             for (final Curve c : geomCurves) {
                 geomCurvesMap.put(jtsTransformer.toJTSGeometry(c), c);
             }
 
-            /* Now parse and index the curves from the other geometry nodes (second parameter). */
+            /*
+             * Now parse and index the curves from the other geometry nodes (second parameter).
+             */
 
             final STRtree otherGeomsCurvesIndex = new STRtree();
 
             for (ANode otherGeomNode : otherGeomNodes_list) {
 
-                /* NOTE: We do not directly compute the deegree geometry here, because it is only necessary to do so if the JTS geometries are equal */
+                /*
+                 * NOTE: We do not directly compute the deegree geometry here, because it is only necessary to do so if the JTS
+                 * geometries are equal
+                 */
                 Geometry otherGeom_deegree = null;
                 // try to get JTS geometry for the geometry node from cache
                 com.vividsolutions.jts.geom.Geometry otherGeom_jts = null;
@@ -3358,9 +3615,17 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                     otherGeom_jts = jtsTransformer.toJTSGeometry(otherGeom_deegree);
                 }
 
-                /* Check if the other geometry intersects at all. If not, the other geometry can be ignored.
+                /*
+                 * Check if the other geometry intersects at all. If not, the other geometry can be ignored.
                  *
-                 * TODO: We may not need the overall intersection check ... could be more performant to just use other features returned from a query of the spatial index, and then just create a spatial index of their curve components. To do so, we still need to build the JTS geometries of the components (to get their envelopes - deegree.Geometry.getEnvelope() does that as well). Avoiding the JTS.equals(..) operation to compare curves, and instead just compare the sequence of points - AND the type of curve segment - might also suffice. ... That (i.e., also checking curve segment types) may require that we compare the sequence of curve segments, instead of just the set of all control points. */
+                 * TODO: We may not need the overall intersection check ... could be more performant to just use other features
+                 * returned from a query of the spatial index, and then just create a spatial index of their curve components.
+                 * To do so, we still need to build the JTS geometries of the components (to get their envelopes -
+                 * deegree.Geometry.getEnvelope() does that as well). Avoiding the JTS.equals(..) operation to compare curves,
+                 * and instead just compare the sequence of points - AND the type of curve segment - might also suffice. ...
+                 * That (i.e., also checking curve segment types) may require that we compare the sequence of curve segments,
+                 * instead of just the set of all control points.
+                 */
                 if (geom_jts.intersects(otherGeom_jts)) {
 
                     if (otherGeom_deegree == null) {
@@ -3376,7 +3641,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
                 }
             }
 
-            /* Now check that each curve of the geometry from the first parameter is matched by an identical curve from the other geometries. */
+            /*
+             * Now check that each curve of the geometry from the first parameter is matched by an identical curve from the
+             * other geometries.
+             */
             for (Entry<com.vividsolutions.jts.geom.Geometry, Curve> e : geomCurvesMap.entrySet()) {
 
                 final com.vividsolutions.jts.geom.Geometry geomCurve_jts = e.getKey();
@@ -3396,7 +3664,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
 
                     if (geomCurve_jts.equals(otherGeomCurve_jts)) {
 
-                        /* So the two JTS geometries (of the two curves) are spatially equal. However, we need to ensure that the control points are identical as well (ignoring orientation). */
+                        /*
+                         * So the two JTS geometries (of the two curves) are spatially equal. However, we need to ensure that
+                         * the control points are identical as well (ignoring orientation).
+                         */
 
                         final Curve otherGeomCurve_deegree = pair.right;
                         final Points otherGeomCurveControlPoints = deegreeTransformer
@@ -3404,7 +3675,10 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
 
                         if (geomCurveControlPoints.size() == otherGeomCurveControlPoints.size()) {
 
-                            /* NOTE: deegree.Point equals(..) implementation really just compares the coordinates. So no specific overhead in doing so. */
+                            /*
+                             * NOTE: deegree.Point equals(..) implementation really just compares the coordinates. So no
+                             * specific overhead in doing so.
+                             */
 
                             boolean pointsMatch = true;
                             for (int i = 0; i < geomCurveControlPoints.size(); i++) {
@@ -3450,13 +3724,21 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Checks two geometries for interior intersection of curve components. If both geometries are point based, the result will be <code>null</code> (since then there are no curves to check). Components of the first geometry are compared with the components of the second geometry (using a spatial index to prevent unnecessary checks): If two components are not equal (a situation that is allowed) then they are checked for an interior intersection, meaning that the interiors of the two components intersect (T********) or - only when curves are compared - that the boundary of one component intersects the interior of the other component (*T******* or ***T*****). If such a situation is detected, the intersection of the two components will be returned and testing will stop (meaning that the result will only provide information for one invalid intersection, not all intersections).
+     * Checks two geometries for interior intersection of curve components. If both geometries are point based, the result
+     * will be <code>null</code> (since then there are no curves to check). Components of the first geometry are compared
+     * with the components of the second geometry (using a spatial index to prevent unnecessary checks): If two components
+     * are not equal (a situation that is allowed) then they are checked for an interior intersection, meaning that the
+     * interiors of the two components intersect (T********) or - only when curves are compared - that the boundary of one
+     * component intersects the interior of the other component (*T******* or ***T*****). If such a situation is detected,
+     * the intersection of the two components will be returned and testing will stop (meaning that the result will only
+     * provide information for one invalid intersection, not all intersections).
      *
      * @param geomNode1
      *            the node that represents the first geometry
      * @param geomNode2
      *            the node that represents the second geometry
-     * @return The intersection of two components from the two geometries, where an invalid intersection was detected, or <code>null</code> if no such case exists.
+     * @return The intersection of two components from the two geometries, where an invalid intersection was detected, or
+     *         <code>null</code> if no such case exists.
      * @throws QueryException
      *             In case an exception occurred.
      */
@@ -3597,7 +3879,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
     }
 
     /**
-     * Retrieve the geometry represented by a given node as a JTS geometry. First try the cache and if it is not in the cache construct it from the XML.
+     * Retrieve the geometry represented by a given node as a JTS geometry. First try the cache and if it is not in the
+     * cache construct it from the XML.
      *
      * <p>
      * See {@link JtsTransformer#toJTSGeometry(Geometry)} for a list of supported and unsupported geometry types.
@@ -3806,7 +4089,8 @@ final public class GmlGeoX extends QueryModule implements Externalizable {
      *
      * @param geom
      *            the geometry
-     * @return an empty array if the geometry is null or empty, otherwise an array with the x and y from the first coordinate of the geometry
+     * @return an empty array if the geometry is null or empty, otherwise an array with the x and y from the first
+     *         coordinate of the geometry
      */
     @Requires(Permission.NONE)
     @Deterministic

@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,17 +51,21 @@ public class PolygonPatchConnectivityValidator implements Validator {
     /**
      * Checks that multiple polygon patches within a surface are connected.
      * <p>
-     * The test is implemented as follows: Each polygon patch is converted into a JTS Polygon. Then the union of all polygons is created. If the union geometry is a JTS Polygon then the surface is connected - otherwise it is not.
+     * The test is implemented as follows: Each polygon patch is converted into a JTS Polygon. Then the union of all
+     * polygons is created. If the union geometry is a JTS Polygon then the surface is connected - otherwise it is not.
      * <p>
      * Checks:
      * <ul>
      * <li>Surface (including PolyhedralSurface, CompositeSurface, and OrientableSurface)</li>
-     * <li>Only PolygonPatch is allowed as surface patch - all surfaces that contain a different type of surface patch are ignored.</li>
+     * <li>Only PolygonPatch is allowed as surface patch - all surfaces that contain a different type of surface patch are
+     * ignored.</li>
      * <li>The elements of multi and composite geometries (except Multi- and CompositeSolids).</li>
      * </ul>
      * Does NOT check the surfaces within solids!
      *
-     * @return <code>true</code> if the given geometry is a connected surface, a point, a curve, multi- or composite geometry that only consists of these geometry types, else <code>false</code>. Thus, <code>false</code> will be returned whenever a solid is encountered and if a surface is not connected.
+     * @return <code>true</code> if the given geometry is a connected surface, a point, a curve, multi- or composite
+     *         geometry that only consists of these geometry types, else <code>false</code>. Thus, <code>false</code> will
+     *         be returned whenever a solid is encountered and if a surface is not connected.
      */
     private boolean checkConnectivityOfPolygonPatches(final ElementContext elementContext, final ValidationResult result,
             final Geometry deegreeGeometry, final com.vividsolutions.jts.geom.Geometry jtsGeometry) {
@@ -94,7 +98,8 @@ public class PolygonPatchConnectivityValidator implements Validator {
                     }
                 } catch (final UnsupportedGeometryTypeException e) {
                     // ignore unsupported geometry -> TODO why?
-                    // result.addError(elementContext, Message.translate("gmlgeox.validation.geometry.unsupportedgeometrytype", e.getMessage()));
+                    // result.addError(elementContext, Message.translate("gmlgeox.validation.geometry.unsupportedgeometrytype",
+                    // e.getMessage()));
                     return true;
                 }
             }

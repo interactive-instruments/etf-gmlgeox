@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * A class for externalization, in which DBNodeRefs from different sources are collected.
  *
- * If there are several sources that share an object instance, the object instance is created only once during the recovery.
+ * If there are several sources that share an object instance, the object instance is created only once during the
+ * recovery.
  *
  * @author Jon Herrmann ( herrmann aT interactive-instruments doT de )
  */

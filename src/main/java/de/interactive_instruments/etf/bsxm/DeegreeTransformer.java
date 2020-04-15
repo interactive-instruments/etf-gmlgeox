@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,7 +128,10 @@ public final class DeegreeTransformer {
             }
         } else {
             try {
-                /* We use the same folder each time an instance of GmlGeoX is created. The configuration files will not be deleted upon exit. That shouldn't be a problem since we always use the same folder. */
+                /*
+                 * We use the same folder each time an instance of GmlGeoX is created. The configuration files will not be
+                 * deleted upon exit. That shouldn't be a problem since we always use the same folder.
+                 */
                 final String tempDirPath = System.getProperty("java.io.tmpdir");
                 final File tempDir = new File(tempDirPath, "gmlGeoXSrsConfig");
 
@@ -219,7 +222,8 @@ public final class DeegreeTransformer {
     }
 
     /**
-     * Retrieves all basic curve components from the given geometry. Composite geometries - including curves - will be broken up into their parts. Point based geometries will be ignored.
+     * Retrieves all basic curve components from the given geometry. Composite geometries - including curves - will be
+     * broken up into their parts. Point based geometries will be ignored.
      *
      * @param geom
      *            tbd
@@ -240,7 +244,10 @@ public final class DeegreeTransformer {
         } else if (geom instanceof LineString) {
             return Collections.singleton((LineString) geom);
         } else if (geom instanceof OrientableCurve) {
-            /* 2015-12-14 JE: special treatment is necessary because OrientableCurve.getJTSGeometry() returns null (with code from deegree 3.4-pre22-SNAPSHOT). */
+            /*
+             * 2015-12-14 JE: special treatment is necessary because OrientableCurve.getJTSGeometry() returns null (with code
+             * from deegree 3.4-pre22-SNAPSHOT).
+             */
             final OrientableCurve oc = (OrientableCurve) geom;
             final Curve baseCurve = oc.getBaseCurve();
             return getCurveComponents(baseCurve);
@@ -305,7 +312,8 @@ public final class DeegreeTransformer {
     }
 
     /**
-     * Retrieves all basic curve components from the given geometry node. Composite geometries - including curves - will be broken up into their parts. Point based geometries will be ignored.
+     * Retrieves all basic curve components from the given geometry node. Composite geometries - including curves - will be
+     * broken up into their parts. Point based geometries will be ignored.
      *
      * @param geomNode
      *            GML geometry node
@@ -338,7 +346,8 @@ public final class DeegreeTransformer {
     }
 
     /**
-     * Getting the control points from a deegree Curve via Curve.getControlPoints() is, according to the javadoc of that method, only safe for linearly interpolated curves. Therefore, we use a different way to compute the control points.
+     * Getting the control points from a deegree Curve via Curve.getControlPoints() is, according to the javadoc of that
+     * method, only safe for linearly interpolated curves. Therefore, we use a different way to compute the control points.
      *
      * @param curve
      *            Curve geometry from which to retrieve the control points
@@ -392,7 +401,10 @@ public final class DeegreeTransformer {
                 pointsList.add(p);
                 first = false;
             } else {
-                /* starting with the second segment, skip the first point (as it *must* be identical to last point of the last segment) */
+                /*
+                 * starting with the second segment, skip the first point (as it *must* be identical to last point of the last
+                 * segment)
+                 */
                 pointsList.add(new PointsSubsequence(p, 1));
             }
         }

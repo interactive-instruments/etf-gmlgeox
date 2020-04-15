@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,12 +77,15 @@ public class Circle {
     }
 
     /**
-     * Checks if the lines c1-c2 and c2-c3 are perpendicular to the x or y axis, using a certain tolerance. Takes into account that there is a simple solution (for calculating the center of the circle) for the case of c1-c2 being vertical and c2-c3 being horizontal.
+     * Checks if the lines c1-c2 and c2-c3 are perpendicular to the x or y axis, using a certain tolerance. Takes into
+     * account that there is a simple solution (for calculating the center of the circle) for the case of c1-c2 being
+     * vertical and c2-c3 being horizontal.
      *
      * @param c1
      * @param c2
      * @param c3
-     * @return <code>false</code> if c1-c2 is vertical and c2-c3 is horizontal (then there is a simple solution) or if none of the two lines is vertical or horizontal, else <code>true</code>
+     * @return <code>false</code> if c1-c2 is vertical and c2-c3 is horizontal (then there is a simple solution) or if none
+     *         of the two lines is vertical or horizontal, else <code>true</code>
      */
     private static boolean checkPerpendicular(Coordinate c1, Coordinate c2,
             Coordinate c3) {

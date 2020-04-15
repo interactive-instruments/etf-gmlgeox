@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,5 +75,6 @@ public enum SpatialRelOp {
             return g1.touches(g2);
         }
     };
+
     public abstract boolean call(final com.vividsolutions.jts.geom.Geometry g1, final com.vividsolutions.jts.geom.Geometry g2);
 }

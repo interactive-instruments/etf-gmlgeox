@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,8 @@ public class CustomCurveLinearizer {
     /**
      * Returns a linearized version of the given {@link Curve} geometry.
      * <p>
-     * NOTE: This method respects the semantic difference between {@link Curve} and {@link Ring} geometries: if the input is a {@link Ring}, a ring geometry will be returned.
+     * NOTE: This method respects the semantic difference between {@link Curve} and {@link Ring} geometries: if the input is
+     * a {@link Ring}, a ring geometry will be returned.
      *
      * @param curve
      *            curve to be linearized, must not be <code>null</code>
@@ -156,12 +157,16 @@ public class CustomCurveLinearizer {
     }
 
     /**
-     * Returns a linearized version (i.e. a {@link LineStringSegment}) of the given {@link org.deegree.geometry.primitive.segments.Arc}.
+     * Returns a linearized version (i.e. a {@link LineStringSegment}) of the given
+     * {@link org.deegree.geometry.primitive.segments.Arc}.
      * <p>
-     * If the three control points <code>p0</code>, <code>p1</code> and <code>p2</code> of the arc are collinear, i.e. on a straight line, the behaviour depends on the type of {@link org.deegree.geometry.primitive.segments.Arc}:
+     * If the three control points <code>p0</code>, <code>p1</code> and <code>p2</code> of the arc are collinear, i.e. on a
+     * straight line, the behaviour depends on the type of {@link org.deegree.geometry.primitive.segments.Arc}:
      * <ul>
-     * <li>Generic {@link org.deegree.geometry.primitive.segments.Arc}: returns the linear segment <code>(p0, p2)</code></li>
-     * <li>{@link de.interactive_instruments.etf.bsxm.geometry.Circle}: returns the linear segment <code>(p0, p1, p0)</code></li>
+     * <li>Generic {@link org.deegree.geometry.primitive.segments.Arc}: returns the linear segment
+     * <code>(p0, p2)</code></li>
+     * <li>{@link de.interactive_instruments.etf.bsxm.geometry.Circle}: returns the linear segment
+     * <code>(p0, p1, p0)</code></li>
      * </ul>
      *
      * @param arc
@@ -260,9 +265,13 @@ public class CustomCurveLinearizer {
     /**
      * Returns a linearized version (i.e. a {@link LineStringSegment}) of the given {@link CubicSpline}.
      * <p>
-     * A cubic spline consists of n polynomials of degree 3: S<sub>j</sub>(x) = a<sub>j</sub> + b<sub>j</sub>*(x-x<sub>j</sub>) + c<sub>j</sub>*(x-x<sub>j</sub>)<sup>2</sup> + d<sub>j</sub>*(x-x<sub>j</sub>)<sup>3</sup>; that acts upon the interval [x<sub>j</sub>,x<sub>j+1</sub>], 0 <=j< n.
+     * A cubic spline consists of n polynomials of degree 3: S<sub>j</sub>(x) = a<sub>j</sub> +
+     * b<sub>j</sub>*(x-x<sub>j</sub>) + c<sub>j</sub>*(x-x<sub>j</sub>)<sup>2</sup> +
+     * d<sub>j</sub>*(x-x<sub>j</sub>)<sup>3</sup>; that acts upon the interval [x<sub>j</sub>,x<sub>j+1</sub>], 0 <=j< n.
      * <p>
-     * The algorithm for generating points on a spline defined with only control points and starting/ending tangents can be found at <a href="http://persson.berkeley.edu/128A/lec14-2x3.pdf">http://persson.berkeley.edu/128A/lec14-2x3.pdf</a> (last visited 19/08/09)
+     * The algorithm for generating points on a spline defined with only control points and starting/ending tangents can be
+     * found at <a href="http://persson.berkeley.edu/128A/lec14-2x3.pdf">http://persson.berkeley.edu/128A/lec14-2x3.pdf</a>
+     * (last visited 19/08/09)
      *
      * @param spline
      *            curve segment to be linearized, must not be <code>null</code>
@@ -470,7 +479,8 @@ public class CustomCurveLinearizer {
 
                 if (sweepAngle < 0) {
                     /**
-                     * Because the sweepAngle is negative and we are going cw the sweepAngle must be inverted by adding it to 2pi
+                     * Because the sweepAngle is negative and we are going cw the sweepAngle must be inverted by adding it to
+                     * 2pi
                      */
                     sweepAngle = (TWO_PI + sweepAngle);
                 }
@@ -599,7 +609,8 @@ public class CustomCurveLinearizer {
     /**
      * Finds the center of a circle/arc that is specified by three points that lie on the circle's boundary.
      * <p>
-     * Credits go to <a href="http://en.wikipedia.org/wiki/Circumradius#Coordinates_of_circumcenter">wikipedia</a> (visited on 13/08/09).
+     * Credits go to <a href="http://en.wikipedia.org/wiki/Circumradius#Coordinates_of_circumcenter">wikipedia</a> (visited
+     * on 13/08/09).
      * </p>
      *
      * @param p0
@@ -736,7 +747,8 @@ public class CustomCurveLinearizer {
     }
 
     /**
-     * Returns whether the order of the given three points is clockwise or counterclockwise. Uses the (signed) area of a planar triangle to get to know about the order of the points.
+     * Returns whether the order of the given three points is clockwise or counterclockwise. Uses the (signed) area of a
+     * planar triangle to get to know about the order of the points.
      *
      * @param p0
      *            first point
@@ -762,7 +774,8 @@ public class CustomCurveLinearizer {
     /**
      * Tests if the given three points are collinear.
      * <p>
-     * NOTE: Only this method should be used throughout the whole linearization process for testing collinearity to avoid inconsistent results (the necessary EPSILON would differ).
+     * NOTE: Only this method should be used throughout the whole linearization process for testing collinearity to avoid
+     * inconsistent results (the necessary EPSILON would differ).
      * </p>
      *
      * @param p0

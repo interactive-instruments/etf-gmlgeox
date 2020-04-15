@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,8 @@ final public class GraphX extends QueryModule {
     }
 
     /**
-     * Resets the simple graph held by this module. Use this method to ensure that resources can be reclaimed once the graph is no longer needed.
+     * Resets the simple graph held by this module. Use this method to ensure that resources can be reclaimed once the graph
+     * is no longer needed.
      */
     @Requires(Permission.NONE)
     public void resetSimpleGraph() {
@@ -74,7 +75,8 @@ final public class GraphX extends QueryModule {
     /**
      * Adds the given database node as a vertex to the simple graph held by this module.
      *
-     * NOTE: Before a new graph is created, ensure that a previously established graph is reset using {@link #resetSimpleGraph()}.
+     * NOTE: Before a new graph is created, ensure that a previously established graph is reset using
+     * {@link #resetSimpleGraph()}.
      *
      * @param vertex
      *            the database node to add to the graph as a new vertex
@@ -86,7 +88,8 @@ final public class GraphX extends QueryModule {
     }
 
     /**
-     * Adds an undirected edge between two vertices of the simple graph held by this module. The two vertices must already be contained in this graph. If they are not found in the graph, an IllegalArgumentException will be thrown.
+     * Adds an undirected edge between two vertices of the simple graph held by this module. The two vertices must already
+     * be contained in this graph. If they are not found in the graph, an IllegalArgumentException will be thrown.
      *
      * @param vertex1
      *            represents one end of the edge
@@ -101,7 +104,9 @@ final public class GraphX extends QueryModule {
     }
 
     /**
-     * @return A DOM element, with the connected sets (represented as a sequence of nodes of the vertices in the set) that were found in the simple graph; the element can be empty (if the simple graph held by this module is empty). The element has the following (exemplary) structure:
+     * @return A DOM element, with the connected sets (represented as a sequence of nodes of the vertices in the set) that
+     *         were found in the simple graph; the element can be empty (if the simple graph held by this module is empty).
+     *         The element has the following (exemplary) structure:
      *
      *         <pre>
      * {@code

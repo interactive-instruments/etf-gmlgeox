@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2019 interactive instruments GmbH
+ * Copyright 2010-2020 interactive instruments GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,9 @@ import de.interactive_instruments.etf.bsxm.node.DBNodeRefLookup;
 import de.interactive_instruments.etf.bsxm.node.ExternalizableDBNodeRefMap;
 
 /**
- * The GeometryManager builds and maintains spatial indexes and an in-memory cache for JTS geometries that can be used with the GmlGeoX module. The cache is filled during the indexing of the geometries and updated when geometries are accessed using the {@link GmlGeoX#getOrCacheGeometry(ANode)} function.
+ * The GeometryManager builds and maintains spatial indexes and an in-memory cache for JTS geometries that can be used
+ * with the GmlGeoX module. The cache is filled during the indexing of the geometries and updated when geometries are
+ * accessed using the {@link GmlGeoX#getOrCacheGeometry(ANode)} function.
  *
  * @author Clemens Portele (portele <at> interactive-instruments <dot> de)
  * @author Johannes Echterhoff (echterhoff at interactive-instruments dot de)
@@ -65,7 +67,8 @@ public final class GeometryCache implements Externalizable {
     private static final String ETF_GEOCACHE_REC_STATS = "etf.gmlgeox.geocache.statistics";
 
     /**
-     * Geometry cache, where a key is the ID of a database node that represents a geometry, and the value is the JTS geometry parsed from that node.
+     * Geometry cache, where a key is the ID of a database node that represents a geometry, and the value is the JTS
+     * geometry parsed from that node.
      */
     private Cache<DBNodeRef, Geometry> geometryCache = null;
     private HashMap<DBNodeRef, Envelope> envelopeByDBNodeEntry = new HashMap<>();
@@ -78,7 +81,8 @@ public final class GeometryCache implements Externalizable {
     }
 
     /**
-     * Resets the geometry cache, by replacing the existing cache with a new cache of the given size. That means that all cached geometries will be lost.
+     * Resets the geometry cache, by replacing the existing cache with a new cache of the given size. That means that all
+     * cached geometries will be lost.
      *
      * @param maxSize
      *            new cache size
@@ -212,10 +216,13 @@ public final class GeometryCache implements Externalizable {
     }
 
     /**
-     * Create the named spatial index by bulk loading, using the STR method. Before the index can be built, entries must be added by calling {@link #prepareSpatialIndex(String, DBNodeRef, com.github.davidmoten.rtree.geometry.Geometry)}.
+     * Create the named spatial index by bulk loading, using the STR method. Before the index can be built, entries must be
+     * added by calling {@link #prepareSpatialIndex(String, DBNodeRef, com.github.davidmoten.rtree.geometry.Geometry)}.
      *
      * <p>
-     * According to https://github.com/ambling/rtree-benchmark, creating an R*-tree using bulk loading is faster than doing so without bulk loading. Furthermore, according to https://en.wikipedia.org/wiki/R-tree, an STR bulk loaded R*-tree is a "very efficient tree".
+     * According to https://github.com/ambling/rtree-benchmark, creating an R*-tree using bulk loading is faster than doing
+     * so without bulk loading. Furthermore, according to https://en.wikipedia.org/wiki/R-tree, an STR bulk loaded R*-tree
+     * is a "very efficient tree".
      *
      * @param indexName
      *            Identifies the index. The empty string identifies the default index.
@@ -256,7 +263,8 @@ public final class GeometryCache implements Externalizable {
     /**
      * @param entry
      *            tbd
-     * @return The envelope stored for the given entry, or <code>null</code> if the manager does not contain a mapping for the given entry.
+     * @return The envelope stored for the given entry, or <code>null</code> if the manager does not contain a mapping for
+     *         the given entry.
      */
     public Envelope getEnvelope(final DBNodeRef entry) {
         return envelopeByDBNodeEntry.get(entry);
