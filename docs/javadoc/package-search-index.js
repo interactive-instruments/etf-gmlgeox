@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"de.interactive_instruments.etf.bsxm"},{"l":"de.interactive_instruments.etf.bsxm.geometry"},{"l":"de.interactive_instruments.etf.bsxm.index"},{"l":"de.interactive_instruments.etf.bsxm.node"},{"l":"de.interactive_instruments.etf.bsxm.parser"},{"l":"de.interactive_instruments.etf.bsxm.validator"}]
