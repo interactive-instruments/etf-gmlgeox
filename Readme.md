@@ -112,9 +112,9 @@ When GmlGeoX parses a GML encoded geometry, the spatial reference system (SRS) t
 GmlGeoX determines the spatial reference system of a GML geometry element as follows:
 
 1. If the GML element has the XML attribute 'srsName', then the attribute value identifies the SRS.
-   * NOTE: The SRS identifier is used to look up the SRS definition within the [GmlGeoX internal SRS configuration](https://github.com/interactive-instruments/etf-gmlgeox/tree/EIPs/EIP-57/src/main/resources/srsconfig).
+* NOTE: The SRS identifier is used to look up the SRS definition within the [GmlGeoX internal SRS configuration](https://github.com/interactive-instruments/etf-gmlgeox/tree/EIPs/EIP-57/src/main/resources/srsconfig).
 2. Otherwise, the standard SRS is used - if one is set.
-   * A standard SRS can be set by calling function `geox:setStandardSRS(string srsName)`. If a standard SRS applies to a given test dataset (which depends on the use case and data format), it should be set early on in a test run, before geometries are parsed or indexed.
+* A standard SRS can be set by calling function `geox:setStandardSRS(string srsName)`. If a standard SRS applies to a given test dataset (which depends on the use case and data format), it should be set early on in a test run, before geometries are parsed or indexed.
 3. Otherwise, the so-called ancestors of the GML element are inspected, to see if one of them has the 'srsName' XML attribute. If so, then the SRS defined by the nearest ancestor will be used.
 4. Otherwise, the ancestors of the GML element will be reviewed again, but this time in order to determine if one of them has a GML envelope with 'srsName' as child element. If so, then the according SRS of the nearest ancestor is used.
 
@@ -133,64 +133,64 @@ The following geometry types **are** supported by GmlGeoX:
 
 * GM_Point
 * Curves:
-  * GM_Curve
-  * GM_Ring
-  * GM_LinearRing
-  * GM_LineString
-  * GM_OrientedCurve  
+* GM_Curve
+* GM_Ring
+* GM_LinearRing
+* GM_LineString
+* GM_OrientedCurve
 * Curve segments:
-  * GM_Arc (will be linearized)
-  * GM_Circle (will be linearized)
-  * GM_LineString
-  * GM_CubicSpline (will be linearized)
-  * GM_ArcString (will be linearized)  
+* GM_Arc (will be linearized)
+* GM_Circle (will be linearized)
+* GM_LineString
+* GM_CubicSpline (will be linearized)
+* GM_ArcString (will be linearized)
 * Surfaces:
-  * GM_Surface
-  * GM_PolyhedralSurface
-  * GM_OrientableSurface
+* GM_Surface
+* GM_PolyhedralSurface
+* GM_OrientableSurface
 * Surface segments:
-  * GM_Polygon
+* GM_Polygon
 * Aggregates:
-  * GM_Composite
-  * GM_CompositePoint
-  * GM_CompositeCurve
-  * GM_CompositeSurface  
+* GM_Composite
+* GM_CompositePoint
+* GM_CompositeCurve
+* GM_CompositeSurface
 * Multi geometries:
-  * GM_Aggregate
-  * GM_MultiPoint
-  * GM_MultiCurve
-  * GM_MultiSurface
+* GM_Aggregate
+* GM_MultiPoint
+* GM_MultiCurve
+* GM_MultiSurface
 
 The following geometry types are **not** supported:
 
 * GM_Solid
 * Curve segments:
-  * GM_ArcByBulge
-  * ArcByCenterPoint
-  * GM_ArcStringByBulge
-  * GM_Bezier
-  * GM_BSplineCurve
-  * CircleByCenterPoint
-  * GM_Clothoid
-  * GM_Geodesic
-  * GM_GeodesicString
-  * GM_OffsetCurve
-  * GM_Conic
+* GM_ArcByBulge
+* ArcByCenterPoint
+* GM_ArcStringByBulge
+* GM_Bezier
+* GM_BSplineCurve
+* CircleByCenterPoint
+* GM_Clothoid
+* GM_Geodesic
+* GM_GeodesicString
+* GM_OffsetCurve
+* GM_Conic
 * Surfaces:
-  * GM_TriangulatedSurface
-  * GM_Tin
-  * GM_ParametricCurveSurface
-  * GM_GriddedSurface
-  * GM_BilinearGrid
-  * GM_BicubicGrid
-  * GM_Cone
-  * GM_Cylinder
-  * GM_Sphere
-  * GM_BSplineSurface
+* GM_TriangulatedSurface
+* GM_Tin
+* GM_ParametricCurveSurface
+* GM_GriddedSurface
+* GM_BilinearGrid
+* GM_BicubicGrid
+* GM_Cone
+* GM_Cylinder
+* GM_Sphere
+* GM_BSplineSurface
 * Aggregates:
-  * GM_CompositeSolid
+* GM_CompositeSolid
 * Multi geometries:
-  * GM_MultiSolid
+* GM_MultiSolid
 
 As noted above, some of the supported geometry types will be linearized when parsed. What this means, as well as configuration options, are documented in the [Linearization](#linearization) section.
 
@@ -239,131 +239,131 @@ The following functions are available to inspect and to modify the set of geomet
 Geometry validation consists of a number of validation tasks. Currently, the following tasks are available:
 
 1. General Validation - This test validates the given geometry using the validation functionality of both deegree and JTS. More specifically:
-   * **deegree based validation:**
-      * primitive geometry (point, curve, ring, surface):
-         * point: no specific validation
-         * curve:
-            * duplication of successive control points (only for linear curve segments)
-            * segment discontinuity
-            * self intersection (based on JTS isSimple())
-         * ring:
-            * Same as curve.
-            * In addition, test if ring is closed
-         * surface:
-            * only checks PolygonPatch, individually:
-            * applies ring validation to interior and exterior rings
-            * checks ring orientation (ignored for GML 3.1):
-               * must be counter-clockwise for exterior ring
-               * must be clockwise for interior ring
-            * interior ring intersects exterior
-            * interior ring outside of exterior ring
-            * interior rings intersection
-            * interior rings are nested
-      * composite geometry: member geometries are validated individually
-      * multi geometry: member geometries are validated individually
-      * NOTE: There's some overlap with JTS validation. The following invalid situations are reported by the JTS validation:
-         * curve self intersection
-         * interior ring intersects exterior
-         * interior ring outside of exterior ring
-         * interior rings intersection
-         * interior rings are nested
-         * interior rings touch
-         * interior ring touches exterior
-   * **JTS based validation:**
-      * Point:
-         * invalid coordinates
-      * LineString:
-         * invalid coordinates
-         * too few points
-      * LinearRing:
-         * invalid coordinates
-         * closed ring
-         * too few points
-         * no self intersecting rings
-      * Polygon:
-         * invalid coordinates
-         * closed ring
-         * too few points
-         * consistent area
-         * no self intersecting rings
-         * holes in shell
-         * holes not nested
-         * connected interiors
-      * MultiPoint:
-         * invalid coordinates
-      * MultiLineString:
-         * Each contained LineString is validated on its own.
-      * MultiPolygon:
-         * Per polygon:
-               * invalid coordinates
-               * closed ring
-               * holes in shell
-               * holes not nested
-         * too few points
-         * consistent area
-         * no self intersecting rings
-         * shells not nested
-         * connected interiors
-      * GeometryCollection:
-         * Each member of the collection is validated on its own.
-      * General description of checks performed by JTS:
-         * invalid coordinates: x and y are neither NaN or infinite
-         * closed ring: tests if ring is closed; empty rings are closed by definition
-         * too few points: tests if length of coordinate array - after repeated points have been removed - is big enough(e.g. >= 4 for a ring, >= 2 for a line string)
-         * no self intersecting rings: Check that there is no ring which self-intersects (except of course at its endpoints); required by OGC topology rules
-         * consistent area: Checks that the arrangement of edges in a polygonal geometry graph forms a consistent area. Includes check for duplicate rings.
-         * holes in shell: Tests that each hole is inside the polygon shell (i.e. hole rings do not cross the shell ring).
-         * holes not nested: Tests that no hole is nested inside another hole.
-         * connected interiors: Check that the holes do not split the interior of the polygon into at least two pieces.
-         * shells not nested: Tests that no element polygon is wholly in the interior of another element polygon (of a MultiPolygon).
+* **deegree based validation:**
+	* primitive geometry (point, curve, ring, surface):
+		* point: no specific validation
+		* curve:
+			* duplication of successive control points (only for linear curve segments)
+			* segment discontinuity
+			* self intersection (based on JTS isSimple())
+		* ring:
+			* Same as curve.
+			* In addition, test if ring is closed
+		* surface:
+			* only checks PolygonPatch, individually:
+			* applies ring validation to interior and exterior rings
+			* checks ring orientation (ignored for GML 3.1):
+			* must be counter-clockwise for exterior ring
+			* must be clockwise for interior ring
+			* interior ring intersects exterior
+			* interior ring outside of exterior ring
+			* interior rings intersection
+			* interior rings are nested
+	* composite geometry: member geometries are validated individually
+	* multi geometry: member geometries are validated individually
+	* NOTE: There's some overlap with JTS validation. The following invalid situations are reported by the JTS validation:
+		* curve self intersection
+		* interior ring intersects exterior
+		* interior ring outside of exterior ring
+		* interior rings intersection
+		* interior rings are nested
+		* interior rings touch
+		* interior ring touches exterior
+* **JTS based validation:**
+	* Point:
+		* invalid coordinates
+	* LineString:
+		* invalid coordinates
+		* too few points
+	* LinearRing:
+		* invalid coordinates
+		* closed ring
+		* too few points
+		* no self intersecting rings
+	* Polygon:
+		* invalid coordinates
+		* closed ring
+		* too few points
+		* consistent area
+		* no self intersecting rings
+		* holes in shell
+		* holes not nested
+		* connected interiors
+	* MultiPoint:
+		* invalid coordinates
+	* MultiLineString:
+		* Each contained LineString is validated on its own.
+	* MultiPolygon:
+		* Per polygon:
+			* invalid coordinates
+			* closed ring
+			* holes in shell
+			* holes not nested
+		* too few points
+		* consistent area
+		* no self intersecting rings
+		* shells not nested
+		* connected interiors
+	* GeometryCollection:
+		* Each member of the collection is validated on its own.
+	* General description of checks performed by JTS:
+		* invalid coordinates: x and y are neither NaN or infinite
+		* closed ring: tests if ring is closed; empty rings are closed by definition
+		* too few points: tests if length of coordinate array - after repeated points have been removed - is big enough(e.g. >= 4 for a ring, >= 2 for a line string)
+		* no self intersecting rings: Check that there is no ring which self-intersects (except of course at its endpoints); required by OGC topology rules
+		* consistent area: Checks that the arrangement of edges in a polygonal geometry graph forms a consistent area. Includes check for duplicate rings.
+		* holes in shell: Tests that each hole is inside the polygon shell (i.e. hole rings do not cross the shell ring).
+		* holes not nested: Tests that no hole is nested inside another hole.
+		* connected interiors: Check that the holes do not split the interior of the polygon into at least two pieces.
+		* shells not nested: Tests that no element polygon is wholly in the interior of another element polygon (of a MultiPolygon).
 2. Polygon Patch Connectivity - Checks that multiple polygon patches within a single surface are connected.
 3. Repetition of Position in CurveSegments - Checks that consecutive positions within a CurveSegment are not equal.
 4. isSimple - Tests whether a geometry is simple, based on JTS Geometry.isSimple(). In general, the OGC Simple Features specification of simplicity follows the rule: A Geometry is simple if and only if the only self-intersections are at boundary points.
 Simplicity is defined for each JTS geometry type as follows:
-   * Polygonal geometries are simple if their rings are simple (i.e., their rings do not self-intersect).
-      * Note: This does not check if different rings of the geometry intersect, meaning that isSimple cannot be used to fully test for (invalid) self-intersections in polygons. The JTS validity check fully tests for self-intersections in polygons, and is part of the general validation in GmlGeoX.
-   * Linear geometries are simple iff they do not self-intersect at points other than boundary points.
-   * Zero-dimensional (point) geometries are simple if and only if they have no repeated points.
-   * Empty geometries are always simple, by definition.
+* Polygonal geometries are simple if their rings are simple (i.e., their rings do not self-intersect).
+	* Note: This does not check if different rings of the geometry intersect, meaning that isSimple cannot be used to fully test for (invalid) self-intersections in polygons. The JTS validity check fully tests for self-intersections in polygons, and is part of the general validation in GmlGeoX.
+* Linear geometries are simple iff they do not self-intersect at points other than boundary points.
+* Zero-dimensional (point) geometries are simple if and only if they have no repeated points.
+* Empty geometries are always simple, by definition.
 
 Geometry validation can be invoked for a GML geometry element using one of the following functions:
 
-   * `geox:validate(GML_element geometryElement)`
-   * `geox:validate(GML_element geometryElement, string test_mask)`
-   * `geox:validateAndReport(GML_element geometryElement)`
-   * `geox:validateAndReport(GML_element geometryElement. string test_mask)`
+* `geox:validate(GML_element geometryElement)`
+* `geox:validate(GML_element geometryElement, string test_mask)`
+* `geox:validateAndReport(GML_element geometryElement)`
+* `geox:validateAndReport(GML_element geometryElement. string test_mask)`
 
 The differences between these functions is as follows:
 
 * Set of validation task being executed:
-   * The functions with a single parameter run all geometry validation tasks.
-   * For the other two functions, the set of validation tasks to run is defined using the second function parameter, the test mask. The mask is a simple string, where the character '1' at the position of a specific test (assuming a 1-based index) specifies that the test shall be performed. If the mask does not contain a character at the position of a specific test (because the mask is empty or the length is smaller than the position), then the test will be executed. Examples:
-      * The mask '0100' indicates that only the 'Polygon Patch Connectivity' test shall be performed.
-      * The mask '1110' indicates that all tests except the 'isSimple' test shall be performed .
+* The functions with a single parameter run all geometry validation tasks.
+* For the other two functions, the set of validation tasks to run is defined using the second function parameter, the test mask. The mask is a simple string, where the character '1' at the position of a specific test (assuming a 1-based index) specifies that the test shall be performed. If the mask does not contain a character at the position of a specific test (because the mask is empty or the length is smaller than the position), then the test will be executed. Examples:
+	* The mask '0100' indicates that only the 'Polygon Patch Connectivity' test shall be performed.
+	* The mask '1110' indicates that all tests except the 'isSimple' test shall be performed .
 * Return type:
-   * The `geox:validate(..)` functions only return a string with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF' shows that the first test was skipped, while the second test passed and the third and fourth failed.
-   * The `geox:validateAndReport(..)` functions return an XML element, as follows:
+* The `geox:validate(..)` functions only return a string with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped. Example: the string 'SVFF' shows that the first test was skipped, while the second test passed and the third and fourth failed.
+* The `geox:validateAndReport(..)` functions return an XML element, as follows:
 
 ```xml
-	 <ggeo:ValidationResult xmlns:ggeo="de.interactive_instruments.etf.bsxm.GmlGeoX">
-	  <ggeo:valid>false</ggeo:valid>
-	  <ggeo:result>VFV</ggeo:result>
-	  <ggeo:errors>
-	   <etf:message xmlns:etf="http://www.interactive-instruments.de/etf/2.0" ref="TR.gmlgeox.validation.geometry.jts.5">
-	    <etf:argument token="original">Invalid polygon. Two rings of the polygonal geometry intersect.</etf:argument>
-	    <etf:argument token="ID">DETHL56P0000F1TJ</etf:argument>
-	    <etf:argument token="context">Surface</etf:argument>
-	    <etf:argument token="coordinates">666424.2393405803,5614560.422015165</etf:argument>
-	   </etf:message>
-	  </ggeo:errors>
-	 </ggeo:ValidationResult>
+	<ggeo:ValidationResult xmlns:ggeo="de.interactive_instruments.etf.bsxm.GmlGeoX">
+	<ggeo:valid>false</ggeo:valid>
+	<ggeo:result>VFV</ggeo:result>
+	<ggeo:errors>
+	<etf:message xmlns:etf="http://www.interactive-instruments.de/etf/2.0" ref="TR.gmlgeox.validation.geometry.jts.5">
+		<etf:argument token="original">Invalid polygon. Two rings of the polygonal geometry intersect.</etf:argument>
+		<etf:argument token="ID">DETHL56P0000F1TJ</etf:argument>
+		<etf:argument token="context">Surface</etf:argument>
+		<etf:argument token="coordinates">666424.2393405803,5614560.422015165</etf:argument>
+	</etf:message>
+	</ggeo:errors>
+	</ggeo:ValidationResult>
 ```
 Where:
 * ggeo:valid - contains the boolean value indicating if the object passed all tests (defined by the test mask).
 * ggeo:result - contains a string that is a mask with the test results, encoded as characters - one at each position (1-based index) of the available tests. 'V' indicates that the test passed, i.e. that the geometry is valid according to that test. 'F' indicates that the test failed. 'S' indicates that the test was skipped.
 * ggeo:message (one for each message produced during validation) contains:
-   * an XML attribute 'type' that indicates the severity level of the message ('FATAL', 'ERROR', 'WARNING', or 'NOTICE')
-   * the actual validation message as text content
+* an XML attribute 'type' that indicates the severity level of the message ('FATAL', 'ERROR', 'WARNING', or 'NOTICE')
+* the actual validation message as text content
 
 
 ## Creating and using spatial indexes
@@ -394,8 +394,8 @@ Here is an example that shows how a set of features can be indexed, using the de
 
 ```xquery
 let $dummy :=
-  for $feature in $features
-  return geox:index($feature,$feature/*:position/*)
+for $feature in $features
+return geox:index($feature,$feature/*:position/*)
 let $dummyBuildSpatialIndex := geox:buildSpatialIndex()
 ```
 
@@ -447,15 +447,15 @@ In the following example, spatial overlap is determined using the  `geox:overlap
 
 ```xquery
 let $featuresWithErrors :=
-  (for $candidate in $features
-  let $candidate_geometryElement := $candidate/*:position/*
-  let $other_features := geox:search($candidate_geometryElement) except $candidate
-  return
-    if(geox:overlaps($candidate_geometryElement,$other_features/*:position/*,false())) then
-      $candidate
-    else
-      ()
-  )[position() le $limitErrors]
+(for $candidate in $features
+let $candidate_geometryElement := $candidate/*:position/*
+let $other_features := geox:search($candidate_geometryElement) except $candidate
+return
+	if(geox:overlaps($candidate_geometryElement,$other_features/*:position/*,false())) then
+	$candidate
+	else
+	()
+)[position() le $limitErrors]
 ```
 
 
@@ -464,32 +464,32 @@ let $featuresWithErrors :=
 Additional functions supported by GmlGeoX include, but are not limited to:
 
 * Compute the boundary of a geometry:
-  * `geox:boundary(GML_element geometryElement)`
-  * `geox:boundaryGeom(JTS_geometry geometryObject)`
+* `geox:boundary(GML_element geometryElement)`
+* `geox:boundaryGeom(JTS_geometry geometryObject)`
 * Compute the union of multiple geometries:
-  * `geox:union(GML_elements geometryElements)`
-  * `geox:unionGeom(JTS_geometries geometryObjects)`
+* `geox:union(GML_elements geometryElements)`
+* `geox:unionGeom(JTS_geometries geometryObjects)`
 * Compute the intersection of two geometries:
-  * `geox:intersection(GML_element geometryElement1, GML_element geometryElement2)`
-  * `geox:intersectionGeomGeom(JTS_geometry geometryObject1, JTS_geometry geometryObject2)`
+* `geox:intersection(GML_element geometryElement1, GML_element geometryElement2)`
+* `geox:intersectionGeomGeom(JTS_geometry geometryObject1, JTS_geometry geometryObject2)`
 * Compute the difference of two geometries:
-  * `geox:difference(GML_element geometryElement1, GML_element geometryElement2)`
-  * `geox:differenceGeomGeom(JTS_geometry geometryObject1, JTS_geometry geometryObject2)`
+* `geox:difference(GML_element geometryElement1, GML_element geometryElement2)`
+* `geox:differenceGeomGeom(JTS_geometry geometryObject1, JTS_geometry geometryObject2)`
 * Compute the holes in a JTS geometry (typically a surface):
-  * `geox:holes(GML_element geometryElement)`
-  * `geox:holesGeom(JTS_geometry geometry)`
-  * `geox:holesAsGeometryCollection(JTS_geometry geometry)`  
+* `geox:holes(GML_element geometryElement)`
+* `geox:holesGeom(JTS_geometry geometry)`
+* `geox:holesAsGeometryCollection(JTS_geometry geometry)`
 * Check if the control points of a circle have a minimum distance (in degree, 0<=x<=120) to each other: `geox:checkMinimumSeparationOfCircleControlPoints(GML_element circleElement, number minimumDistance)`
 * Check if the second control point of an arc is in the middle third of the arc: `geox:checkSecondControlPointInMiddleThirdOfArc(GML_element arcElement)`
 * Determine the points of a given line (represented as JTS LineString or JTS MultiLineString), at which the line segment that ends in such a point, and the following segment that starts with that point, form a directional change within a given interval (0 <= minAngle <= maxAngle <= 180): `geox:directionChanges(JTS_geometry geometry, number minAngle, number maxAngle)`
 * Determine the points of a given line (represented as JTS LineString or JTS MultiLineString), at which the line segment that ends in such a point, and the following segment that starts with that point, form a directional change that is bigger than a given limit (0 <= limitAngle <= 180): `geox:directionChangesGreaterThanLimit(JTS_geometry geometry, number limitAngle)`
 * Compute the endpoints of a given curve: `geox:curveEndPoints(GML_element geometryElement)`. The result is a sequence of JTS Point objects.
 * Functions useful for debugging:
-   * Compute the first two coordinates:
-      * of a JTS geometry: `geox:georefFromGeom(JTS_geometry geometry)`
-      * of a JTS Coordinate object: `geox:georefFromCoord(JTS_Coordinate coord)`
-   * Check if a JTS geometry is empty: `geox:isEmptyGeom(JTS_geometry geometry)`.
-   * Compute the Well-Known-Text (WKT) representation of a JTS geometry: `geox:toWKT(JTS_geometry geometry)`.
+* Compute the first two coordinates:
+	* of a JTS geometry: `geox:georefFromGeom(JTS_geometry geometry)`
+	* of a JTS Coordinate object: `geox:georefFromCoord(JTS_Coordinate coord)`
+* Check if a JTS geometry is empty: `geox:isEmptyGeom(JTS_geometry geometry)`.
+* Compute the Well-Known-Text (WKT) representation of a JTS geometry: `geox:toWKT(JTS_geometry geometry)`.
 
 NOTE: All available GmlGeoX functions are documented in detail both in the [XQuery module descriptor file](https://github.com/interactive-instruments/etf-gmlgeox/blob/EIPs/EIP-57/src/main/xquery/GmlGeoX.xq), and in the JavaDoc of public methods from [GmlGeoX.java](https://github.com/interactive-instruments/etf-gmlgeox/blob/EIPs/EIP-57/src/main/java/de/interactive_instruments/etf/bsxm/GmlGeoX.java).
 
